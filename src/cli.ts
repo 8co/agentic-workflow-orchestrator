@@ -17,6 +17,7 @@ import { createCursorAdapter } from './adapters/cursor-adapter.js';
 import { createAnthropicAdapter } from './adapters/anthropic-adapter.js';
 import { createOpenAIAdapter } from './adapters/openai-adapter.js';
 import { createAutonomousRunner } from './autonomous-runner.js';
+import { createScheduler } from './scheduler.js';
 import type { AgentAdapter, AgentType } from './types.js';
 
 const basePath = process.cwd();
@@ -148,6 +149,62 @@ async function main() {
       break;
     }
 
+    case 'next': {
+      const agentToUse = agent ?? config.defaultAgent;
+      if (agentToUse === 'cursor') {
+        console.error('❌ Scheduler requires a real LLM agent. Use --agent openai');
+        process.exit(1);
+      }
+      validateConfig(config, agentToUse);
+
+      const scheduler = createScheduler({
+        basePath,
+        adapters,
+        defaultAgent: agentToUse,
+      });
+
+      const result = await scheduler.next();
+      if (result && !result.success) {
+        process.exit(1);
+      }
+      break;
+    }
+
+    case 'schedule': {
+      const mode = positional[0] ?? 'loop';
+      const agentToUse = agent ?? config.defaultAgent;
+      if (agentToUse === 'cursor') {
+        console.error('❌ Scheduler requires a real LLM agent. Use --agent openai');
+        process.exit(1);
+      }
+      validateConfig(config, agentToUse);
+
+      const scheduler = createScheduler({
+        basePath,
+        adapters,
+        defaultAgent: agentToUse,
+      });
+
+      if (mode === 'watch') {
+        await scheduler.watch();
+      } else {
+        const results = await scheduler.loop();
+        const failed = results.some((r) => !r.success);
+        if (failed) process.exit(1);
+      }
+      break;
+    }
+
+    case 'queue': {
+      const scheduler = createScheduler({
+        basePath,
+        adapters,
+        defaultAgent: agent ?? config.defaultAgent,
+      });
+      await scheduler.status();
+      break;
+    }
+
     case 'list': {
       await runner.list();
       break;
@@ -176,17 +233,22 @@ function printUsage() {
 
 Usage:
   npx tsx src/cli.ts run <workflow.yaml> [options]     Run a prompt workflow (output to files)
-  npx tsx src/cli.ts auto <workflow.yaml> [options]    Run autonomous workflow (writes code → verifies → commits)
-  npx tsx src/cli.ts list                              List executions
+  npx tsx src/cli.ts auto <workflow.yaml> [options]    Run autonomous workflow (writes → verifies → commits)
+  npx tsx src/cli.ts next [--agent openai|anthropic]   Run next pending task from queue
+  npx tsx src/cli.ts schedule [loop|watch] [--agent]   Run all pending tasks (loop) or poll continuously (watch)
+  npx tsx src/cli.ts queue                             Show task queue status
+  npx tsx src/cli.ts list                              List workflow executions
   npx tsx src/cli.ts resume <executionId>              Resume failed workflow
 
 Options:
   --var key=value       Override workflow variable
   --agent <name>        Override agent (anthropic|openai|codex|cursor)
 
-Modes:
-  run                   Generate-only: LLM output → files for human review
-  auto                  Autonomous: LLM → write files → build/test → git commit (or revert)
+Scheduler:
+  next                  Pick and run one pending task from tasks/queue.yaml
+  schedule loop         Run all pending tasks sequentially, then stop
+  schedule watch        Run all pending, then poll for new tasks every 5 min
+  queue                 Print current queue status
 
 Agents:
   anthropic             Claude API (requires ANTHROPIC_API_KEY)
@@ -197,11 +259,14 @@ Agents:
 Examples:
   npx tsx src/cli.ts run workflows/sample.yaml --agent openai
   npx tsx src/cli.ts auto workflows/auto-sample.yaml --agent openai
-  npx tsx src/cli.ts auto workflows/auto-sample.yaml --var feature_name="auth" --agent anthropic
-  npx tsx src/cli.ts list
+  npx tsx src/cli.ts next --agent openai
+  npx tsx src/cli.ts schedule loop --agent openai
+  npx tsx src/cli.ts schedule watch --agent openai
+  npx tsx src/cli.ts queue
 
 Setup:
   cp .env.example .env    # Then add your API keys
+  Edit tasks/queue.yaml   # Add tasks to the queue
 `);
 }
 

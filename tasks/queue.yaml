@@ -1,0 +1,49 @@
+# Task Queue
+# The scheduler picks the next "pending" task, runs it, and updates the status.
+# Add tasks here. The agent works through them in order.
+
+tasks:
+  - id: add-config-validator
+    status: pending
+    workflow: auto-implement
+    prompt: prompts/auto-create-module.md
+    context_files:
+      - src/config.ts
+      - src/types.ts
+    variables:
+      module_name: "config validator"
+      module_description: >
+        Create src/config-validator.ts that exports a function validateEnvConfig()
+        which checks that required environment variables exist and returns a typed
+        result: { valid: boolean, missing: string[], warnings: string[] }.
+        Check for ANTHROPIC_API_KEY, OPENAI_API_KEY, and DEFAULT_AGENT.
+        If DEFAULT_AGENT is set but the corresponding API key is missing, add a warning.
+        No external dependencies. Use named exports only.
+
+  - id: add-duration-formatter
+    status: pending
+    workflow: auto-implement
+    prompt: prompts/auto-create-module.md
+    context_files:
+      - src/types.ts
+    variables:
+      module_name: "duration formatter"
+      module_description: >
+        Create src/format-duration.ts that exports a function formatDuration(ms: number): string.
+        It should convert milliseconds to a human-readable string like "1m 23s", "45s", "2m 0s",
+        or "1h 5m 30s". Handle edge cases: 0ms returns "0s", negative returns "0s".
+        No external dependencies. Use named exports only.
+
+  - id: add-format-duration-tests
+    status: pending
+    workflow: auto-test
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/format-duration.ts
+    variables:
+      test_target: "src/format-duration.ts"
+      test_description: >
+        Write tests at src/format-duration.test.ts for the formatDuration function.
+        Test: 0ms, sub-second, seconds only, minutes and seconds, hours minutes seconds,
+        negative input, and large values. Use node:test and node:assert.
+

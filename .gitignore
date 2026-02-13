@@ -86,3 +86,4 @@ tmp/
 # Orchestrator state and output
 .state/
 output/
+.tmp-workflow-*
