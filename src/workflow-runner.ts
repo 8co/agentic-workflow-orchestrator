@@ -24,10 +24,11 @@ interface RunnerDeps {
   promptResolver: PromptResolver;
   adapters: Record<string, AgentAdapter>;
   basePath: string;
+  defaultAgent?: AgentType;
 }
 
 export function createWorkflowRunner(deps: RunnerDeps) {
-  const { stateManager, promptResolver, adapters, basePath } = deps;
+  const { stateManager, promptResolver, adapters, basePath, defaultAgent } = deps;
 
   async function loadWorkflow(workflowPath: string): Promise<WorkflowDefinition> {
     const fullPath = resolve(basePath, workflowPath);
@@ -115,13 +116,14 @@ export function createWorkflowRunner(deps: RunnerDeps) {
         stepResult.startedAt = new Date().toISOString();
         await stateManager.save(execution);
 
-        console.log(`▶ Step: ${step.id} (agent: ${step.agent})`);
+        const agentName = defaultAgent ?? step.agent;
+        console.log(`▶ Step: ${step.id} (agent: ${agentName})`);
 
         // Get adapter
-        const adapter = adapters[step.agent];
+        const adapter = adapters[agentName];
         if (!adapter) {
           stepResult.status = 'failed';
-          stepResult.error = `No adapter registered for agent: ${step.agent}`;
+          stepResult.error = `No adapter registered for agent: ${agentName}`;
           stepResult.completedAt = new Date().toISOString();
           execution.status = 'failed';
           await stateManager.save(execution);

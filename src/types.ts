@@ -4,7 +4,7 @@
 
 // --- Workflow Definition Types ---
 
-export type AgentType = 'cursor' | 'codex' | 'copilot';
+export type AgentType = 'cursor' | 'codex' | 'copilot' | 'anthropic' | 'openai';
 
 export type StepStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
 

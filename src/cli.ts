@@ -3,15 +3,19 @@
 /**
  * CLI Entry Point
  * Usage:
- *   npx tsx src/cli.ts run <workflow.yaml> [--var key=value]
+ *   npx tsx src/cli.ts run <workflow.yaml> [--var key=value] [--agent anthropic|openai|cursor]
  *   npx tsx src/cli.ts list
  *   npx tsx src/cli.ts resume <executionId>
  */
 
+import { loadConfig, validateConfig } from './config.js';
 import { createWorkflowRunner } from './workflow-runner.js';
 import { createPromptResolver } from './prompt-resolver.js';
 import { createStateManager } from './state-manager.js';
 import { createCursorAdapter } from './adapters/cursor-adapter.js';
+import { createAnthropicAdapter } from './adapters/anthropic-adapter.js';
+import { createOpenAIAdapter } from './adapters/openai-adapter.js';
+import type { AgentAdapter, AgentType } from './types.js';
 
 const basePath = process.cwd();
 
@@ -19,18 +23,49 @@ function parseArgs(args: string[]) {
   const command = args[0];
   const positional: string[] = [];
   const vars: Record<string, string> = {};
+  let agent: AgentType | undefined;
 
   for (let i = 1; i < args.length; i++) {
     if (args[i] === '--var' && i + 1 < args.length) {
       const [key, ...rest] = args[i + 1].split('=');
       vars[key] = rest.join('=');
       i++;
+    } else if (args[i] === '--agent' && i + 1 < args.length) {
+      agent = args[i + 1] as AgentType;
+      i++;
     } else {
       positional.push(args[i]);
     }
   }
 
-  return { command, positional, vars };
+  return { command, positional, vars, agent };
+}
+
+function buildAdapters(config: ReturnType<typeof loadConfig>): Record<string, AgentAdapter> {
+  const adapters: Record<string, AgentAdapter> = {
+    cursor: createCursorAdapter(),
+  };
+
+  if (config.anthropic.apiKey) {
+    adapters.anthropic = createAnthropicAdapter({
+      apiKey: config.anthropic.apiKey,
+      model: config.anthropic.model,
+    });
+  }
+
+  if (config.openai.apiKey) {
+    adapters.openai = createOpenAIAdapter({
+      apiKey: config.openai.apiKey,
+      model: config.openai.model,
+    });
+    // Codex uses the same OpenAI API
+    adapters.codex = createOpenAIAdapter(
+      { apiKey: config.openai.apiKey, model: config.openai.model },
+      'codex'
+    );
+  }
+
+  return adapters;
 }
 
 async function main() {
@@ -41,26 +76,40 @@ async function main() {
     process.exit(0);
   }
 
-  const { command, positional, vars } = parseArgs(args);
+  const { command, positional, vars, agent } = parseArgs(args);
+  const config = loadConfig();
 
   const stateManager = createStateManager(basePath);
   const promptResolver = createPromptResolver(basePath);
-  const cursorAdapter = createCursorAdapter();
+  const adapters = buildAdapters(config);
+
+  // If agent override provided via CLI, validate its config
+  if (agent) {
+    validateConfig(config, agent);
+  }
 
   const runner = createWorkflowRunner({
     stateManager,
     promptResolver,
-    adapters: { cursor: cursorAdapter },
+    adapters,
     basePath,
+    defaultAgent: agent ?? config.defaultAgent,
   });
 
   switch (command) {
     case 'run': {
       const workflowPath = positional[0];
       if (!workflowPath) {
-        console.error('❌ Usage: run <workflow.yaml> [--var key=value]');
+        console.error('❌ Usage: run <workflow.yaml> [--var key=value] [--agent anthropic|openai|cursor]');
         process.exit(1);
       }
+
+      // Validate that the agents used in the workflow have API keys
+      console.log(`🔧 Available agents: ${Object.keys(adapters).join(', ')}`);
+      if (agent) {
+        console.log(`🎯 Agent override: ${agent}`);
+      }
+
       await runner.run(workflowPath, vars);
       break;
     }
@@ -92,14 +141,28 @@ function printUsage() {
 🤖 Agentic Workflow Orchestrator
 
 Usage:
-  npx tsx src/cli.ts run <workflow.yaml> [--var key=value]   Run a workflow
-  npx tsx src/cli.ts list                                    List executions
-  npx tsx src/cli.ts resume <executionId>                    Resume failed workflow
+  npx tsx src/cli.ts run <workflow.yaml> [options]     Run a workflow
+  npx tsx src/cli.ts list                              List executions
+  npx tsx src/cli.ts resume <executionId>              Resume failed workflow
+
+Options:
+  --var key=value       Override workflow variable
+  --agent <name>        Override agent for all steps (anthropic|openai|codex|cursor)
+
+Agents:
+  anthropic             Claude API (requires ANTHROPIC_API_KEY)
+  openai                GPT API (requires OPENAI_API_KEY)
+  codex                 OpenAI Codex (requires OPENAI_API_KEY)
+  cursor                Local log-only mode (no API key needed)
 
 Examples:
   npx tsx src/cli.ts run workflows/sample.yaml
-  npx tsx src/cli.ts run workflows/sample.yaml --var feature_name="auth system"
+  npx tsx src/cli.ts run workflows/sample.yaml --agent anthropic
+  npx tsx src/cli.ts run workflows/sample.yaml --var feature_name="auth" --agent openai
   npx tsx src/cli.ts list
+
+Setup:
+  cp .env.example .env    # Then add your API keys
 `);
 }
 
@@ -107,4 +170,3 @@ main().catch((err) => {
   console.error('❌ Fatal error:', err.message ?? err);
   process.exit(1);
 });
-
