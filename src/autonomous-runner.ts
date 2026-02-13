@@ -42,6 +42,7 @@ export interface AutoStep {
   verify?: VerifyCommand[]; // Custom verification commands (defaults to tsc)
   max_attempts?: number;    // Max LLM attempts including error feedback (default 3)
   commit_message?: string;  // Custom commit message template
+  variables?: Record<string, string>; // Step-specific variables (merged with workflow vars)
 }
 
 export interface AutoWorkflow {
@@ -147,8 +148,11 @@ export function createAutonomousRunner(deps: AutoRunnerDeps) {
       };
     }
 
-    // Build variables including previous step outputs
-    const vars: Record<string, string> = { ...workflow.variables };
+    // Build variables: workflow-level → step-level → previous step outputs
+    const vars: Record<string, string> = {
+      ...workflow.variables,
+      ...step.variables,
+    };
     for (const [id, output] of Object.entries(prevOutputs)) {
       vars[`steps.${id}.output`] = output;
     }
