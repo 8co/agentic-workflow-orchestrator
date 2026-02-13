@@ -82,3 +82,7 @@ tmp/
 
 # Cursor AI
 .cursor/
+
+# Orchestrator state and output
+.state/
+output/
