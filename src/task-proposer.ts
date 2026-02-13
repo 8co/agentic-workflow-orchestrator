@@ -16,9 +16,11 @@ export interface ProposerConfig {
   basePath: string;
   adapter: AgentAdapter;
   promptPath?: string;
+  reviewPromptPath?: string;
   maxTasks?: number;
   maxFileSize?: number;    // Skip files larger than this (bytes)
   includeGlobs?: string[]; // Only include these directories
+  skipReview?: boolean;     // Skip the self-review step (default: false)
 }
 
 interface ProposedTask {
@@ -145,11 +147,68 @@ export function createTaskProposer(config: ProposerConfig) {
     basePath,
     adapter,
     promptPath = 'prompts/auto-propose-tasks.md',
+    reviewPromptPath = 'prompts/auto-review-tasks.md',
     maxTasks = 5,
     maxFileSize = MAX_FILE_SIZE,
+    skipReview = false,
   } = config;
 
   const queue = createQueueManager(basePath);
+
+  /**
+   * Self-review: Feed proposed tasks back to the LLM to filter out
+   * bad ideas before they hit the queue.
+   */
+  async function reviewTasks(tasks: ProposedTask[]): Promise<ProposedTask[]> {
+    if (tasks.length === 0 || skipReview) return tasks;
+
+    console.log('\n🧠 Self-review: LLM auditing its own proposals...\n');
+
+    // Load review prompt
+    const templatePath = resolve(basePath, reviewPromptPath);
+    let template: string;
+    try {
+      template = await readFile(templatePath, 'utf-8');
+    } catch {
+      console.log('   ⚠️  Review prompt not found, skipping review');
+      return tasks;
+    }
+
+    // Format proposed tasks as YAML for the reviewer
+    const { stringify: stringifyYaml } = await import('yaml');
+    const tasksYaml = stringifyYaml(tasks, { lineWidth: 120 });
+
+    const prompt = template
+      .replace(/\{\{\s*project_name\s*\}\}/g, 'agentic-workflow-orchestrator')
+      .replace(/\{\{\s*proposed_tasks\s*\}\}/g, tasksYaml);
+
+    const request: AgentRequest = { prompt };
+    const response = await adapter.execute(request);
+
+    if (!response.success || !response.output) {
+      console.log('   ⚠️  Review call failed, proceeding with unfiltered tasks');
+      return tasks;
+    }
+
+    const reviewed = parseProposedTasks(response.output);
+
+    const kept = reviewed.length;
+    const dropped = tasks.length - kept;
+
+    if (dropped > 0) {
+      console.log(`   🔍 Review result: kept ${kept}, dropped ${dropped}`);
+      const droppedIds = tasks
+        .filter((t) => !reviewed.some((r) => r.id === t.id))
+        .map((t) => t.id);
+      for (const id of droppedIds) {
+        console.log(`   ❌ Dropped: ${id}`);
+      }
+    } else {
+      console.log(`   ✅ Review result: all ${kept} tasks approved`);
+    }
+
+    return reviewed;
+  }
 
   return {
     /**
@@ -204,7 +263,10 @@ export function createTaskProposer(config: ProposerConfig) {
 
       console.log(`\n📋 Proposed ${proposed.length} tasks, ${newTasks.length} are new`);
 
-      return newTasks;
+      // Self-review: LLM audits its own proposals
+      const reviewed = await reviewTasks(newTasks);
+
+      return reviewed;
     },
 
     /**

@@ -27,7 +27,32 @@ export interface FileChange {
 export interface WriteResult {
   filesWritten: FileChange[];
   errors: string[];
+  blocked: string[]; // Files blocked by the protected list
 }
+
+/**
+ * Protected files that autonomous mode cannot overwrite.
+ * These are core infrastructure files with high blast radius.
+ * The LLM can create new files freely, but cannot modify these.
+ */
+export const PROTECTED_FILES: Set<string> = new Set([
+  'src/types.ts',
+  'src/cli.ts',
+  'src/config.ts',
+  'src/autonomous-runner.ts',
+  'src/scheduler.ts',
+  'src/queue-manager.ts',
+  'src/task-proposer.ts',
+  'src/file-writer.ts',
+  'src/verify-runner.ts',
+  'src/git-ops.ts',
+  'src/workflow-runner.ts',
+  'src/prompt-resolver.ts',
+  'src/state-manager.ts',
+  'package.json',
+  'tsconfig.json',
+  'AGENTS.md',
+]);
 
 /**
  * Parse LLM output and extract file changes.
@@ -130,9 +155,11 @@ export async function writeToFile(
  */
 export async function writeFiles(
   changes: FileChange[],
-  targetDir: string
+  targetDir: string,
+  options?: { enforceProtected?: boolean }
 ): Promise<WriteResult> {
-  const result: WriteResult = { filesWritten: [], errors: [] };
+  const enforceProtected = options?.enforceProtected ?? true;
+  const result: WriteResult = { filesWritten: [], errors: [], blocked: [] };
 
   for (const change of changes) {
     try {
@@ -141,6 +168,13 @@ export async function writeFiles(
       // Safety: don't write outside the target dir
       if (!fullPath.startsWith(resolve(targetDir))) {
         result.errors.push(`Skipped ${change.filePath}: path escapes target directory`);
+        continue;
+      }
+
+      // Protected files check: block overwrites of core infrastructure
+      if (enforceProtected && PROTECTED_FILES.has(change.filePath)) {
+        console.log(`  🛡️  Blocked: ${change.filePath} (protected file)`);
+        result.blocked.push(change.filePath);
         continue;
       }
 

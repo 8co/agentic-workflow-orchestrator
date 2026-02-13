@@ -11,6 +11,7 @@
 import { resolve } from 'node:path';
 import { createQueueManager, type QueueTask } from './queue-manager.js';
 import { createAutonomousRunner, type AutoStep, type AutoWorkflow } from './autonomous-runner.js';
+import { runVerification, defaultVerifyCommands } from './verify-runner.js';
 import type { AgentAdapter, AgentType } from './types.js';
 
 // --- Types ---
@@ -164,9 +165,22 @@ export function createScheduler(config: SchedulerConfig) {
         task = await queue.next();
       }
 
+      // Post-batch health check
+      console.log('\n' + '─'.repeat(50));
+      console.log('🏥 POST-BATCH HEALTH CHECK');
+      console.log('─'.repeat(50));
+
+      const healthCheck = await runVerification(defaultVerifyCommands(), basePath);
+      if (healthCheck.allPassed) {
+        console.log('   ✅ Codebase is healthy — tsc passed');
+      } else {
+        console.log('   ⚠️  Codebase has issues after batch:');
+        console.log(`   ${healthCheck.errorSummary?.slice(0, 200)}`);
+      }
+
       // Print summary
       console.log('\n' + '═'.repeat(50));
-      console.log('📊 SCHEDULER COMPLETE');
+      console.log('📊 BATCH COMPLETE');
       console.log('═'.repeat(50));
 
       const passed = results.filter((r) => r.success).length;
@@ -176,6 +190,7 @@ export function createScheduler(config: SchedulerConfig) {
       console.log(`   Tasks run: ${results.length}`);
       console.log(`   Passed: ${passed} | Failed: ${failed}`);
       console.log(`   Total time: ${Math.round(totalMs / 1000)}s`);
+      console.log(`   Health:    ${healthCheck.allPassed ? '✅ clean' : '⚠️  issues detected'}`);
       console.log('═'.repeat(50));
 
       await queue.print();
