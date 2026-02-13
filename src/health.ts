@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { createLogger } from './logger.js';
 
 interface HealthStatus {
   status: 'ok' | 'degraded' | 'down';
@@ -8,6 +9,8 @@ interface HealthStatus {
   timestamp: string;
   version: string;
 }
+
+const logger = createLogger('health');
 
 export function getHealthStatus(): HealthStatus {
   const packageJsonPath = join(process.cwd(), 'package.json');
@@ -27,6 +30,12 @@ export function getHealthStatus(): HealthStatus {
     timestamp: new Date().toISOString(),
     version,
   };
+
+  logger.info(`Health status fetched: ${JSON.stringify(status)}`);
+
+  if (status.memoryUsage > 500) {
+    logger.warn(`High memory usage detected: ${status.memoryUsage} MB`);
+  }
 
   return status;
 }
