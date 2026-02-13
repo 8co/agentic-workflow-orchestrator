@@ -32,7 +32,7 @@ tasks:
     completed_at: 2026-02-13T23:49:22.705Z
     branch: auto/add-duration-formatter
   - id: add-format-duration-tests
-    status: running
+    status: completed
     workflow: auto-test
     prompt: prompts/auto-write-test.md
     context_files:
@@ -43,3 +43,5 @@ tasks:
         Write tests at src/format-duration.test.ts for the formatDuration function. Test: 0ms, sub-second, seconds only,
         minutes and seconds, hours minutes seconds, negative input, and large values. Use node:test and node:assert.
     started_at: 2026-02-13T23:49:22.707Z
+    completed_at: 2026-02-13T23:49:28.615Z
+    branch: auto/add-format-duration-tests
