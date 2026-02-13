@@ -13,6 +13,18 @@ interface AnthropicConfig {
   model: string;
 }
 
+function isNetworkError(err: unknown): boolean {
+  return typeof err === 'object' && err !== null && 'code' in err && (err as { code: string }).code === 'ENOTFOUND';
+}
+
+function isAPILimitError(err: unknown): boolean {
+  return typeof err === 'object' && err !== null && 'response' in err && (err as { response: { status: number } }).response.status === 429;
+}
+
+function isInvalidResponseError(response: any): boolean {
+  return !(response && typeof response === 'object' && 'content' in response && 'usage' in response);
+}
+
 export function createAnthropicAdapter(config: AnthropicConfig): AgentAdapter {
   const client = new Anthropic({ apiKey: config.apiKey });
 
@@ -42,6 +54,10 @@ export function createAnthropicAdapter(config: AnthropicConfig): AgentAdapter {
             },
           ],
         });
+
+        if (isInvalidResponseError(message)) {
+          throw new Error('Received an invalid response structure from the API.');
+        }
 
         // Extract text from response
         const textBlocks = message.content.filter(
@@ -79,7 +95,16 @@ export function createAnthropicAdapter(config: AnthropicConfig): AgentAdapter {
           durationMs,
         };
       } catch (err) {
-        const error = err instanceof Error ? err.message : String(err);
+        let error = 'An unknown error occurred.';
+        
+        if (isNetworkError(err)) {
+          error = 'Network error: Unable to reach the API.';
+        } else if (isAPILimitError(err)) {
+          error = 'API limit reached: Too many requests. Please try again later.';
+        } else if (err instanceof Error) {
+          error = err.message;
+        }
+
         const durationMs = Date.now() - start;
 
         console.log(`│ ❌ Error: ${error}`);
@@ -94,4 +119,3 @@ export function createAnthropicAdapter(config: AnthropicConfig): AgentAdapter {
     },
   };
 }
-
