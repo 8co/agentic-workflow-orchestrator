@@ -1,0 +1,24 @@
+name: auto-health-check
+description: Autonomous workflow — adds a health check module to the project
+target_dir: "."
+branch: "auto/health-check"
+variables:
+  project_name: "agentic-workflow-orchestrator"
+  target_dir: "src/"
+  feature_name: "health check module"
+  feature_description: >
+    Create a new file src/health.ts that exports a function called getHealthStatus().
+    It should return an object with: status ('ok' | 'degraded' | 'down'), uptime
+    (process.uptime() in seconds), memoryUsage (process.memoryUsage().heapUsed in MB,
+    rounded to 2 decimals), timestamp (ISO string), and version (read from package.json
+    or default to 'unknown'). Use named exports only. No external dependencies.
+
+steps:
+  - id: implement
+    prompt: prompts/auto-implement.md
+    context_files:
+      - src/types.ts
+      - package.json
+    max_attempts: 3
+    commit_message: "Add health check module"
+

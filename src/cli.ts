@@ -4,6 +4,7 @@
  * CLI Entry Point
  * Usage:
  *   npx tsx src/cli.ts run <workflow.yaml> [--var key=value] [--agent anthropic|openai|cursor]
+ *   npx tsx src/cli.ts auto <workflow.yaml> [--var key=value] [--agent openai|anthropic]
  *   npx tsx src/cli.ts list
  *   npx tsx src/cli.ts resume <executionId>
  */
@@ -15,6 +16,7 @@ import { createStateManager } from './state-manager.js';
 import { createCursorAdapter } from './adapters/cursor-adapter.js';
 import { createAnthropicAdapter } from './adapters/anthropic-adapter.js';
 import { createOpenAIAdapter } from './adapters/openai-adapter.js';
+import { createAutonomousRunner } from './autonomous-runner.js';
 import type { AgentAdapter, AgentType } from './types.js';
 
 const basePath = process.cwd();
@@ -114,6 +116,38 @@ async function main() {
       break;
     }
 
+    case 'auto': {
+      const workflowPath = positional[0];
+      if (!workflowPath) {
+        console.error('❌ Usage: auto <workflow.yaml> [--var key=value] [--agent openai|anthropic]');
+        process.exit(1);
+      }
+
+      const agentToUse = agent ?? config.defaultAgent;
+      if (agentToUse === 'cursor') {
+        console.error('❌ Autonomous mode requires a real LLM agent (openai, anthropic). Use --agent openai');
+        process.exit(1);
+      }
+
+      validateConfig(config, agentToUse);
+
+      console.log(`🔧 Available agents: ${Object.keys(adapters).join(', ')}`);
+      console.log(`🎯 Agent: ${agentToUse}`);
+
+      const autoRunner = createAutonomousRunner({
+        adapters,
+        defaultAgent: agentToUse,
+      });
+
+      const result = await autoRunner.run(workflowPath, basePath, vars);
+
+      // Exit with error code if workflow failed
+      if (result.status === 'failed') {
+        process.exit(1);
+      }
+      break;
+    }
+
     case 'list': {
       await runner.list();
       break;
@@ -141,24 +175,29 @@ function printUsage() {
 🤖 Agentic Workflow Orchestrator
 
 Usage:
-  npx tsx src/cli.ts run <workflow.yaml> [options]     Run a workflow
+  npx tsx src/cli.ts run <workflow.yaml> [options]     Run a prompt workflow (output to files)
+  npx tsx src/cli.ts auto <workflow.yaml> [options]    Run autonomous workflow (writes code → verifies → commits)
   npx tsx src/cli.ts list                              List executions
   npx tsx src/cli.ts resume <executionId>              Resume failed workflow
 
 Options:
   --var key=value       Override workflow variable
-  --agent <name>        Override agent for all steps (anthropic|openai|codex|cursor)
+  --agent <name>        Override agent (anthropic|openai|codex|cursor)
+
+Modes:
+  run                   Generate-only: LLM output → files for human review
+  auto                  Autonomous: LLM → write files → build/test → git commit (or revert)
 
 Agents:
   anthropic             Claude API (requires ANTHROPIC_API_KEY)
   openai                GPT API (requires OPENAI_API_KEY)
   codex                 OpenAI Codex (requires OPENAI_API_KEY)
-  cursor                Local log-only mode (no API key needed)
+  cursor                Local log-only mode (no API key needed, run mode only)
 
 Examples:
-  npx tsx src/cli.ts run workflows/sample.yaml
-  npx tsx src/cli.ts run workflows/sample.yaml --agent anthropic
-  npx tsx src/cli.ts run workflows/sample.yaml --var feature_name="auth" --agent openai
+  npx tsx src/cli.ts run workflows/sample.yaml --agent openai
+  npx tsx src/cli.ts auto workflows/auto-sample.yaml --agent openai
+  npx tsx src/cli.ts auto workflows/auto-sample.yaml --var feature_name="auth" --agent anthropic
   npx tsx src/cli.ts list
 
 Setup:
