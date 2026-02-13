@@ -31,37 +31,82 @@ export interface WriteResult {
 
 /**
  * Parse LLM output and extract file changes.
- * Supports two formats:
+ *
+ * Supports formats:
  *  1. ```language:path/to/file.ts  (colon-delimited in the fence)
- *  2. <!-- file: path/to/file.ts --> before a regular code block
+ *  2. ````language:path/to/file.ts (4+ backtick fences for files with nested code blocks)
+ *  3. <!-- file: path/to/file.ts --> before a regular code block
+ *
+ * Handles nested fences: if the opening fence has N backticks,
+ * only a closing fence with >= N backticks terminates it.
  */
 export function parseCodeBlocks(llmOutput: string): FileChange[] {
   const changes: FileChange[] = [];
+  const lines = llmOutput.split('\n');
 
-  // Pattern 1: ```language:filepath
-  const colonPattern = /```(\w+):([^\n]+)\n([\s\S]*?)```/g;
-  let match: RegExpExecArray | null;
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
 
-  while ((match = colonPattern.exec(llmOutput)) !== null) {
-    const language = match[1].trim();
-    const filePath = match[2].trim();
-    const content = match[3];
-
-    changes.push({ filePath, content: content.trimEnd() + '\n', language });
-  }
-
-  // Pattern 2: <!-- file: filepath --> followed by ```language
-  const commentPattern = /<!--\s*file:\s*([^\s>]+)\s*-->\s*\n```(\w*)\n([\s\S]*?)```/g;
-
-  while ((match = commentPattern.exec(llmOutput)) !== null) {
-    const filePath = match[1].trim();
-    const language = match[2].trim() || undefined;
-    const content = match[3];
-
-    // Avoid duplicates if same path was caught by pattern 1
-    if (!changes.some((c) => c.filePath === filePath)) {
-      changes.push({ filePath, content: content.trimEnd() + '\n', language });
+    // Check for <!-- file: path --> comment pattern
+    const commentMatch = line.match(/^<!--\s*file:\s*([^\s>]+)\s*-->\s*$/);
+    if (commentMatch && i + 1 < lines.length) {
+      const filePath = commentMatch[1].trim();
+      const nextLine = lines[i + 1];
+      const fenceMatch = nextLine.match(/^(`{3,})(\w*)\s*$/);
+      if (fenceMatch) {
+        const closingFence = fenceMatch[1]; // need at least this many backticks to close
+        const language = fenceMatch[2] || undefined;
+        const contentLines: string[] = [];
+        let j = i + 2;
+        while (j < lines.length) {
+          if (lines[j].startsWith(closingFence) && lines[j].trim().length <= closingFence.length + 1) {
+            break;
+          }
+          contentLines.push(lines[j]);
+          j++;
+        }
+        if (!changes.some((c) => c.filePath === filePath)) {
+          changes.push({
+            filePath,
+            content: contentLines.join('\n').trimEnd() + '\n',
+            language,
+          });
+        }
+        i = j + 1;
+        continue;
+      }
     }
+
+    // Check for ```language:filepath or ````language:filepath (3+ backticks)
+    const fenceOpenMatch = line.match(/^(`{3,})(\w+):([^\n]+)$/);
+    if (fenceOpenMatch) {
+      const backticks = fenceOpenMatch[1];     // the opening fence (3+ backticks)
+      const language = fenceOpenMatch[2].trim();
+      const filePath = fenceOpenMatch[3].trim();
+      const contentLines: string[] = [];
+
+      let j = i + 1;
+      while (j < lines.length) {
+        // Closing fence: same or more backticks, nothing else significant
+        if (lines[j].startsWith(backticks) && lines[j].trim().length <= backticks.length + 1) {
+          break;
+        }
+        contentLines.push(lines[j]);
+        j++;
+      }
+
+      changes.push({
+        filePath,
+        content: contentLines.join('\n').trimEnd() + '\n',
+        language,
+      });
+
+      i = j + 1;
+      continue;
+    }
+
+    i++;
   }
 
   return changes;
