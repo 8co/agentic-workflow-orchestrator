@@ -113,6 +113,18 @@ export function parseCodeBlocks(llmOutput: string): FileChange[] {
 }
 
 /**
+ * Utility function to create directories and write files.
+ * Ensures directories are created before writing a file.
+ */
+export async function writeToFile(
+  fullPath: string,
+  content: string
+): Promise<void> {
+  await mkdir(dirname(fullPath), { recursive: true });
+  await writeFile(fullPath, content, 'utf-8');
+}
+
+/**
  * Write extracted file changes to the target project directory.
  * Creates directories as needed. Returns a summary of what was written.
  */
@@ -132,8 +144,7 @@ export async function writeFiles(
         continue;
       }
 
-      await mkdir(dirname(fullPath), { recursive: true });
-      await writeFile(fullPath, change.content, 'utf-8');
+      await writeToFile(fullPath, change.content);
       result.filesWritten.push(change);
 
       console.log(`  📝 Wrote: ${change.filePath}`);
@@ -180,4 +191,3 @@ export async function buildFileContext(
 
   return sections.join('\n\n');
 }
-
