@@ -5060,7 +5060,7 @@ tasks:
     completed_at: 2026-02-14T02:30:27.383Z
     branch: auto/add-monitoring-metrics-utility
   - id: add-cli-observability-commands-tests
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -5070,6 +5070,7 @@ tasks:
       test_description: >
         Add tests for CLI observability commands to ensure all functions such as listRunningJobs and getJobLogs are
         covered and handle edge cases properly.
+    started_at: 2026-02-14T02:30:49.119Z
   - id: enhance-anthropic-adapter-type-safety
     status: pending
     workflow: auto
