@@ -5409,3 +5409,45 @@ tasks:
     started_at: 2026-02-14T02:37:37.997Z
     completed_at: 2026-02-14T02:37:49.183Z
     branch: auto/enhance-type-safety-anthropic-adapter-module
+  - id: add-tests-security-check-runner-exception-cases
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/security-check-runner.ts
+    variables:
+      test_target: src/security-check-runner.ts
+      test_description: >
+        Add tests to cover exception cases in `security-check-runner.ts`, ensuring  comprehensive error handling during
+        file access and command execution.
+  - id: enhance-type-safety-anthropic-adapter-functions
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/adapters/anthropic-adapter.ts
+    variables:
+      modification_description: >
+        Enhance type safety for the functions in `anthropic-adapter.ts`, focusing  especially on the return types and
+        parameter types to ensure robustness.
+  - id: write-tests-ai-agents-error-handling-exception-cases
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/aiAgents.ts
+    variables:
+      test_target: src/aiAgents.ts
+      test_description: >
+        Include tests for exception cases in `connectToAIAgents` to ensure error  handling is robust against unexpected
+        network and filesystem errors.
+  - id: improve-type-safety-networkErrorUtil-exception-checks
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/utils/networkErrorUtil.ts
+    variables:
+      modification_description: >
+        Improve the type safety in `networkErrorUtil.ts` by refining exception  checks and ensuring consistent handling
+        of potential unknown error types.
