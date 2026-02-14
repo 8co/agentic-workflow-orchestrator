@@ -1,0 +1,24 @@
+name: improve-api-error-handling
+description: Add comprehensive error handling to API handlers
+target_dir: "."
+variables:
+  project_name: "prompt-scorer-sls-api"
+  target_dir: "src/"
+
+steps:
+  - id: add-error-handler
+    prompt: prompts/auto-create-module.md
+    context_files:
+      - src/handlers/response.js
+      - src/lib/response.js
+    max_attempts: 3
+    commit_message: "Add centralized error handler utility"
+    variables:
+      module_name: "error handler utility"
+      module_description: >
+        Create src/lib/errorHandler.js that exports a function handleError(error, context) which
+        returns a standardized error response. It should detect common error types (ValidationError,
+        NotFoundError, UnauthorizedError) and return appropriate HTTP status codes and messages.
+        Include stack traces only in development (check NODE_ENV). Export also a class AppError
+        extends Error with statusCode property for custom errors. Use CommonJS module syntax (module.exports).
+

@@ -1,0 +1,22 @@
+name: add-loading-component
+description: Create a reusable loading spinner component for the UI
+target_dir: "."
+variables:
+  project_name: "prompt-scorer-ui"
+  target_dir: "src/"
+
+steps:
+  - id: create-loading-spinner
+    prompt: prompts/auto-create-module.md
+    context_files:
+      - src/components/ui/button.tsx
+    max_attempts: 3
+    commit_message: "Add LoadingSpinner component"
+    variables:
+      module_name: "LoadingSpinner component"
+      module_description: >
+        Create src/components/LoadingSpinner.tsx — a reusable React component that displays
+        a loading spinner. Accept props: size ('sm' | 'md' | 'lg'), color (string, default 'currentColor'),
+        className (optional). Use Tailwind CSS for styling with animate-spin. Export as named export
+        LoadingSpinner. TypeScript with proper prop types defined as interface LoadingSpinnerProps.
+

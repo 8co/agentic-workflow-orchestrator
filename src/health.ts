@@ -19,23 +19,26 @@ const logger = createLogger('health');
 export function getHealthStatus(): HealthStatus {
   let version: string | undefined;
   let memoryUsageMB: number = 0;
+  let status: 'ok' | 'degraded' = 'ok';
   
   try {
     version = extractPackageVersion();
   } catch (error) {
     logger.error(`Version extraction error: Failed to parse package.json for version. ${error instanceof Error ? error.message : 'Unknown error'}`);
+    status = 'degraded';
   }
   
   try {
     memoryUsageMB = getSafeMemoryUsageMB();
   } catch (error) {
     logger.error(`Memory usage retrieval error: Unable to calculate memory usage. ${error instanceof Error ? error.message : 'Unknown error'}`);
+    status = 'degraded';
   }
 
   const uptime = Number(process.uptime().toFixed(2));
 
-  const status: HealthStatus = {
-    status: 'ok',
+  const healthStatus: HealthStatus = {
+    status,
     uptime,
     memoryUsage: memoryUsageMB,
     timestamp: new Date().toISOString(),
@@ -49,7 +52,7 @@ export function getHealthStatus(): HealthStatus {
     logger.error(`Logging error: Could not log health status and warnings. ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 
-  return status;
+  return healthStatus;
 }
 
 function extractPackageVersion(): string | undefined {
