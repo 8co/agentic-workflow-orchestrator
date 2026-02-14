@@ -3879,3 +3879,43 @@ tasks:
     started_at: 2026-02-14T01:52:51.882Z
     completed_at: 2026-02-14T01:52:58.473Z
     branch: auto/add-missing-tests-enhanced-logger-error-handling
+  - id: add-tests-cli
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/cli.ts
+    variables:
+      test_target: src/cli.ts
+      test_description: |
+        Add tests for the CLI entry point to ensure commands like `run`, `auto`, `list`, and `resume` are functioning.
+  - id: enhance-error-handling-security-scanner
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/security-scanner.ts
+    variables:
+      modification_description: >
+        Enhance error handling for file reading and scanning processes. Ensure errors are caught and logged for better
+        debugging.
+  - id: add-type-safety-adapters-cursor
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/adapters/cursor-adapter.ts
+    variables:
+      modification_description: >
+        Improve type safety in the Cursor Adapter. Ensure that all interfaces and function signatures use TypeScript
+        features to enforce strict typing.
+  - id: enhance-logging-openai-adapter
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/adapters/openai-adapter.ts
+    variables:
+      modification_description: >
+        Enhance logging in the OpenAI Adapter to capture detailed information about API calls, including error
+        scenarios, responses, and execution durations.
