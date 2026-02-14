@@ -6138,3 +6138,24 @@ tasks:
     started_at: 2026-02-14T02:51:19.330Z
     completed_at: 2026-02-14T02:51:30.952Z
     branch: auto/write-tests-aiagents-error-cases-handling
+  - id: add-tests-adapters-anthropic-edge-cases
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/adapters/anthropic-adapter.ts
+    variables:
+      test_target: src/adapters/anthropic-adapter.ts
+      test_description: >
+        Write comprehensive tests for the Anthropic adapter focusing on edge cases, including invalid configurations and
+        unexpected API responses.
+  - id: refactor-scheduler-error-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/scheduler.ts
+    variables:
+      modification_description: >
+        Refactor the scheduler module to improve error handling by adding granular try-catch blocks and logging any
+        caught exceptions.
