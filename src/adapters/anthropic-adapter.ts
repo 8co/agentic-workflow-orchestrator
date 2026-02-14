@@ -77,6 +77,33 @@ async function retry<T>(fn: () => Promise<T>, retries: number, delayMs: number):
   throw new Error('Retry attempts exhausted');
 }
 
+function logError(err: unknown, start: number): { error: string; durationMs: number } {
+  let error: string = 'An unknown error occurred.';
+  const durationMs: number = Date.now() - start;
+
+  if (isNetworkError(err)) {
+    error = 'Network error: Unable to reach the API. Retrying...';
+  } else if (isAPILimitError(err)) {
+    error = 'API limit reached: Too many requests. Please try again later.';
+  } else if (isTimeoutError(err)) {
+    error = 'Network error: Request timed out. Please check your connection.';
+  } else if (isRateLimitError(err)) {
+    error = 'Rate limit error: Too many requests in a short amount of time.';
+  } else if (err instanceof Error) {
+    error = `Error: ${err.message}`;
+  } else if (typeof err === 'object' && err !== null) {
+    error = `Unexpected error object: ${JSON.stringify(err)}`;
+  } else {
+    error = `Unexpected error type: ${String(err)}`;
+  }
+
+  console.error(`│ ❌ Error: ${error}`);
+  console.error(`│ ⏱  Duration: ${durationMs}ms`);
+  console.log('└─────────────────────────────────────────\n');
+
+  return { error, durationMs };
+}
+
 export function createAnthropicAdapter(config: AnthropicConfig): AgentAdapter {
   const client = new Anthropic({ apiKey: config.apiKey });
 
@@ -161,29 +188,7 @@ export function createAnthropicAdapter(config: AnthropicConfig): AgentAdapter {
           durationMs,
         };
       } catch (err: unknown) {
-        let error: string = 'An unknown error occurred.';
-        const durationMs: number = Date.now() - start;
-
-        if (isNetworkError(err)) {
-          error = 'Network error: Unable to reach the API. Retrying...';
-        } else if (isAPILimitError(err)) {
-          error = 'API limit reached: Too many requests. Please try again later.';
-        } else if (isTimeoutError(err)) {
-          error = 'Network error: Request timed out. Please check your connection.';
-        } else if (isRateLimitError(err)) {
-          error = 'Rate limit error: Too many requests in a short amount of time.';
-        } else if (err instanceof Error) {
-          error = `Error: ${err.message}`;
-        } else if (typeof err === 'object' && err !== null) {
-          error = `Unexpected error object: ${JSON.stringify(err)}`;
-        } else {
-          error = `Unexpected error type: ${String(err)}`;
-        }
-
-        console.error(`│ ❌ Error: ${error}`);
-        console.error(`│ ⏱  Duration: ${durationMs}ms`);
-        console.log('└─────────────────────────────────────────\n');
-
+        const { error, durationMs } = logError(err, start);
         return {
           success: false,
           error,
