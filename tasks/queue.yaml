@@ -338,3 +338,20 @@ tasks:
     started_at: 2026-02-14T20:11:40.490Z
     completed_at: 2026-02-14T20:11:47.066Z
     branch: auto/create-protected-files-config
+  - id: ps-validate-config-values
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    project: prompt-scorer-api
+    context_files:
+      - src/config/index.js
+    variables:
+      modification_description: >
+        Add startup validation for critical environment variables in the config module. At the top of the file
+        (after require('dotenv').config()), add a validateConfig() function that checks the following required
+        env vars are set: COGNITO_USER_POOL_ID, COGNITO_JWKS_URL, PERPLEXITY_API_KEY. For each missing var,
+        log a warning with console.warn (do NOT throw — the Lambda must still start). Also validate that
+        PERPLEXITY_MAX_TOKENS parses to a positive integer and PERPLEXITY_TEMPERATURE parses to a number
+        between 0 and 1, logging warnings if invalid. Call validateConfig() at module load time. Keep the
+        existing module.exports structure exactly as-is. Use CommonJS (require/module.exports). Do not add any
+        new dependencies.
