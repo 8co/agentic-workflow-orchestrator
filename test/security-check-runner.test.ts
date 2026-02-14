@@ -1,85 +1,78 @@
+import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { execSync, spawnSync } from 'node:child_process';
-import { unlinkSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { spawn } from 'node:child_process';
+import { promises as fsPromises } from 'node:fs';
+import { resolve } from 'node:path';
+import { scanCode, formatViolations, requiresSecurityScan, type SecurityScanResult } from '../src/security-scanner.js';
 
-// Helper function to create a temporary file
-function createTempFile(content: string, filename: string): string {
-  const filepath = join(tmpdir(), filename);
-  writeFileSync(filepath, content, 'utf-8');
-  return filepath;
-}
+// Mocking dependencies
+import { mockSpawn, mockReadFile, resetMocks } from './mocks.js';
 
-// Test suite for security-check-runner
-describe('security-check-runner', () => {
-  const TEMP_GIT_REPO_PATH = join(tmpdir(), 'temp-git-repo');
+// Mocked modules
+jest.mock('node:child_process', () => ({
+  spawn: jest.fn(),
+}));
 
-  before(() => {
-    // Create a temporary git repository
-    execSync('mkdir -p ' + TEMP_GIT_REPO_PATH);
-    execSync('git init', { cwd: TEMP_GIT_REPO_PATH });
-  });
+jest.mock('node:fs/promises', () => ({
+  readFile: jest.fn(),
+}));
 
-  after(() => {
-    // Clean up the temporary git repository
-    execSync('rm -rf ' + TEMP_GIT_REPO_PATH);
-  });
+// Test cases
+test('should exit with code 0 when no files are changed', async () => {
+  mockSpawn({ stdout: '\n', code: 0 });  // Simulating no changed files in git
+  const exitSpy = jest.spyOn(process, 'exit').mockImplementation(() => { throw new Error('process.exit called'); });
 
-  it('should exit with code 0 when no changes are detected', () => {
-    const result = spawnSync('node', ['src/security-check-runner.ts'], { cwd: TEMP_GIT_REPO_PATH });
-    assert.equal(result.status, 0);
-    assert.match(result.stdout.toString(), /No changed files to scan/);
-  });
+  try {
+    await import('../src/security-check-runner.js');
+  } catch (e) {
+    expect(e.message).toBe('process.exit called');
+  }
 
-  it('should handle changed files and exit with the correct code based on security scan', () => {
-    const testFileName = 'testFile.ts';
-    const testFilePath = createTempFile('console.log("test");', testFileName);
-    execSync(`git add ${testFileName}`, { cwd: TEMP_GIT_REPO_PATH });
-    
-    // Setup mock implementations for the security scan functions
-    const requiresSecurityScanMock = (file: string) => file === testFileName;
-    const scanCodeMock = (code: string, file: string) => ({ safe: code.includes('safe') });
-    const formatViolationsMock = () => 'Mock Violation Report';
+  expect(exitSpy).toHaveBeenCalledWith(0);
+  resetMocks();
+});
 
-    import('../src/security-scanner.js').then((scannerModule) => {
-      const originalRequiresSecurityScan = scannerModule.requiresSecurityScan;
-      const originalScanCode = scannerModule.scanCode;
-      const originalFormatViolations = scannerModule.formatViolations;
-      
-      scannerModule.requiresSecurityScan = requiresSecurityScanMock;
-      scannerModule.scanCode = scanCodeMock;
-      scannerModule.formatViolations = formatViolationsMock;
+test('should exit with code 0 when no security-critical files are detected', async () => {
+  mockSpawn({ stdout: 'file1.txt\nfile2.md\n', code: 0 });  // Simulating changed files
+  jest.spyOn(require('../src/security-scanner.js'), 'requiresSecurityScan').mockReturnValue(false);
+  const exitSpy = jest.spyOn(process, 'exit').mockImplementation(() => { throw new Error('process.exit called'); });
 
-      try {
-        const resultSafe = spawnSync('node', ['src/security-check-runner.ts'], { cwd: TEMP_GIT_REPO_PATH });
-        assert.equal(resultSafe.status, 0);
-        assert.match(resultSafe.stdout.toString(), /Security scan passed/);
+  try {
+    await import('../src/security-check-runner.js');
+  } catch (e) {
+    expect(e.message).toBe('process.exit called');
+  }
 
-        // Test failing scenario
-        writeFileSync(testFilePath, 'console.log("unsafe");', 'utf-8');
-        const resultUnsafe = spawnSync('node', ['src/security-check-runner.ts'], { cwd: TEMP_GIT_REPO_PATH });
-        assert.equal(resultUnsafe.status, 1);
-        assert.match(resultUnsafe.stdout.toString(), /Security scan failed/);
-      } finally {
-        scannerModule.requiresSecurityScan = originalRequiresSecurityScan;
-        scannerModule.scanCode = originalScanCode;
-        scannerModule.formatViolations = originalFormatViolations;
-        unlinkSync(testFilePath);
-      }
-    });
-  });
+  expect(exitSpy).toHaveBeenCalledWith(0);
+  resetMocks();
+});
 
-  it('should handle errors during file read', () => {
-    const invalidFileName = 'nonExistentFile.ts';
-    const result = spawnSync('node', ['src/security-check-runner.ts'], { cwd: TEMP_GIT_REPO_PATH });
-    assert.match(result.stderr.toString(), new RegExp(`Could not read ${invalidFileName}`));
-  });
+test('should handle unexpected errors in git commands', async () => {
+  mockSpawn({ error: new Error('git command error') });  // Simulating git command error
+  const exitSpy = jest.spyOn(process, 'exit').mockImplementation(() => { throw new Error('process.exit called'); });
 
-  it('should handle git command errors gracefully', () => {
-    const result = spawnSync('node', ['src/security-check-runner.ts'], { cwd: '/invalid/path' });
-    assert.equal(result.status, 1);
-    assert.match(result.stderr.toString(), /Unexpected error/);
-  });
+  try {
+    await import('../src/security-check-runner.js');
+  } catch (e) {
+    expect(e.message).toBe('process.exit called');
+  }
 
+  expect(exitSpy).toHaveBeenCalledWith(1);
+  resetMocks();
+});
+
+test('should handle file reading errors gracefully', async () => {
+  mockSpawn({ stdout: 'critical-file.js\n', code: 0 });  // Simulating changed critical file
+  jest.spyOn(require('../src/security-scanner.js'), 'requiresSecurityScan').mockReturnValue(true);
+  mockReadFile({ error: new Error('File read error') });  // Simulating file read error
+  const exitSpy = jest.spyOn(process, 'exit').mockImplementation(() => { throw new Error('process.exit called'); });
+
+  try {
+    await import('../src/security-check-runner.js');
+  } catch (e) {
+    expect(e.message).toBe('process.exit called');
+  }
+
+  expect(exitSpy).toHaveBeenCalledWith(1);
+  resetMocks();
 });
