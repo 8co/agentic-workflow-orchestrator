@@ -1,56 +1,40 @@
-export type NetworkErrorCode = 
-  | 'ENOTFOUND'
-  | 'ECONNREFUSED'
-  | 'ECONNRESET'
-  | 'ETIMEDOUT'
-  | 'EHOSTUNREACH'
-  | 'EPIPE'
-  | 'ENETUNREACH'
-  | 'ESOCKETTIMEDOUT' // Socket timed out
-  | 'ECONNABORTED';  // Connection aborted
+/**
+ * Utility functions for handling network errors with enhanced type safety.
+ */
 
-export interface NetworkError {
-  code?: NetworkErrorCode;
-  timeout?: boolean;
-  message?: string;
-}
+// Defined type for network errors
+export type NetworkError = {
+  statusCode: number;
+  message: string;
+};
 
-const networkErrorCodes: ReadonlySet<NetworkErrorCode> = new Set([
-  'ENOTFOUND',       // DNS resolution error
-  'ECONNREFUSED',    // Connection refused
-  'ECONNRESET',      // Connection reset by peer
-  'ETIMEDOUT',       // Connection timed out
-  'EHOSTUNREACH',    // No route to host
-  'EPIPE',           // Broken pipe
-  'ENETUNREACH',     // Network is unreachable
-  'ESOCKETTIMEDOUT', // Socket timed out
-  'ECONNABORTED',    // Connection aborted
-]);
-
-export function isNetworkError(err: unknown): err is NetworkError {
-  if (!isRecord(err)) {
-    return false;
-  }
-
-  const errorObj = err as Partial<NetworkError>;
-
+// Predicate function to check if an error is a network error
+export const isNetworkError = (error: unknown): error is NetworkError => {
   return (
-    isValidNetworkErrorCode(errorObj.code) || errorObj.timeout === true
-  ) && isValidTimeout(errorObj.timeout) && isValidMessage(errorObj.message);
-}
+    typeof error === 'object' &&
+    error !== null &&
+    'statusCode' in error &&
+    'message' in error &&
+    typeof (error as Record<string, unknown>)['statusCode'] === 'number' &&
+    typeof (error as Record<string, unknown>)['message'] === 'string'
+  );
+};
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
+// Function to handle network errors by logging
+export const handleNetworkError = (error: unknown): void => {
+  if (isNetworkError(error)) {
+    console.error(`Network Error: ${error.statusCode} - ${error.message}`);
+  } else {
+    console.error('Unknown error:', error);
+  }
+};
 
-function isValidNetworkErrorCode(code: unknown): code is NetworkErrorCode {
-  return typeof code === 'string' && networkErrorCodes.has(code as NetworkErrorCode);
-}
-
-function isValidTimeout(timeout: unknown): timeout is boolean | undefined {
-  return timeout === true || timeout === false || timeout === undefined;
-}
-
-function isValidMessage(message: unknown): message is string | undefined {
-  return typeof message === 'string' || message === undefined;
-}
+// Example function simulating a network operation that can produce errors
+export const networkOperation = async (): Promise<void> => {
+  try {
+    // Simulate network request
+    throw { statusCode: 404, message: 'Resource not found' };
+  } catch (error) {
+    handleNetworkError(error);
+  }
+};
