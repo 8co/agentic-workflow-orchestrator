@@ -12,14 +12,14 @@ export interface NetworkError {
   timeout?: boolean;
 }
 
-export function isNetworkError(err: unknown): boolean {
+export function isNetworkError(err: unknown): err is NetworkError {
   if (!isObject(err)) {
     return false;
   }
 
   const errorObj = err as NetworkError;
 
-  const networkErrorCodes: NetworkErrorCode[] = [
+  const networkErrorCodes: readonly NetworkErrorCode[] = [
     'ENOTFOUND',   // DNS resolution error
     'ECONNREFUSED',// Connection refused
     'ECONNRESET',  // Connection reset by peer
@@ -30,11 +30,11 @@ export function isNetworkError(err: unknown): boolean {
   ];
 
   return (
-    (errorObj.code !== undefined && networkErrorCodes.includes(errorObj.code)) ||
+    (typeof errorObj.code === 'string' && networkErrorCodes.includes(errorObj.code)) ||
     errorObj.timeout === true
   );
 }
 
-function isObject(value: unknown): value is object {
+function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
