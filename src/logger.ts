@@ -2,7 +2,8 @@ type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 function formatMessage(level: LogLevel, prefix: string, msg: string): string {
   const timestamp = new Date().toISOString();
-  return `[${timestamp}] [${level.toUpperCase()}] [${prefix}] ${msg}`;
+  const logLevelStr = level.toUpperCase();
+  return `[${timestamp}] [${logLevelStr}] [${prefix}] ${msg}`;
 }
 
 function createLogger(prefix: string) {
