@@ -2675,3 +2675,25 @@ tasks:
     started_at: 2026-02-14T01:13:05.601Z
     completed_at: 2026-02-14T01:13:19.689Z
     branch: auto/write-tests-aiagents-error-handling-improvement
+  - id: write-tests-main-function-initialization
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/index.ts
+    variables:
+      test_target: src/index.ts
+      test_description: >
+        Develop test cases for the main function initialization sequence to ensure all components are started correctly
+        and any initialization errors are identified and handled.
+  - id: write-tests-openai-adapter-exception-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/adapters/openai-adapter.ts
+    variables:
+      test_target: src/adapters/openai-adapter.ts
+      test_description: >
+        Write tests for exception handling in the OpenAI Adapter, particularly cases where API errors, timeouts, or
+        unexpected response formats might occur, ensuring each scenario is captured and managed appropriately.
