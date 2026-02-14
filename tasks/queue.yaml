@@ -492,7 +492,7 @@ tasks:
     completed_at: 2026-02-14T20:52:22.513Z
     branch: auto/add-token-verification-tests
   - id: refactor-jwt-parsing
-    status: running
+    status: completed
     workflow: auto
     prompt: prompts/auto-modify-file.md
     context_files:
@@ -502,8 +502,10 @@ tasks:
         Refactor JWT parsing in extractToken to include more robust validation and error handling.
     project: prompt-scorer-api
     started_at: 2026-02-14T20:52:22.521Z
+    completed_at: 2026-02-14T20:52:33.192Z
+    branch: auto/refactor-jwt-parsing
   - id: improve-error-generation
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-modify-file.md
     context_files:
@@ -513,6 +515,7 @@ tasks:
         Enhance error generation in createResponse function by adding more detailed error descriptions for common HTTP
         status codes.
     project: prompt-scorer-api
+    started_at: 2026-02-14T20:52:33.201Z
   - id: add-feedback-handler-tests
     status: pending
     workflow: auto
