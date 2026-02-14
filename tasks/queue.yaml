@@ -1638,7 +1638,7 @@ tasks:
     completed_at: 2026-02-14T00:46:26.198Z
     branch: auto/write-tests-health-logger-edge-cases
   - id: refactor-autonomous-runner-formatError
-    status: running
+    status: completed
     workflow: auto
     prompt: prompts/auto-modify-file.md
     context_files:
@@ -1648,8 +1648,10 @@ tasks:
         Refactor the existing error formatting logic in autonomous-runner.ts to enhance readability and maintainability,
         ensuring consistency across different types of errors.
     started_at: 2026-02-14T00:46:26.218Z
+    completed_at: 2026-02-14T00:46:42.637Z
+    branch: auto/refactor-autonomous-runner-formatError
   - id: add-type-safety-to-enhanced-logger
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-modify-file.md
     context_files:
@@ -1658,3 +1660,4 @@ tasks:
       modification_description: >
         Improve type safety in enhanced-logger.ts by adding TypeScript types to variables and functions where
         applicable, ensuring consistent type definitions across the module.
+    started_at: 2026-02-14T00:46:42.657Z
