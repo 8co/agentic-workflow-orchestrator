@@ -55,7 +55,7 @@ class EnhancedLogger {
     let attempt = 0;
     while (attempt < this.maxRetries) {
       try {
-        fs.appendFileSync(this.logFilePath, message);
+        fs.appendFileSync(this.logFilePath, message, { flag: 'a', encoding: 'utf8' });
         return;
       } catch (error: unknown) {
         attempt++;
@@ -64,6 +64,9 @@ class EnhancedLogger {
         // Attempt to recreate the log directory if necessary
         if (attempt < this.maxRetries) {
           this.recoverLogDirectory();
+        } else {
+          // Emit a final warning to console if all retries have failed
+          this.logFinalFailure(attempt, error);
         }
       }
     }
@@ -72,6 +75,11 @@ class EnhancedLogger {
   private logRetryErrorDetail(attempt: number, error: unknown): void {
     const errorDescription: string = this.getErrorDescription(error);
     console.error(`[ERROR] Attempt ${attempt} to write to log file failed: ${errorDescription}`);
+  }
+
+  private logFinalFailure(attempt: number, error: unknown): void {
+    const errorDescription: string = this.getErrorDescription(error);
+    console.error(`[FATAL ERROR] All ${attempt} attempts to write to log file have failed: ${errorDescription}`);
   }
 
   private getErrorDescription(error: unknown): string {
