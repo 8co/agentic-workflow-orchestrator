@@ -226,7 +226,7 @@ tasks:
     completed_at: 2026-02-14T18:55:27.621Z
     branch: auto/improve-type-coverage
   - id: create-project-profiles
-    status: running
+    status: completed
     workflow: auto
     prompt: prompts/auto-create-module.md
     context_files:
@@ -255,8 +255,10 @@ tasks:
         language, code_lang, file_ext, module_system, language_instructions mapped from the profile fields. Use no
         external dependencies. Named exports only.
     started_at: 2026-02-14T20:10:36.132Z
+    completed_at: 2026-02-14T20:10:44.983Z
+    branch: auto/create-project-profiles
   - id: create-project-context
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-create-module.md
     context_files:
@@ -280,6 +282,7 @@ tasks:
         node:fs/promises and node:path only. Named exports only. Handle missing files gracefully (return partial
         context). Export a second function detectLanguage(projectPath: string): Promise<'TypeScript' | 'JavaScript'>
         that checks for tsconfig.json existence and .ts files in src/.
+    started_at: 2026-02-14T20:10:44.992Z
   - id: create-project-detector
     status: pending
     workflow: auto
