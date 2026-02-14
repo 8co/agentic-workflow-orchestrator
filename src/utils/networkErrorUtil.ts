@@ -5,7 +5,9 @@ export type NetworkErrorCode =
   | 'ETIMEDOUT'
   | 'EHOSTUNREACH'
   | 'EPIPE'
-  | 'ENETUNREACH';
+  | 'ENETUNREACH'
+  | 'ESOCKETTIMEDOUT' // Socket timed out
+  | 'ECONNABORTED';  // Connection aborted
 
 export interface NetworkError {
   code?: NetworkErrorCode;
@@ -20,13 +22,15 @@ export function isNetworkError(err: unknown): err is NetworkError {
   const errorObj = err as NetworkError;
 
   const networkErrorCodes: readonly NetworkErrorCode[] = [
-    'ENOTFOUND',   // DNS resolution error
-    'ECONNREFUSED',// Connection refused
-    'ECONNRESET',  // Connection reset by peer
-    'ETIMEDOUT',   // Connection timed out
-    'EHOSTUNREACH',// No route to host
-    'EPIPE',       // Broken pipe
-    'ENETUNREACH', // Network is unreachable
+    'ENOTFOUND',       // DNS resolution error
+    'ECONNREFUSED',    // Connection refused
+    'ECONNRESET',      // Connection reset by peer
+    'ETIMEDOUT',       // Connection timed out
+    'EHOSTUNREACH',    // No route to host
+    'EPIPE',           // Broken pipe
+    'ENETUNREACH',     // Network is unreachable
+    'ESOCKETTIMEDOUT', // Socket timed out
+    'ECONNABORTED',    // Connection aborted
   ];
 
   return (
