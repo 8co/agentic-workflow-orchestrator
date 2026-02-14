@@ -7,6 +7,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { writeFile, mkdir } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import type { AgentAdapter, AgentRequest, AgentResponse } from '../types.js';
+import { isNetworkError } from '../utils/networkErrorUtil.js';
 
 interface AnthropicConfig {
   apiKey: string;
@@ -25,10 +26,6 @@ interface ValidAnthropicResponse {
     output_tokens: number;
   };
   stop_reason: string;
-}
-
-function isNetworkError(err: unknown): boolean {
-  return typeof err === 'object' && err !== null && 'code' in err && (err as { code: string }).code === 'ENOTFOUND';
 }
 
 function isAPILimitError(err: unknown): boolean {
