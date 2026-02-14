@@ -2353,3 +2353,45 @@ tasks:
     started_at: 2026-02-14T01:07:52.121Z
     completed_at: 2026-02-14T01:07:59.815Z
     branch: auto/add-error-handling-enhanced-logger
+  - id: write-tests-main-function-error-hole
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/index.ts
+    variables:
+      test_target: src/index.ts
+      test_description: >
+        Add tests for potential error scenarios in the main function, including environment variable loading failures
+        and unhandled exceptions during initialization.
+  - id: add-error-handling-state-manager-changes
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/state-manager.ts
+    variables:
+      modification_description: >
+        Add comprehensive error handling for JSON parsing errors and file access issues that may arise when loading and
+        saving state in the state-manager.
+  - id: write-tests-file-writer-critical
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/file-writer.ts
+    variables:
+      test_target: src/file-writer.ts
+      test_description: >
+        Add tests for critical scenarios in file-writer, ensuring proper handling of file system errors and validating
+        the blocking of writes to protected files.
+  - id: refactor-health-logging-enhancement
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/health.ts
+    variables:
+      modification_description: >
+        Enhance health status logging to include additional system health metrics and refine the memory usage checks to
+        detect and log extreme scenarios, incorporating structured log formats.
