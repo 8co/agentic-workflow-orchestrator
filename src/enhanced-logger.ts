@@ -59,29 +59,43 @@ class EnhancedLogger {
         return;
       } catch (error: unknown) {
         attempt++;
-        this.logErrorDetail(`Attempt ${attempt} - Failed to write to log file`, error);
+        this.logRetryErrorDetail(attempt, error);
 
-        // Attempt to recreate the log directory and file
+        // Attempt to recreate the log directory if necessary
         if (attempt < this.maxRetries) {
-          try {
-            const logDirectory: string = path.dirname(this.logFilePath);
-            if (!fs.existsSync(logDirectory)) {
-              fs.mkdirSync(logDirectory, { recursive: true });
-            }
-          } catch (recoveryError: unknown) {
-            this.logErrorDetail('Recovery attempt failed', recoveryError);
-          }
+          this.recoverLogDirectory();
         }
       }
     }
   }
 
-  private logErrorDetail(context: string, error: unknown): void {
+  private logRetryErrorDetail(attempt: number, error: unknown): void {
+    const errorDescription: string = this.getErrorDescription(error);
+    console.error(`[ERROR] Attempt ${attempt} to write to log file failed: ${errorDescription}`);
+  }
+
+  private getErrorDescription(error: unknown): string {
     if (this.isError(error)) {
-      console.error(`[ERROR] ${context}: ${error.message}. Stack: ${error.stack ?? 'No stack trace available.'}`);
+      return `${error.message}. Stack: ${error.stack ?? 'No stack trace available.'}`;
     } else {
-      console.error(`[ERROR] ${context}: ${String(error)}`);
+      return String(error);
     }
+  }
+
+  private recoverLogDirectory(): void {
+    try {
+      const logDirectory: string = path.dirname(this.logFilePath);
+      if (!fs.existsSync(logDirectory)) {
+        fs.mkdirSync(logDirectory, { recursive: true });
+      }
+    } catch (recoveryError: unknown) {
+      this.logErrorDetail('Recovery attempt failed', recoveryError);
+    }
+  }
+
+  private logErrorDetail(context: string, error: unknown): void {
+    const errorDescription: string = this.getErrorDescription(error);
+    console.error(`[ERROR] ${context}: ${errorDescription}`);
   }
 
   private isError(obj: unknown): obj is Error {
