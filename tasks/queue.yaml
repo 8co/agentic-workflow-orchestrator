@@ -6680,3 +6680,14 @@ tasks:
     started_at: 2026-02-14T03:06:33.462Z
     completed_at: 2026-02-14T03:06:41.076Z
     branch: auto/add-tests-health-function
+  - id: write-tests-anthropic-adapter-execution
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/adapters/anthropic-adapter.ts
+    variables:
+      test_target: src/adapters/anthropic-adapter.ts
+      test_description: >
+        Create tests to verify that the execution logic of the Anthropic adapter produces the expected results and
+        handles API responses correctly.
