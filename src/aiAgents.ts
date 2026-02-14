@@ -43,6 +43,9 @@ export function formatError(error: unknown): Error | null {
   if (typeof error === 'string') {
     return new Error(error);
   }
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    return new Error(String((error as { message: unknown }).message));
+  }
   return null;
 }
 
