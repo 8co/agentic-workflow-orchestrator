@@ -3331,7 +3331,7 @@ tasks:
     completed_at: 2026-02-14T01:40:56.473Z
     branch: auto/add-type-safety-to-file-writer
   - id: write-tests-adapters-cursor
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -3340,6 +3340,7 @@ tasks:
       test_target: src/adapters/cursor-adapter.ts
       test_description: |
         Write comprehensive tests for the 'Cursor Agent Adapter' to cover edge cases and error handling scenarios.
+    started_at: 2026-02-14T01:41:11.285Z
   - id: enhance-type-safety-adapters-cursor
     status: pending
     workflow: auto
