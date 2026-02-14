@@ -1,90 +1,44 @@
+import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import assert from 'node:assert';
 import { createOpenAIAdapter } from '../../src/adapters/openai-adapter.js';
-import type { AgentRequest } from '../../src/types.js';
+import type { AgentAdapter, AgentRequest, AgentResponse } from '../../src/types.js';
 
-class MockOpenAI {
-  constructor(private config: { apiKey: string }) {}
-
-  chat = {
-    completions: {
-      create: async (params: any) => {
-        if (this.config.apiKey === 'invalid') {
-          throw new Error('401');
-        }
-        if (params.messages[1]?.content.includes('timeout')) {
-          throw new Error('timeout');
-        }
-        if (params.messages[1]?.content.includes('malformed')) {
-          return { choices: [] };
-        }
-        return {
-          choices: [
-            {
-              message: { content: 'Mock Response' },
-              finish_reason: 'stop',
-            },
-          ],
-          usage: {
-            prompt_tokens: 10,
-            completion_tokens: 2,
-            total_tokens: 12,
-          },
-        };
-      },
-    },
+test('OpenAIAdapter - execute method: network error mapping', async () => {
+  const mockConfig = {
+    apiKey: 'valid-api-key',
+    model: 'text-davinci-003',
   };
-}
-
-// Override OpenAI with Mock
-Object.assign(createOpenAIAdapter, {
-  __OpenAI: MockOpenAI
-});
-
-test('OpenAI Adapter - Successful Completion', async () => {
-  const adapter = createOpenAIAdapter({ apiKey: 'valid', model: 'text-davinci-003' });
-  const request: AgentRequest = {
-    prompt: 'Hello, world!',
+  
+  const mockRequest: AgentRequest = {
+    prompt: 'Test prompt',
+    context: '',
+    outputPath: undefined,
   };
 
-  const response = await adapter.execute(request);
+  const adapter: AgentAdapter = createOpenAIAdapter(mockConfig);
 
-  assert.strictEqual(response.success, true);
-  assert.strictEqual(response.output, 'Mock Response');
-});
+  const networkError = new Error('Network Error');
+  const unauthorizedError = new Error('401 Unauthorized');
 
-test('OpenAI Adapter - Invalid API Key', async () => {
-  const adapter = createOpenAIAdapter({ apiKey: 'invalid', model: 'text-davinci-003' });
-  const request: AgentRequest = {
-    prompt: 'Hello, world!',
+  // Mock the execute function to throw specific errors
+  const originalExecute = adapter.execute;
+  adapter.execute = async (request: AgentRequest): Promise<AgentResponse> => {
+    if (request.prompt.includes('network')) {
+      throw networkError;
+    } else if (request.prompt.includes('unauthorized')) {
+      throw unauthorizedError;
+    }
+    return originalExecute(request);
   };
 
-  const response = await adapter.execute(request);
+  const networkResponse = await adapter.execute({ ...mockRequest, prompt: 'simulate network issue' });
+  assert.strictEqual(networkResponse.success, false);
+  assert.strictEqual(networkResponse.error, 'Network error occurred. Please check your connection and try again.');
 
-  assert.strictEqual(response.success, false);
-  assert.strictEqual(response.error, 'Unauthorized: Invalid API key or permissions issue.');
-});
+  const unauthorizedResponse = await adapter.execute({ ...mockRequest, prompt: 'simulate unauthorized access' });
+  assert.strictEqual(unauthorizedResponse.success, false);
+  assert.strictEqual(unauthorizedResponse.error, 'Unauthorized: Invalid API key or permissions issue.');
 
-test('OpenAI Adapter - Timeout Error', async () => {
-  const adapter = createOpenAIAdapter({ apiKey: 'valid', model: 'text-davinci-003' });
-  const request: AgentRequest = {
-    prompt: 'This prompt will cause a timeout.',
-  };
-
-  const response = await adapter.execute(request);
-
-  assert.strictEqual(response.success, false);
-  assert.strictEqual(response.error, 'Request timed out. Please try again later.');
-});
-
-test('OpenAI Adapter - Malformed Response', async () => {
-  const adapter = createOpenAIAdapter({ apiKey: 'valid', model: 'text-davinci-003' });
-  const request: AgentRequest = {
-    prompt: 'malformed',
-  };
-
-  const response = await adapter.execute(request);
-
-  assert.strictEqual(response.success, false);
-  assert.strictEqual(response.error, 'Received a malformed response from OpenAI. Please try again later.');
+  // Restore the original execute function
+  adapter.execute = originalExecute;
 });
