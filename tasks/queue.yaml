@@ -380,7 +380,7 @@ tasks:
     completed_at: 2026-02-14T20:27:29.379Z
     branch: auto/ps-error-handling-service-methods
   - id: ps-add-tests-auth-handler
-    status: running
+    status: completed
     workflow: auto
     prompt: prompts/auto-write-test.md
     project: prompt-scorer-api
@@ -401,3 +401,5 @@ tasks:
         should return 401 when no auth header and no authorizer. Use CommonJS (require/module.exports). Do not use
         TypeScript. Mock event objects should include methodArn, type, headers, path, httpMethod as needed.
     started_at: 2026-02-14T20:27:29.390Z
+    completed_at: 2026-02-14T20:27:41.588Z
+    branch: auto/ps-add-tests-auth-handler
