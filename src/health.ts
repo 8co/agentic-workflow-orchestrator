@@ -21,6 +21,7 @@ export function getHealthStatus(): HealthStatus {
     try {
       const packageJson = JSON.parse(packageJsonContent);
       version = packageJson.version || 'unknown';
+      logger.debug(`Package version extracted: ${version}`);
     } catch (jsonError) {
       logger.error(`Failed to parse package.json: ${(jsonError as Error).message}`);
     }
