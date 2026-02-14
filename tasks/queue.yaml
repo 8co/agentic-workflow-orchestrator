@@ -2097,7 +2097,7 @@ tasks:
         Property 'text' does not exist on type 'ThinkingBlock'.
       ```
   - id: write-tests-state-manager-load-failure-cases
-    status: running
+    status: completed
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -2108,8 +2108,10 @@ tasks:
         Add test cases for the `load` function of `StateManager` to handle various failure scenarios, ensuring robust
         error handling when files are missing or corrupted, and verifying the correct null return value.
     started_at: 2026-02-14T00:54:18.731Z
+    completed_at: 2026-02-14T00:54:25.854Z
+    branch: auto/write-tests-state-manager-load-failure-cases
   - id: add-error-handling-to-file-writer
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-modify-file.md
     context_files:
@@ -2119,6 +2121,7 @@ tasks:
         Implement comprehensive error handling in the `file-writer` module, including handling of potential file system
         errors during read and write operations, and ensure all errors are logged or thrown appropriately to aid
         debugging.
+    started_at: 2026-02-14T00:54:25.879Z
   - id: write-tests-format-duration-function
     status: pending
     workflow: auto
