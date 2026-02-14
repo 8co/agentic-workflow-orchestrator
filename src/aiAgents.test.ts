@@ -1,77 +1,70 @@
-import { strict as assert } from 'node:assert';
-import test from 'node:test';
-import { connectToAIAgents } from './aiAgents.js';
+import { test } from 'node:test';
+import assert from 'node:assert';
+import { connectToAIAgents, formatError, formatErrorWithDetails, handleConnectionError, getNetworkDetails } from './aiAgents.js';
+import { createConnection, Socket } from 'node:net';
+import { accessSync } from 'node:fs';
 
-// Test Suite for aiAgents module
-test('AI Agent connection - error handling', async (t) => {
-  await t.test('should log an error on connection failure with known Error', () => {
-    const originalConsoleError = console.error;
-    let loggedMessage = '';
-
-    console.error = (message: unknown) => {
-      if (typeof message === 'string') {
-        loggedMessage = message;
-      }
+test('connectToAIAgents should connect successfully', (t) => {
+  const originalCreateConnection = createConnection;
+  const originalAccessSync = accessSync;
+  try {
+    let connected = false;
+    
+    (globalThis as any).createConnection = (opts: any, callback: any) => {
+      connected = true;
+      const socket: Socket = new Socket();
+      process.nextTick(callback);
+      return socket;
     };
 
-    // Test known Error handling
-    try {
-      connectToAIAgents();
-    } catch (error) {
-      assert.fail(`Execution should not reach here. Error: ${error}`);
-    }
-
-    assert.match(
-      loggedMessage,
-      /❌ Error connecting to AI agent APIs: Simulation of a connection error\./
-    );
-
-    console.error = originalConsoleError;
-  });
-
-  await t.test('should handle unknown error types gracefully', () => {
-    const originalConsoleError = console.error;
-    let loggedMessage = '';
-
-    console.error = (message: unknown) => {
-      if (typeof message === 'string') {
-        loggedMessage = message;
-      }
+    (globalThis as any).accessSync = (path: string, mode: number) => {
+      // Simulate permission is granted, do nothing
     };
 
-    // Simulate the condition where an unknown error type is thrown
-    const simulateUnknownErrorType = () => {
-      throw 12345;
-    };
+    connectToAIAgents();
 
-    try {
-      simulateUnknownErrorType();
-    } catch (error: unknown) {
-      const formattedError = formatError(error);
-      handleConnectionError(formattedError || new Error('Unknown error type'));
-    }
-
-    assert.match(
-      loggedMessage,
-      /❌ An unknown error occurred while connecting to AI agent APIs./
-    );
-
-    console.error = originalConsoleError;
-  });
+    assert.strictEqual(connected, true, 'The connection should be successfully established');
+  } finally {
+    (globalThis as any).createConnection = originalCreateConnection;
+    (globalThis as any).accessSync = originalAccessSync;
+  }
 });
 
-function formatError(error: unknown): Error | null {
-  if (error instanceof Error) {
-    return error;
-  }
-  if (typeof error === 'string') {
-    return new Error(error);
-  }
-  return null;
-}
+test('connectToAIAgents should handle network permission error', (t) => {
+  const originalAccessSync = accessSync;
+  try {
+    (globalThis as any).accessSync = (path: string, mode: number) => {
+      throw new Error('Permission denied');
+    };
 
-function handleConnectionError(error: Error): void {
-  const errorMessage = `❌ Error connecting to AI agent APIs: ${error.message}`;
-  const errorStack = error.stack ? ` Stack trace: ${error.stack}` : '';
-  console.error(`${errorMessage}\n${errorStack}`);
-}
+    assert.throws(() => {
+      connectToAIAgents();
+    }, /Network permission error: Permission denied/);
+  } finally {
+    (globalThis as any).accessSync = originalAccessSync;
+  }
+});
+
+test('formatError should format string errors correctly', (t) => {
+  const errorString = 'This is a string error';
+  const formattedError = formatError(errorString);
+
+  assert.strictEqual(formattedError?.message, errorString, 'The formatted message should match the input string');
+});
+
+test('formatErrorWithDetails should add details to error message', (t) => {
+  const error = new Error('Original error message');
+  const host = '123.45.67.89';
+  const port = 8080;
+
+  const detailedError = formatErrorWithDetails(error, host, port);
+
+  assert.match(detailedError.message, /Host: 123.45.67.89, Port: 8080, Error: Original error message/, 
+    'The formatted error message should contain host, port, and original error message');
+});
+
+test('getNetworkDetails should return network details', (t) => {
+  const networkDetails = getNetworkDetails();
+
+  assert.strictEqual(typeof networkDetails, 'object', 'Network details should be an object');
+});
