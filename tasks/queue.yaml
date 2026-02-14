@@ -5266,3 +5266,13 @@ tasks:
     started_at: 2026-02-14T02:33:57.457Z
     completed_at: 2026-02-14T02:34:17.560Z
     branch: auto/add-error-handling-scheduler
+  - id: write-tests-ai-agents-module-timeouts
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/aiAgents.ts
+    variables:
+      test_target: src/aiAgents.ts
+      test_description: |
+        Add unit tests to simulate timeout scenarios and ensure AI Agents module handles them properly without crashing.
