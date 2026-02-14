@@ -65,14 +65,23 @@ export function createCursorAdapter(): AgentAdapter {
               case 'EACCES':
                 errorMessage = 'Permission denied. Check your access rights to the output path.';
                 break;
+              case 'EMFILE':
+                errorMessage = 'Too many open files. Please close some files and try again.';
+                break;
+              case 'EISDIR':
+                errorMessage = 'Expected a file but found a directory. Please provide a file path.';
+                break;
+              case 'ENOTDIR':
+                errorMessage = 'A component of the path is not a directory. Please check the path.';
+                break;
               default:
-                errorMessage = `Unhandled error: ${errnoError.message}`;
+                errorMessage = `Unhandled error (code: ${errnoError.code}): ${errnoError.message}`;
             }
           } else {
-            errorMessage = err.message;
+            errorMessage = `Unexpected error: ${err.message}`;
           }
         } else {
-          errorMessage = String(err);
+          errorMessage = `Unknown error: ${String(err)}`;
         }
         console.error(`Error executing Cursor Agent: ${errorMessage}`);
 
