@@ -28,9 +28,11 @@ export function getHealthStatus(): HealthStatus {
       logger.debug(`Health: Package version extracted: ${version}`);
     } catch (jsonError) {
       logger.error(`Health: Failed to parse package.json: ${(jsonError as Error).message}`);
+      logger.error('Health: Returning status with unknown version due to JSON parsing error.');
     }
   } catch (fsError) {
     logger.error(`Health: Failed to read package.json: ${(fsError as Error).message}`);
+    logger.error('Health: Returning status with unknown version due to file read error.');
   }
 
   const status: HealthStatus = {
