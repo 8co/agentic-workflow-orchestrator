@@ -1,46 +1,97 @@
-import { main } from '../src/index.js';
 import { strict as assert } from 'node:assert';
-import { test, beforeEach } from 'node:test';
+import { spawn } from 'node:child_process';
+import { join } from 'node:path';
 
-import * as orchestrationEngine from '../src/orchestrationEngine.js';
-import * as workflowConfig from '../src/workflowConfig.js';
-import * as aiAgents from '../src/aiAgents.js';
+const scriptPath = join(__dirname, '../src/index.js');
 
-let consoleLogSpy: jest.SpyInstance;
-let consoleErrorSpy: jest.SpyInstance;
-
-beforeEach(() => {
-  consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
-  consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-
-  jest.spyOn(orchestrationEngine, 'initializeOrchestrationEngine');
-  jest.spyOn(workflowConfig, 'loadWorkflowConfigurations');
-  jest.spyOn(aiAgents, 'connectToAIAgents');
-});
-
-test('main initializes all components successfully', () => {
-  orchestrationEngine.initializeOrchestrationEngine.mockImplementation(() => {});
-  workflowConfig.loadWorkflowConfigurations.mockImplementation(() => {});
-  aiAgents.connectToAIAgents.mockImplementation(() => {});
-
-  main();
+function executeMainScript(callback: (error: Error | null, stdout: string, stderr: string) => void): void {
+  const process = spawn('node', [scriptPath]);
   
-  assert.ok(orchestrationEngine.initializeOrchestrationEngine.mock.calls.length > 0, 'initializeOrchestrationEngine should be called');
-  assert.ok(workflowConfig.loadWorkflowConfigurations.mock.calls.length > 0, 'loadWorkflowConfigurations should be called');
-  assert.ok(aiAgents.connectToAIAgents.mock.calls.length > 0, 'connectToAIAgents should be called');
+  let stdout = '';
+  let stderr = '';
   
-  assert(consoleLogSpy.mock.calls.some(call => call[0] === '✅ System initialized'), 'System initialized message should be logged');
+  process.stdout.on('data', (data) => {
+    stdout += data;
+  });
+
+  process.stderr.on('data', (data) => {
+    stderr += data;
+  });
+
+  process.on('close', (code) => {
+    callback(code === 0 ? null : new Error(`Process exited with code ${code}`), stdout, stderr);
+  });
+}
+
+interface FakeModules {
+  initializeOrchestrationEngine?: () => void;
+  loadWorkflowConfigurations?: () => void;
+  connectToAIAgents?: () => void;
+}
+
+function mockModules({ initializeOrchestrationEngine, loadWorkflowConfigurations, connectToAIAgents }: FakeModules): void {
+  jest.mock('../src/orchestrationEngine.js', () => ({
+    initializeOrchestrationEngine: initializeOrchestrationEngine || jest.fn(() => {})
+  }));
+  
+  jest.mock('../src/workflowConfig.js', () => ({
+    loadWorkflowConfigurations: loadWorkflowConfigurations || jest.fn(() => {})
+  }));
+  
+  jest.mock('../src/aiAgents.js', () => ({
+    connectToAIAgents: connectToAIAgents || jest.fn(() => {})
+  }));
+}
+
+test('runs successfully when no errors occur', (done) => {
+  mockModules({});
+  
+  executeMainScript((error, stdout, stderr) => {
+    assert.strictEqual(error, null);
+    assert.ok(stdout.includes('✅ System initialized'));
+    assert.strictEqual(stderr, '');
+    done();
+  });
 });
 
-test('main handles initialization error', () => {
-  const error = new Error('Initialization failed');
-  orchestrationEngine.initializeOrchestrationEngine.mockImplementation(() => { throw error; });
+test('handles errors in initializeOrchestrationEngine', (done) => {
+  mockModules({
+    initializeOrchestrationEngine: () => { throw new Error('Engine Initialization Error'); }
+  });
 
-  main();
-
-  assert(consoleErrorSpy.mock.calls.some(call => call[0] === '❌ Error during system initialization:' && call[1] === error), 'Error during system initialization should be logged');
+  executeMainScript((error, stdout, stderr) => {
+    assert.strictEqual(error, null);
+    assert.ok(stderr.includes('❌ Error during orchestration engine initialization'));
+    assert.ok(stderr.includes('Engine Initialization Error'));
+    assert.ok(!stdout.includes('✅ System initialized'));
+    done();
+  });
 });
 
-afterEach(() => {
-  jest.restoreAllMocks();
+test('handles errors in loadWorkflowConfigurations', (done) => {
+  mockModules({
+    loadWorkflowConfigurations: () => { throw new Error('Configuration Load Error'); }
+  });
+
+  executeMainScript((error, stdout, stderr) => {
+    assert.strictEqual(error, null);
+    assert.ok(stderr.includes('❌ Error during workflow configurations loading'));
+    assert.ok(stderr.includes('Configuration Load Error'));
+    assert.ok(!stdout.includes('✅ System initialized'));
+    done();
+  });
+});
+
+test('handles errors in connectToAIAgents', (done) => {
+  mockModules({
+    connectToAIAgents: () => { throw new Error('AI Agent Connection Error'); }
+  });
+
+  executeMainScript((error, stdout, stderr) => {
+    assert.strictEqual(error, null);
+    assert.ok(stderr.includes('❌ Error during AI agents connection'));
+    assert.ok(stderr.includes('AI Agent Connection Error'));
+    assert.ok(!stdout.includes('✅ System initialized'));
+    done();
+  });
 });
