@@ -5327,3 +5327,25 @@ tasks:
     started_at: 2026-02-14T02:35:53.668Z
     completed_at: 2026-02-14T02:35:59.812Z
     branch: auto/improve-error-handling-network-util
+  - id: write-tests-for-ai-agents-error-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/aiAgents.ts
+    variables:
+      test_target: src/aiAgents.ts
+      test_description: >
+        Develop tests to cover error handling in the connectToAIAgents function, verifying that various network
+        exceptions are logged correctly.
+  - id: add-util-function-log-exceptions
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-create-module.md
+    context_files:
+      - src/logger.ts
+    variables:
+      module_name: log-exception-util
+      module_description: >
+        Create a utility function to standardize the logging of exceptions, ensuring consistency across various parts of
+        the codebase where errors are caught.
