@@ -6389,3 +6389,46 @@ tasks:
     started_at: 2026-02-14T02:57:13.673Z
     completed_at: 2026-02-14T02:57:24.953Z
     branch: auto/add-type-safety-to-cli-observability
+  - id: add-tests-anthropic-adapter-execution
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/adapters/anthropic-adapter.ts
+    variables:
+      test_target: src/adapters/anthropic-adapter.ts
+      test_description: >
+        Write tests for the execution method of the Anthropic adapter, covering successful execution, retry scenarios,
+        and error handling.
+  - id: add-tests-file-helper-module
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/file-helper.ts
+    variables:
+      test_target: src/file-helper.ts
+      test_description: >
+        Add comprehensive tests for the file-helper module, verifying file operations, error handling, and edge cases
+        for directory creation and file reading/writing.
+  - id: add-error-handling-to-task-proposer
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/task-proposer.ts
+    variables:
+      modification_description: >
+        Implement error handling in the task proposer to manage possible failures during task proposal generation,
+        including handling undefined LLM responses.
+  - id: write-tests-git-ops-error-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/git-ops.ts
+    variables:
+      test_target: src/git-ops.ts
+      test_description: >
+        Create unit tests to verify error handling mechanisms within the Git operations module, especially focusing on
+        network errors and git command failures.
