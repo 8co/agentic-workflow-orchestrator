@@ -13,8 +13,8 @@ export async function ensureDirectoryAndWriteFile(
   fullPath: string,
   content: string
 ): Promise<void> {
-  if (!fullPath || !content) {
-    throw new Error('Invalid arguments: fullPath and content are required.');
+  if (typeof fullPath !== 'string' || typeof content !== 'string' || !fullPath || !content) {
+    throw new Error('Invalid arguments: fullPath and content are required and must be strings.');
   }
 
   try {
@@ -33,8 +33,8 @@ export async function ensureDirectoryAndWriteFile(
  * @returns The content of the file as a string, or null if the file cannot be read.
  */
 export async function readFromFile(filePath: string): Promise<string | null> {
-  if (!filePath) {
-    throw new Error('Invalid argument: filePath is required.');
+  if (typeof filePath !== 'string' || !filePath) {
+    throw new Error('Invalid argument: filePath is required and must be a string.');
   }
 
   try {
@@ -54,8 +54,8 @@ export async function readFromFile(filePath: string): Promise<string | null> {
  * @returns The resolved absolute file path.
  */
 export function resolveFilePath(baseDir: string, relativePath: string): string {
-  if (!baseDir || !relativePath) {
-    throw new Error('Invalid arguments: baseDir and relativePath are required.');
+  if (typeof baseDir !== 'string' || typeof relativePath !== 'string' || !baseDir || !relativePath) {
+    throw new Error('Invalid arguments: baseDir and relativePath are required and must be strings.');
   }
 
   return resolve(baseDir, relativePath);
