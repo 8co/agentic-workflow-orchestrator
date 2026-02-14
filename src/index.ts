@@ -7,27 +7,36 @@ import { initializeOrchestrationEngine } from './orchestrationEngine.js';
 import { loadWorkflowConfigurations } from './workflowConfig.js';
 import { connectToAIAgents } from './aiAgents.js';
 
+function logError(context: string, error: unknown): void {
+  if (error instanceof Error) {
+    console.error(`❌ Error during ${context}:`, error.message);
+    console.error('Stack trace:', error.stack);
+  } else {
+    console.error(`❌ Error during ${context}:`, String(error));
+  }
+}
+
 export function main(): void {
   console.log('🤖 Agentic Workflow Orchestrator - Starting...');
 
   try {
     initializeOrchestrationEngine();
   } catch (error) {
-    console.error('❌ Error during orchestration engine initialization:', error instanceof Error ? error.message : String(error));
+    logError('orchestration engine initialization', error);
     return;
   }
 
   try {
     loadWorkflowConfigurations();
   } catch (error) {
-    console.error('❌ Error during workflow configurations loading:', error instanceof Error ? error.message : String(error));
+    logError('workflow configurations loading', error);
     return;
   }
 
   try {
     connectToAIAgents();
   } catch (error) {
-    console.error('❌ Error during AI agents connection:', error instanceof Error ? error.message : String(error));
+    logError('AI agents connection', error);
     return;
   }
 
