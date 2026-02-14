@@ -62,20 +62,21 @@ export function createOpenAIAdapter(config: OpenAIConfig, adapterName: 'openai' 
           ? `You are an expert software engineer. Follow all instructions precisely.\n\nContext:\n${request.context}`
           : 'You are an expert software engineer. Follow all instructions precisely. Return only the requested output — no preamble, no explanation unless asked.';
 
-        const completion: CompletionResponse = await client.chat.completions.create({
+        const completion = await client.chat.completions.create({
           model: config.model,
           messages: [
             { role: 'system', content: systemContent },
             { role: 'user', content: request.prompt },
           ],
           max_tokens: 4096,
-        }) as CompletionResponse;
+        });
 
-        if (!completion || !Array.isArray(completion.choices) || completion.choices.length === 0 || !completion.choices[0]?.message?.content) {
+        // Ensure the types align specifically with what we expect in CompletionResponse
+        if (!completion || !Array.isArray(completion.choices) || completion.choices.length === 0 || !completion.choices[0].message?.content) {
           throw new Error('Malformed response from OpenAI service');
         }
 
-        const output: string = completion.choices[0].message.content;
+        const output: string = completion.choices[0].message.content ?? '';
         const durationMs: number = Date.now() - start;
 
         // Write to output file if specified
