@@ -815,3 +815,44 @@ tasks:
     started_at: 2026-02-14T00:29:22.636Z
     completed_at: 2026-02-14T00:29:26.130Z
     branch: auto/small-refactor-health-logging
+  - id: add-tests-enhanced-logger
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/enhanced-logger.ts
+    variables:
+      test_target: src/enhanced-logger.ts
+      test_description: >
+        Write comprehensive unit tests for the enhanced logger module including tests for info, warn, error, and debug
+        logging levels, both file and console outputs.
+  - id: add-error-handling-prompt-resolver
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/prompt-resolver.ts
+    variables:
+      modification_description: >
+        Add error handling to manage cases when file reading fails or when injecting variables into the templates
+        results in unexpected placeholders.
+  - id: refactor-execution-error-handling-workflow-runner
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/workflow-runner.ts
+    variables:
+      modification_description: >
+        Refactor the error handling during execution to ensure all step execution errors are caught and logged uniformly
+        for clarity and consistency.
+  - id: improve-type-safety-health-status
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/health.ts
+    variables:
+      modification_description: >
+        Enhance type safety for the HealthStatus interface by ensuring all fields are appropriately typed and used
+        consistently.
