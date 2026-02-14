@@ -403,3 +403,226 @@ tasks:
     started_at: 2026-02-14T20:27:29.390Z
     completed_at: 2026-02-14T20:27:41.588Z
     branch: auto/ps-add-tests-auth-handler
+  - id: add-tests-for-auth-module
+    status: running
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/handlers/auth.js
+    variables:
+      test_target: src/handlers/auth.js
+      test_description: >
+        Create unit tests for the "authorize" and "authenticateRequest" functions to verify correct authorization and
+        authentication behavior based on event data, including scenarios with missing headers and invalid tokens.
+    project: prompt-scorer-api
+    started_at: 2026-02-14T20:51:26.502Z
+  - id: log-enhancement
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/handlers/prompts/analyze.js
+    variables:
+      modification_description: >
+        Implement structured logging using JSON format for key events (e.g., user authentication failures, prompt
+        processing starts, errors) to enhance observability and debugging.
+    project: prompt-scorer-api
+  - id: improve-env-validation
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/config/index.js
+    variables:
+      modification_description: >
+        Enhance environment variable validation by throwing errors for missing critical variables to prevent application
+        launch issues, replacing warnings with an error-throwing mechanism.
+    project: prompt-scorer-api
+  - id: create-metrics-module
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-create-module.md
+    context_files:
+      - src/lib/metrics.js
+    variables:
+      module_name: metrics
+      module_description: >
+        Implement a new utility module capable of emitting custom metrics to a monitoring service such as AWS
+        CloudWatch. Metrics should track event counts (e.g., prompts analyzed, prompts generated) and user interactions.
+    project: prompt-scorer-api
+  - id: write-tests-diagnostics-handler
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/handlers/diagnostic.js
+    variables:
+      test_target: src/handlers/diagnostic.js
+      test_description: >
+        Add test coverage for the diagnosticHandler to ensure it handles various event scenarios properly, logs event
+        information accurately, and returns diagnostic data effectively.
+    project: prompt-scorer-api
+  - id: add-token-verification-tests
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/lib/auth.js
+    variables:
+      test_target: src/lib/auth.js
+      test_description: >
+        Create tests for verifyToken to ensure it correctly verifies valid tokens, rejects invalid ones, and handles
+        errors gracefully.
+    project: prompt-scorer-api
+  - id: refactor-jwt-parsing
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/lib/auth.js
+    variables:
+      modification_description: |
+        Refactor JWT parsing in extractToken to include more robust validation and error handling.
+    project: prompt-scorer-api
+  - id: improve-error-generation
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/lib/response.js
+    variables:
+      modification_description: >
+        Enhance error generation in createResponse function by adding more detailed error descriptions for common HTTP
+        status codes.
+    project: prompt-scorer-api
+  - id: add-feedback-handler-tests
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/handlers/prompts/rate.js
+    variables:
+      test_target: src/handlers/prompts/rate.js
+      test_description: >
+        Write comprehensive tests for the ratePrompt handler covering various edge cases such as invalid input, missing
+        authentication, and successful cases.
+    project: prompt-scorer-api
+  - id: add-jwks-retrieval-caching
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/lib/auth.js
+    variables:
+      modification_description: |
+        Implement a caching mechanism for JWKS retrieval to minimize network requests and improve performance.
+    project: prompt-scorer-api
+  - id: handle-edge-cases-in-auth-handler
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/handlers/auth.js
+    variables:
+      modification_description: >
+        Enhance error handling and edge case coverage in the auth handler, including scenarios for missing authorization
+        tokens and invalid token structures. Verify proper logging and error messages for each case.
+    project: prompt-scorer-api
+  - id: implement-claim-parsing-helper
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-create-module.md
+    context_files:
+      - src/handlers/auth.js
+      - src/handlers/prompts/analyze.js
+      - src/handlers/prompts/delete.js
+    variables:
+      module_name: claimsParser
+      module_description: >
+        Create a helper module for parsing claims from the authorizer context in a consistent manner across handlers.
+        This should handle stringified claims and return claims as an object.
+    project: prompt-scorer-api
+  - id: add-serverless-schedule-event
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-create-module.md
+    context_files:
+      - resources/functions.yml
+    variables:
+      module_name: ScheduledMetricsCollection
+      module_description: >
+        Create a new Serverless function for collecting usage metrics on a regular schedule, leveraging the existing
+        DynamoDB models and AWS SDK. This new function should be added to the serverless configuration under
+        functions.yml with a scheduled CloudWatch event.
+    project: prompt-scorer-api
+  - id: validate-request-body
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/handlers/prompts/analyze.js
+      - src/handlers/prompts/optimize.js
+    variables:
+      modification_description: >
+        Implement request body validation to ensure the required fields are present before proceeding with prompt
+        handling in both analyze and optimize handlers. Log meaningful errors and reject malformed requests with 400
+        status code.
+    project: prompt-scorer-api
+  - id: write-tests-for-analyze-prompt-handler
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/handlers/prompts/analyze.js
+    variables:
+      test_target: src/handlers/prompts/analyze.js
+      test_description: >
+        Develop unit tests for the analyze prompt handler to ensure proper functionality and error handling, and to
+        verify that analyzed prompts are properly stored.
+    project: prompt-scorer-api
+  - id: error-handling-improvement-in-diagnostic
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/handlers/diagnostic.js
+    variables:
+      modification_description: >
+        Enhance error handling in the diagnostic handler by introducing specific error messages and logging for
+        potential issues like parsing failures or missing fields in the event object.
+    project: prompt-scorer-api
+  - id: refactor-duplicate-auth-header-checks
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/handlers/auth.js
+      - src/lib/auth.js
+    variables:
+      modification_description: >
+        Refactor duplicate checks for the authorization header into a reusable function to reduce redundancy and
+        standardize how auth headers are processed across different modules.
+    project: prompt-scorer-api
+  - id: write-tests-for-vote-prompt-handler
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/handlers/prompts/vote.js
+    variables:
+      test_target: src/handlers/prompts/vote.js
+      test_description: >
+        Create tests to check the voting functionality for prompts, ensuring the handler correctly processes votes and
+        updates the prompt statistics as expected.
+    project: prompt-scorer-api
+  - id: add-type-validation-in-promptservice
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/services/promptAnalyzer.js
+    variables:
+      modification_description: >
+        Integrate type validation for input parameters in the promptAnalyzer service to prevent unexpected runtime
+        errors and improve input reliability.
+    project: prompt-scorer-api

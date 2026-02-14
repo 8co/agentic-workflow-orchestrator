@@ -186,7 +186,9 @@ export function createTaskProposer(config: ProposerConfig) {
   // Prompts always come from orchestrator root
   const promptBasePath = orchestratorRoot ?? basePath;
 
-  const queue = createQueueManager(basePath);
+  // Queue always lives in the orchestrator, not in the target project
+  const queueBasePath = orchestratorRoot ?? basePath;
+  const queue = createQueueManager(queueBasePath);
 
   /**
    * Self-review: Feed proposed tasks back to the LLM to filter out
@@ -354,23 +356,25 @@ export function createTaskProposer(config: ProposerConfig) {
       }
 
       // Convert to QueueTasks and append
+      const projectId = projectConfig?.id;
       const queueTasks: QueueTask[] = proposed.map((t) => ({
         id: t.id,
         status: 'pending' as const,
         workflow: 'auto',
         prompt: t.prompt,
+        ...(projectId ? { project: projectId } : {}),
         context_files: t.context_files,
         variables: t.variables,
       }));
 
-      // Load existing queue, append new tasks, save
+      // Load existing queue, append new tasks, save (queue lives in orchestrator root)
       const existing = await queue.list();
       const allTasks = [...existing, ...queueTasks];
 
       // Write updated queue using the yaml module
       const { writeFile: writeFs } = await import('node:fs/promises');
       const { stringify: stringifyYaml } = await import('yaml');
-      const queuePath = resolve(basePath, 'tasks/queue.yaml');
+      const queuePath = resolve(queueBasePath, 'tasks/queue.yaml');
       await writeFs(queuePath, stringifyYaml({ tasks: allTasks }, { lineWidth: 120 }), 'utf-8');
 
       console.log(`\n✅ Added ${queueTasks.length} tasks to queue:`);
