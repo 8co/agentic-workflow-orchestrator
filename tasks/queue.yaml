@@ -1543,7 +1543,7 @@ tasks:
     completed_at: 2026-02-14T00:44:38.290Z
     branch: auto/write-tests-main-function
   - id: write-tests-state-manager-load-edge-cases
-    status: running
+    status: completed
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -1553,8 +1553,10 @@ tasks:
       test_description: |
         Add tests to ensure load function handles missing state files gracefully and returns null.
     started_at: 2026-02-14T00:44:57.973Z
+    completed_at: 2026-02-14T00:45:02.614Z
+    branch: auto/write-tests-state-manager-load-edge-cases
   - id: add-tests-anthropic-adapter-edge-cases
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -1563,3 +1565,4 @@ tasks:
       test_target: src/adapters/anthropic-adapter.ts
       test_description: |
         Write tests for edge cases like invalid API responses in anthropic-adapter.
+    started_at: 2026-02-14T00:45:02.639Z
