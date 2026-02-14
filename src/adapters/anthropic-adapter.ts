@@ -98,7 +98,7 @@ export function createAnthropicAdapter(config: AnthropicConfig): AgentAdapter {
           : 'You are an expert software engineer. Follow all instructions precisely. Return only the requested output — no preamble, no explanation unless asked.';
 
         const message: unknown = await retry(
-          () =>
+          (): Promise<unknown> =>
             client.messages.create({
               model: config.model,
               max_tokens: 4096,
@@ -127,9 +127,9 @@ export function createAnthropicAdapter(config: AnthropicConfig): AgentAdapter {
 
         // Extract text from response
         const textBlocks: TextBlock[] = validResponse.content.filter(
-          (block): block is TextBlock => block.type === 'text'
+          (block: TextBlock): block is TextBlock => block.type === 'text'
         );
-        const output: string = textBlocks.map((b) => b.text).join('\n');
+        const output: string = textBlocks.map((b: TextBlock) => b.text).join('\n');
 
         const durationMs: number = Date.now() - start;
 
@@ -160,7 +160,7 @@ export function createAnthropicAdapter(config: AnthropicConfig): AgentAdapter {
           output,
           durationMs,
         };
-      } catch (err) {
+      } catch (err: unknown) {
         let error: string = 'An unknown error occurred.';
         const durationMs: number = Date.now() - start;
 
