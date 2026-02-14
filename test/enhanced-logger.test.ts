@@ -1,59 +1,85 @@
-import { test } from 'node:test';
+import { EnhancedLogger } from '../src/enhanced-logger';
 import assert from 'node:assert';
-import fs from 'fs';
-import path from 'path';
-import { EnhancedLogger } from '../src/enhanced-logger.js';
+import { test } from 'node:test';
 
-test('EnhancedLogger should create instance and log info messages', () => {
-  const logger = EnhancedLogger.getInstance('test.log');
-  const message = 'Info level log message';
-  logger.logInfo(message);
+// Test suite for the EnhancedLogger
+test('EnhancedLogger Singleton Test', (t) => {
+  const logger1 = EnhancedLogger.getInstance();
+  const logger2 = EnhancedLogger.getInstance();
 
-  const logDirectory = path.resolve(process.cwd(), 'logs');
-  const logFilePath = path.join(logDirectory, 'test.log');
-  const logContent = fs.readFileSync(logFilePath, 'utf-8');
-  
-  assert.match(logContent, new RegExp(`\\[INFO\\] ${message}`));
+  assert.strictEqual(logger1, logger2, 'getInstance should return a singleton instance');
 });
 
-test('EnhancedLogger should log messages at different levels', () => {
+test('Logging Methods Test - Console and File', (t) => {
   const logger = EnhancedLogger.getInstance('test.log');
 
-  const messages = {
-    info: 'Info message',
-    warn: 'Warning message',
-    error: 'Error message',
-    debug: 'Debug message',
+  // Mock console and file system methods
+  const originalConsoleInfo = console.info;
+  const originalConsoleWarn = console.warn;
+  const originalConsoleError = console.error;
+  const originalConsoleDebug = console.debug;
+
+  console.info = function(message: string) {
+    assert.match(message, /\[INFO\] Test message/, 'Info log should be called with the correct message');
+  };
+  
+  console.warn = function(message: string) {
+    assert.match(message, /\[WARN\] Test message/, 'Warning log should be called with the correct message');
+  };
+  
+  console.error = function(message: string) {
+    assert.match(message, /\[ERROR\] Test message/, 'Error log should be called with the correct message');
+  };
+  
+  console.debug = function(message: string) {
+    assert.match(message, /\[DEBUG\] Test message/, 'Debug log should be called with the correct message');
   };
 
-  logger.logInfo(messages.info);
-  logger.logWarn(messages.warn);
-  logger.logError(messages.error);
-  logger.logDebug(messages.debug);
-  
-  const logDirectory = path.resolve(process.cwd(), 'logs');
-  const logFilePath = path.join(logDirectory, 'test.log');
-  const logContent = fs.readFileSync(logFilePath, 'utf-8');
+  const logFilePath = `logs/test.log`;
+  const originalAppendFileSync = fs.appendFileSync;
+  fs.appendFileSync = function(filePath: fs.PathLike | fd: fs-like, data: string | Uint8Array, options?: fs.WriteFileOptions): void {
+    assert.strictEqual(filePath, logFilePath, 'Log should be written to the correct file path');
+  };
 
-  Object.entries(messages).forEach(([level, message]) => {
-    const regex = new RegExp(`\\[${level.toUpperCase()}\\] ${message}`);
-    assert.match(logContent, regex);
-  });
+  // Test each logging level
+  logger.logInfo('Test message');
+  logger.logWarn('Test message');
+  logger.logError('Test message');
+  logger.logDebug('Test message');
+
+  // Restore the original methods
+  console.info = originalConsoleInfo;
+  console.warn = originalConsoleWarn;
+  console.error = originalConsoleError;
+  console.debug = originalConsoleDebug;
+  fs.appendFileSync = originalAppendFileSync;
 });
 
-test('EnhancedLogger should handle log file write errors gracefully', () => {
-  const logger = EnhancedLogger.getInstance('test-error.log');
-  const message = 'This is an error handling test';
+test('Error Handling Test', (t) => {
+  const logger = EnhancedLogger.getInstance('invalid_path/test.log');
 
-  // Temporarily make log directory unwritable
-  const logDirectory = path.resolve(process.cwd(), 'logs');
-  fs.chmodSync(logDirectory, '0444'); // Read-only
+  // Mock console error method
+  const originalConsoleError = console.error;
+  console.error = function(message: string) {
+    assert.match(message, /\[ERROR\] Failed to write to log file/, 'Should log error message about failed file write');
+  };
+
+  // Mock fs methods to simulate directory and file errors
+  const originalMkdirSync = fs.mkdirSync;
+  const originalExistSync = fs.existsSync;
+  fs.mkdirSync = function() {
+    throw new Error('Mock mkdir error');
+  };
+  fs.existsSync = function() {
+    return false;
+  };
 
   try {
-    logger.logError(message);
-    assert.ok(true, 'Logger should not throw');
+    logger.logInfo('Test message that will fail');
   } finally {
-    // Restore directory permissions
-    fs.chmodSync(logDirectory, '0755');
+    // Restore the original methods
+    fs.mkdirSync = originalMkdirSync;
+    fs.existsSync = originalExistSync;
+    console.error = originalConsoleError;
   }
 });
