@@ -2422,3 +2422,52 @@ tasks:
       is not assignable to parameter of type 'string'.
 
       ```
+  - id: add-error-handling-anthropic-adapter
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/adapters/anthropic-adapter.ts
+    variables:
+      modification_description: |
+        Add comprehensive error handling for network errors and API response validations in the Anthropic adapter.
+  - id: refactor-ai-agents-detailed-error-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/aiAgents.ts
+    variables:
+      modification_description: >
+        Refactor the aiAgents.ts file to include more detailed error messages and exception catching for connection
+        attempts.
+  - id: improve-type-safety-aiagents
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/aiAgents.ts
+    variables:
+      modification_description: >
+        Improve the type safety of the variables and functions in aiAgents by introducing explicit type annotations
+        where they are missing.
+  - id: add-tests-aiagents-detailed-error-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/aiAgents.ts
+    variables:
+      test_target: src/aiAgents.ts
+      test_description: >
+        Write test cases to cover the enhanced error handling paths for different exceptions and error scenarios in the
+        aiAgents module.
+  - id: add-error-handling-to-state-manager-save
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/state-manager.ts
+    variables:
+      modification_description: |
+        Add error handling mechanisms to the save function in the state manager to ensure safe file writing operations.
