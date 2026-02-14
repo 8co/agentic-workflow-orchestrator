@@ -2138,3 +2138,45 @@ tasks:
     started_at: 2026-02-14T00:54:35.457Z
     completed_at: 2026-02-14T00:54:45.315Z
     branch: auto/write-tests-format-duration-function
+  - id: add-tests-anthropic-adapter
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/adapters/anthropic-adapter.ts
+    variables:
+      test_target: src/adapters/anthropic-adapter.ts
+      test_description: >
+        Add comprehensive tests to ensure full coverage of the Anthropic Adapter including edge cases for invalid
+        response errors and network errors.
+  - id: refactor-main-error-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/index.ts
+    variables:
+      modification_description: >
+        Refactor the main function in src/index.ts to use a unified error handling mechanism for better consistency and
+        readability.
+  - id: add-utils-constant-module
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-create-module.md
+    context_files:
+      - src/utils.ts
+    variables:
+      module_name: constants
+      module_description: >
+        Create a module to store commonly used constants like error messages and API URLs to enhance maintainability and
+        reduce duplication across the codebase.
+  - id: add-error-handling-dashboard
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/health.ts
+    variables:
+      modification_description: >
+        Improve error handling in the health dashboard module to account for possible file read issues and inaccurate
+        memory usage reporting.
