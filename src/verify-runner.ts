@@ -168,3 +168,22 @@ export function fullVerifyCommands(): VerifyCommand[] {
   ];
 }
 
+/**
+ * Security-enhanced verification for critical infrastructure files.
+ * Used when modifying CLI, scheduler, runner, or git-ops.
+ */
+export function securityVerifyCommands(): VerifyCommand[] {
+  return [
+    {
+      label: 'TypeScript Build',
+      command: 'npx',
+      args: ['tsc', '--noEmit'],
+    },
+    {
+      label: 'Security Scan',
+      command: 'npx',
+      args: ['tsx', 'src/security-check-runner.ts'],
+    },
+  ];
+}
+

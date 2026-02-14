@@ -15,6 +15,9 @@ Analyze the current codebase and propose **{{max_tasks}}** high-value tasks. Foc
 4. Utility functions that would reduce duplication
 5. Type safety improvements
 6. Small, focused refactors
+7. New utility modules that add value (monitoring, metrics, notifications)
+8. Incremental improvements to existing infrastructure (if no tests missing)
+9. Read-only CLI commands that improve observability
 
 ## Rules
 

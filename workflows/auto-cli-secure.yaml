@@ -1,0 +1,32 @@
+# Example workflow showing security-enhanced verification
+# Use this for any tasks that modify critical infrastructure
+
+name: add-cli-command-with-security
+description: Add a new CLI command with enhanced security checks
+target_dir: .
+branch: auto/{{task_id}}
+
+variables:
+  task_id: example-task
+
+steps:
+  - id: add-cli-enhancement
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/cli.ts
+    variables:
+      modification_description: >
+        Add a new 'stats' command that displays system statistics:
+        total commits, success rate, average task duration, estimated API costs.
+        Read from tasks/queue.yaml and parse completed tasks.
+        Display in formatted table. Read-only operation, no writes.
+    verify:
+      - label: 'TypeScript Build'
+        command: 'npx'
+        args: ['tsc', '--noEmit']
+      - label: 'Security Scan'
+        command: 'npx'
+        args: ['tsx', 'src/security-check-runner.ts']
+    max_attempts: 3
+    commit_message: 'Auto: {{task_id}} - add CLI stats command'
+

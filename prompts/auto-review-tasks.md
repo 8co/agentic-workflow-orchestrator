@@ -19,14 +19,21 @@ Drop a task if:
 1. It would modify a core/shared type or interface that many files depend on (high blast radius)
 2. It conflicts with or duplicates another task in this batch
 3. It's vague or too broad to complete in a single file change
-4. It modifies infrastructure files (CLI, config, runner, scheduler)
+4. It modifies infrastructure files in a breaking way (see exceptions below)
 5. The description doesn't match the prompt template being used
+6. It adds dangerous operations: eval(), exec(), spawn() outside verify-runner, file deletion with recursive flag
+7. It modifies critical commands: autopilot, schedule (these require human review)
+8. It adds unbounded loops, infinite recursion, or operations without limits
 
 Keep a task if:
 1. It's a focused, single-file change (new module or test)
 2. It adds tests for an untested module
 3. It adds a small utility with no cross-file dependencies
 4. It improves error handling within a single file
+5. It adds a read-only CLI command (stats, show, list, inspect)
+6. It adds monitoring/observability features (metrics, webhooks, logging)
+7. It improves validation or safety checks in existing code
+8. It adds non-breaking enhancements to scheduler, runner, or CLI
 
 ## Output
 
