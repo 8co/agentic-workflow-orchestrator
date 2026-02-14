@@ -2192,3 +2192,56 @@ tasks:
     started_at: 2026-02-14T00:55:19.839Z
     completed_at: 2026-02-14T00:55:24.765Z
     branch: auto/add-error-handling-dashboard
+  - id: add-missing-tests-enhanced-logger
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/enhanced-logger.ts
+    variables:
+      test_target: src/enhanced-logger.ts
+      test_description: >
+        Create tests to cover all methods of the EnhancedLogger class, including private methods, ensuring all log
+        levels (info, warn, error, debug) are handled correctly and file logging works without errors.
+  - id: refactor-queue-manager-error-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/queue-manager.ts
+    variables:
+      modification_description: >
+        Add error handling for all asynchronous operations within the queue-manager module, ensuring that file reading
+        and writing operations are wrapped in try-catch blocks, with appropriate logging for any errors that occur.
+  - id: add-type-safety-enhancements-to-file-writer
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/file-writer.ts
+    variables:
+      modification_description: >
+        Enhance type safety in the file-writer module by refining type definitions and ensuring all functions and
+        variables have explicit TypeScript types defined, including ensuring that parsed file changes strictly conform
+        to the FileChange type.
+  - id: write-tests-errorUtility-enhancements
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/errorUtility.ts
+    variables:
+      test_target: src/errorUtility.ts
+      test_description: >
+        Develop additional tests for the errorUtility module focusing on edge cases, such as handling unknown error
+        types, testing error message formatting, and validating file writing operations for error logs.
+  - id: refactor-health-module
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/health.ts
+    variables:
+      modification_description: >
+        Simplify and enhance the readability of the health status logging by improving the logger usage, refining memory
+        and uptime checks, and removing redundant code paths.
