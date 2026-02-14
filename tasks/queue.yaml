@@ -1097,3 +1097,54 @@ tasks:
     started_at: 2026-02-14T00:34:19.555Z
     completed_at: 2026-02-14T00:34:24.993Z
     branch: auto/write-tests-autonomous-runner-edgeCases
+  - id: write-tests-enhanced-logger-error-case
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/enhanced-logger.ts
+    variables:
+      test_target: src/enhanced-logger.ts
+      test_description: |
+        Add a test case to ensure enhanced logger handles invalid log levels gracefully and logs appropriate messages.
+  - id: add-missing-error-handling-anthropic-adapter
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/adapters/anthropic-adapter.ts
+    variables:
+      modification_description: >
+        Add missing error handling for the scenario where the Anthropic API response has unexpected data. Log the issue
+        and return a generic error message.
+  - id: refactor-health-status-memory-check
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/health.ts
+    variables:
+      modification_description: >
+        Refactor the memory usage warning logic for improved readability and accuracy. Ensure it accounts for different
+        thresholds with warnings appropriately logged.
+  - id: improve-type-safety-git-ops
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/git-ops.ts
+    variables:
+      modification_description: >
+        Improve type safety by defining explicit types for the arguments and return values in the git command execution
+        functions.
+  - id: add-tests-verify-runner
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/verify-runner.ts
+    variables:
+      test_target: src/verify-runner.ts
+      test_description: >
+        Add tests to cover various verify command scenarios, including both success and failure cases. Ensure captured
+        outputs are correctly processed and errors are reported.
