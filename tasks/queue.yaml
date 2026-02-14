@@ -358,7 +358,7 @@ tasks:
     completed_at: 2026-02-14T20:25:02.020Z
     branch: auto/ps-validate-config-values
   - id: ps-error-handling-service-methods
-    status: running
+    status: completed
     workflow: auto
     prompt: prompts/auto-modify-file.md
     project: prompt-scorer-api
@@ -377,8 +377,10 @@ tasks:
         behavior (callers expect thrown errors) but wrap the thrown error with the original error as a cause: throw new
         Error('message', { cause: error }). Use CommonJS. Do not add dependencies. Keep module.exports exactly as-is.
     started_at: 2026-02-14T20:27:05.526Z
+    completed_at: 2026-02-14T20:27:29.379Z
+    branch: auto/ps-error-handling-service-methods
   - id: ps-add-tests-auth-handler
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-write-test.md
     project: prompt-scorer-api
@@ -398,3 +400,4 @@ tasks:
         middleware: should add event.user when requestContext.authorizer exists. 7) authenticateRequest middleware:
         should return 401 when no auth header and no authorizer. Use CommonJS (require/module.exports). Do not use
         TypeScript. Mock event objects should include methodArn, type, headers, path, httpMethod as needed.
+    started_at: 2026-02-14T20:27:29.390Z
