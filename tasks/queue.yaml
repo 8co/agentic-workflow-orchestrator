@@ -3004,7 +3004,7 @@ tasks:
     completed_at: 2026-02-14T01:20:00.288Z
     branch: auto/add-error-handling-ai-agents
   - id: write-missing-tests-enhanced-logger
-    status: running
+    status: completed
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -3014,8 +3014,10 @@ tasks:
       test_description: |
         Write tests for the missing edge cases and error handling paths in the EnhancedLogger module.
     started_at: 2026-02-14T01:20:38.725Z
+    completed_at: 2026-02-14T01:20:46.520Z
+    branch: auto/write-missing-tests-enhanced-logger
   - id: add-tests-state-manager-save-error-handling
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -3024,6 +3026,7 @@ tasks:
       test_target: src/state-manager.ts
       test_description: |
         Develop tests for error handling during the save operation in the StateManager, including file access issues.
+    started_at: 2026-02-14T01:20:46.572Z
   - id: write-tests-aiagents-detailed-error-handling-edge-cases
     status: pending
     workflow: auto
