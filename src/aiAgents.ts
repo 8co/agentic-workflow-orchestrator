@@ -1,11 +1,23 @@
 // AI Agent Connection
 import { networkInterfaces, NetworkInterfaceInfo } from 'os';
+import { createConnection, Socket } from 'net';
 
 export function connectToAIAgents(): void {
   console.log("🔗 Connecting to AI agent APIs...");
   try {
-    // Placeholder for real connection logic
-    throw new Error("Simulation of a connection error."); // Example error for demonstration
+    const aiAgentHost: string = 'ai-agent-api.example.com';
+    const aiAgentPort: number = 443;
+
+    const socket: Socket = createConnection({ host: aiAgentHost, port: aiAgentPort }, () => {
+      console.log('✅ Successfully connected to AI agent APIs.');
+      socket.end();
+    });
+
+    socket.on('error', (error: Error) => {
+      const formattedError: Error = formatError(error) || new Error('Unknown error');
+      handleConnectionError(formattedError);
+    });
+
   } catch (error: unknown) {
     const formattedError: Error | null = formatError(error);
     if (formattedError) {
