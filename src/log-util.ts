@@ -14,22 +14,27 @@ class LogUtil {
   }
 
   private log(level: LogLevel, message: string, error?: Error): void {
-    const logMessage = error ? `${message} - Error: ${error.message}` : message;
-    switch (level) {
-      case 'info':
-        this.logger.info(logMessage);
-        break;
-      case 'warn':
-        this.logger.warn(logMessage);
-        break;
-      case 'error':
-        this.logger.error(logMessage);
-        break;
-      case 'debug':
-        this.logger.debug(logMessage);
-        break;
-      default:
-        this.logger.error(`Unexpected log level: ${level}. ${logMessage}`);
+    try {
+      const logMessage = error ? `${message} - Error: ${error.message}` : message;
+      switch (level) {
+        case 'info':
+          this.logger.info(logMessage);
+          break;
+        case 'warn':
+          this.logger.warn(logMessage);
+          break;
+        case 'error':
+          this.logger.error(logMessage);
+          break;
+        case 'debug':
+          this.logger.debug(logMessage);
+          break;
+        default:
+          throw new Error(`Invalid log level: ${level}`);
+      }
+    } catch (loggingError) {
+      const errorMessage = loggingError instanceof Error ? loggingError.message : 'Unknown error';
+      this.logger.error(`Logging failed for original message: ${message}. Error: ${errorMessage}`);
     }
   }
 
