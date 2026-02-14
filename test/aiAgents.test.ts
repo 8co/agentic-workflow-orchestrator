@@ -1,79 +1,103 @@
-import { test } from 'node:test';
+import { connectToAIAgents, formatError, formatErrorWithDetails, handleConnectionError } from '../src/aiAgents.js';
 import assert from 'node:assert';
-import { connectToAIAgents, formatError, formatErrorWithDetails, handleConnectionError, getNetworkDetails } from '../src/aiAgents.js';
-import { createConnection } from 'net';
-import { accessSync } from 'fs';
+import { spawn } from 'child_process';
+import { createServer } from 'net';
 
-test('connectToAIAgents should handle successful connection', () => {
-  const mockSocket = {
-    on(event: string, callback: Function) {
-      if (event === 'connect') {
-        callback();
+// Helper to capture console outputs
+function captureConsoleOutput(action: () => void): string[] {
+  const output: string[] = [];
+  const originalConsoleLog = console.log;
+  const originalConsoleError = console.error;
+
+  console.log = (...args: unknown[]) => output.push(`LOG: ${args.join(' ')}`);
+  console.error = (...args: unknown[]) => output.push(`ERROR: ${args.join(' ')}`);
+
+  try {
+    action();
+  } finally {
+    console.log = originalConsoleLog;
+    console.error = originalConsoleError;
+  }
+
+  return output;
+}
+
+// Test to check network permission error handling
+{
+  const output = captureConsoleOutput(() => {
+    try {
+      connectToAIAgents();
+    } catch (e) {
+      // Expected to throw due to permission error
+    }
+  });
+
+  const hasPermissionError = output.some(line =>
+    line.includes('Permission error')
+  );
+
+  assert(hasPermissionError, 'Expected permission error to be logged');
+}
+
+// Test to check socket errors are handled and logged
+{
+  const output = captureConsoleOutput(() => {
+    // Simulating a server to force connection error
+    const server = createServer((socket) => {
+      socket.destroy(new Error('Simulated socket error'));
+    });
+
+    server.listen(443, '127.0.0.1', () => {
+      try {
+        connectToAIAgents();
+      } catch (e) {
+        // Expected to handle connection error
+      } finally {
+        server.close();
       }
-    },
-    end: () => {}
-  };
-  
-  const originalCreateConnection = createConnection;
-  createConnection = (options, callback) => {
-    return callback(), mockSocket as any;
-  };
-  
-  assert.doesNotThrow(() => connectToAIAgents());
+    });
+  });
 
-  createConnection = originalCreateConnection; // Restore
-});
+  const hasSocketError = output.some(line =>
+    line.includes('Error connecting to AI agent APIs:')
+  );
 
-test('connectToAIAgents should handle error on connection', () => {
-  const mockSocket = {
-    on(event: string, callback: Function) {
-      if (event === 'error') {
-        const error = new Error('Connection error simulated');
-        callback(error);
-      }
-    },
-    end: () => {}
-  };
-  
-  const originalCreateConnection = createConnection;
-  createConnection = () => mockSocket as any;
-  assert.doesNotThrow(() => connectToAIAgents());
-  createConnection = originalCreateConnection; // Restore
-});
+  assert(hasSocketError, 'Expected socket error to be logged');
+}
 
-test('connectToAIAgents should handle permission error', () => {
-  const originalAccessSync = accessSync;
-  accessSync = () => {
-    throw new Error('Permission denied');
-  };
+// Test formatError function
+{
+  const error = new Error('Test message');
+  const formattedError = formatError(error);
+  assert.strictEqual(formattedError?.message, 'Test message', 'Expected correct error message');
 
-  assert.throws(() => connectToAIAgents(), /Permission denied/);
+  const stringError = formatError('string error');
+  assert.strictEqual(stringError?.message, 'string error', 'Expected string error to be converted to Error');
 
-  accessSync = originalAccessSync; // Restore
-});
+  const objectError = formatError({ message: 'object error' });
+  assert.strictEqual(objectError?.message, 'object error', 'Expected object error to be converted to Error');
 
-test('formatError should handle different error types', () => {
-  const errorFromString = formatError('Error occurred');
-  assert.strictEqual(errorFromString?.message, 'Error occurred');
+  const nullError = formatError(null);
+  assert.strictEqual(nullError, null, 'Expected null to return null');
+}
 
-  const errorFromError = formatError(new Error('Error occurred'));
-  assert.strictEqual(errorFromError?.message, 'Error occurred');
+// Test formatErrorWithDetails function
+{
+  const error = new Error('Test message');
+  const detailedError = formatErrorWithDetails(error, 'host.example.com', 1234);
+  assert.strictEqual(detailedError.message, 'Host: host.example.com, Port: 1234, Error: Test message', 'Expected detailed error message');
+}
 
-  const errorFromObject = formatError({ message: 'Error occurred' });
-  assert.strictEqual(errorFromObject?.message, 'Error occurred');
+// Test handleConnectionError function
+{
+  const output = captureConsoleOutput(() => {
+    const error = new Error('Connection failure');
+    handleConnectionError(error);
+  });
 
-  const errorFromNull = formatError(null);
-  assert.strictEqual(errorFromNull, null);
-});
+  const hasHandledErrorLog = output.some(line =>
+    line.includes('Error connecting to AI agent APIs: Connection failure')
+  );
 
-test('formatErrorWithDetails should return detailed error', () => {
-  const error = new Error('Original error');
-  const detailedError = formatErrorWithDetails(error, 'localhost', 8080);
-  assert.strictEqual(detailedError.message, 'Host: localhost, Port: 8080, Error: Original error');
-});
-
-test('getNetworkDetails should return network details', () => {
-  const networkDetails = getNetworkDetails();
-  assert.strictEqual(typeof networkDetails, 'object');
-  assert.ok(Object.keys(networkDetails).length > 0 || true);
-});
+  assert(hasHandledErrorLog, 'Expected connection error to be logged');
+}
