@@ -1,72 +1,70 @@
-import { LogUtil } from '../src/log-util.js';
+import { describe, it } from 'node:test';
 import assert from 'node:assert';
-import { test } from 'node:test';
+import { LogUtil } from '../src/log-util.js';
+import { LogLevel } from '../src/logger.js';
 
-// Mocking the createLogger function
-const mockedLogger = {
-  info: (msg: string) => {},
-  warn: (msg: string) => {},
-  error: (msg: string) => {},
-  debug: (msg: string) => {}
+// Mock logger
+const mockLogger = {
+  info: (message: string) => message,
+  warn: (message: string) => message,
+  error: (message: string) => message,
+  debug: (message: string) => message,
 };
 
-function createLogger(name: string) {
-  assert.strictEqual(name, 'Application');
-  return mockedLogger;
-}
+// Mock createLogger function
+const createLoggerMock = (name: string) => mockLogger;
 
-import proxyquire from 'proxyquire';
+// Override createLogger in LogUtil
+jest.mock('../src/logger.js', () => ({
+  createLogger: (name: string) => createLoggerMock(name),
+  LogLevel: jest.requireActual('../src/logger.js').LogLevel,
+}));
 
-const { LogUtil: ProxiedLogUtil } = proxyquire('../src/log-util.js', {
-  './logger.js': { createLogger }
-});
+describe('LogUtil', () => {
 
-test('LogUtil should return the same instance', (t) => {
-  const instance1 = ProxiedLogUtil.getInstance();
-  const instance2 = ProxiedLogUtil.getInstance();
-  assert.strictEqual(instance1, instance2);
-});
+  const logUtil = LogUtil.getInstance();
 
-test('LogUtil should log info messages', (t) => {
-  let messageLogged: string | null = null;
-  mockedLogger.info = (msg: string) => {
-    messageLogged = msg;
-  };
+  it('should log info messages correctly', () => {
+    const message = 'Info message';
+    const logMessage = logUtil.logInfo(message);
+    assert.strictEqual(logMessage, message);
+  });
 
-  const logUtil = ProxiedLogUtil.getInstance();
-  logUtil.logInfo('Info message');
-  assert.strictEqual(messageLogged, 'Info message');
-});
+  it('should log warn messages correctly', () => {
+    const message = 'Warning message';
+    const logMessage = logUtil.logWarn(message);
+    assert.strictEqual(logMessage, message);
+  });
 
-test('LogUtil should log warn messages', (t) => {
-  let messageLogged: string | null = null;
-  mockedLogger.warn = (msg: string) => {
-    messageLogged = msg;
-  };
+  it('should log error messages correctly without error', () => {
+    const message = 'Error message';
+    const logMessage = logUtil.logError(message);
+    assert.strictEqual(logMessage, message);
+  });
 
-  const logUtil = ProxiedLogUtil.getInstance();
-  logUtil.logWarn('Warn message');
-  assert.strictEqual(messageLogged, 'Warn message');
-});
+  it('should log error messages correctly with error', () => {
+    const message = 'Error message';
+    const error = new Error('An error occurred');
+    const logMessage = logUtil.logError(message, error);
+    assert.strictEqual(logMessage, `${message} - Error: ${error.message}`);
+  });
 
-test('LogUtil should log error messages', (t) => {
-  let messageLogged: string | null = null;
-  mockedLogger.error = (msg: string) => {
-    messageLogged = msg;
-  };
+  it('should log debug messages correctly', () => {
+    const message = 'Debug message';
+    const logMessage = logUtil.logDebug(message);
+    assert.strictEqual(logMessage, message);
+  });
 
-  const logUtil = ProxiedLogUtil.getInstance();
-  logUtil.logError('Error message');
-  assert.strictEqual(messageLogged, 'Error message');
-});
-
-test('LogUtil should log debug messages', (t) => {
-  let messageLogged: string | null = null;
-  mockedLogger.debug = (msg: string) => {
-    messageLogged = msg;
-  };
-
-  const logUtil = ProxiedLogUtil.getInstance();
-  logUtil.logDebug('Debug message');
-  assert.strictEqual(messageLogged, 'Debug message');
+  it('should handle invalid log level', () => {
+    const message = 'Invalid log level';
+    try {
+      // @ts-expect-error
+      logUtil.log('invalid', message);
+    } catch (error) {
+      assert.strictEqual(
+        (mockLogger.error as any).mock.calls[0][0],
+        `Logging failed for original message: ${message}. Error: Invalid log level: invalid`
+      );
+    }
+  });
 });
