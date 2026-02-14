@@ -13,6 +13,14 @@ interface OpenAIConfig {
   model: string;
 }
 
+// Ensure that the API key is a non-empty string and model is a specified set of allowed values.
+const allowedModels: readonly string[] = ['text-davinci-003', 'gpt-3.5-turbo', 'gpt-4'];
+
+function isValidOpenAIConfig(config: OpenAIConfig): boolean {
+  return typeof config.apiKey === 'string' && config.apiKey.trim() !== '' &&
+    allowedModels.includes(config.model);
+}
+
 interface CompletionResponse {
   id: string;
   object: string;
@@ -36,6 +44,10 @@ interface CompletionChoice {
 }
 
 export function createOpenAIAdapter(config: OpenAIConfig, adapterName: 'openai' | 'codex' = 'openai'): AgentAdapter {
+  if (!isValidOpenAIConfig(config)) {
+    throw new Error('Invalid OpenAI configuration');
+  }
+
   const client = new OpenAI({ apiKey: config.apiKey });
 
   return {
