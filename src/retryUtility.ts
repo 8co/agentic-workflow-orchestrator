@@ -3,11 +3,11 @@ export async function retryAsync<T>(
   retries: number,
   delayMs: number
 ): Promise<T> {
-  let attempt = 0;
+  let attempt: number = 0;
   while (attempt < retries) {
     try {
       return await operation();
-    } catch (error) {
+    } catch (error: unknown) {
       if (attempt === retries - 1) {
         throw new Error(`Operation failed after ${retries} attempts: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
@@ -19,5 +19,5 @@ export async function retryAsync<T>(
 }
 
 function delay(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise<void>(resolve => setTimeout(resolve, ms));
 }
