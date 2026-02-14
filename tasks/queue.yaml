@@ -1316,7 +1316,7 @@ tasks:
     completed_at: 2026-02-14T00:40:36.421Z
     branch: auto/refactor-health-function-memory-usage
   - id: write-tests-adapters-openai-edge-cases
-    status: running
+    status: failed
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -1326,8 +1326,28 @@ tasks:
       test_description: |
         Write tests for edge cases in the OpenAI adapter, such as API failures or unexpected response structures.
     started_at: 2026-02-14T00:40:57.929Z
+    completed_at: 2026-02-14T00:41:26.513Z
+    error: >-
+      # Verification Errors
+
+
+      The following commands failed. Fix ALL errors.
+
+
+      ## TypeScript Build (exit 2)
+
+      ```
+
+      src/adapters/openai-adapter.test.ts(21,19): error TS2503: Cannot find namespace 'jest'.
+
+      src/adapters/openai-adapter.test.ts(24,12): error TS7017: Element implicitly has an 'any' type because type
+      'typeof globalThis' has no index signature.
+
+      src/adapters/openai-adapter.test.ts(25,18): error TS2304: Cannot find name 'jest'.
+
+      ```
   - id: refactor-file-writer-utility-functions
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-modify-file.md
     context_files:
@@ -1335,6 +1355,7 @@ tasks:
     variables:
       modification_description: |
         Refactor utility functions in the file-writer module to reduce code duplication and improve clarity.
+    started_at: 2026-02-14T00:41:26.544Z
   - id: write-tests-main-function-edge-cases
     status: pending
     workflow: auto
