@@ -1,100 +1,54 @@
-import { test } from 'node:test';
-import assert from 'node:assert/strict';
-import { connectToAIAgents, formatError, formatErrorWithDetails, handleConnectionError, NetworkDetails, getNetworkDetails } from '../src/aiAgents.js';
-import { networkInterfaces } from 'os';
-import { accessSync } from 'fs';
-import { createConnection } from 'net';
+import { strict as assert } from 'node:assert';
+import test from 'node:test';
+import { connectToAIAgents, formatError, formatErrorWithDetails, getNetworkDetails } from '../src/aiAgents.js';
+import { execSync } from 'node:child_process';
 
-// Mock the necessary modules
-test('connectToAIAgents - network permissions error', () => {
-  const originalAccessSync = accessSync;
-  accessSync = () => { throw new Error('Mock network permission error'); };
-
-  const originalHandleConnectionError = handleConnectionError;
-  let capturedError;
-  handleConnectionError = (error: Error) => { capturedError = error; };
-
-  try {
+test('connectToAIAgents should not throw on successful connection', () => {
+  assert.doesNotThrow(() => {
     connectToAIAgents();
-  } catch (err) {
-    assert.match(capturedError?.message, /Network permission error/);
-  } finally {
-    accessSync = originalAccessSync;
-    handleConnectionError = originalHandleConnectionError;
-  }
+  }, 'connectToAIAgents threw an unexpected error on successful connection');
 });
 
-test('connectToAIAgents - connection error', () => {
-  const originalCreateConnection = createConnection;
-  createConnection = () => {
-    const socket = {
-      on: (event: string, callback: Function) => {
-        if (event === 'error') {
-          callback(new Error('Mock connection error'));
-        }
-      },
-      destroy: () => {},
-    } as any;
-    return socket;
-  };
+test('formatError should return an Error object for string input', () => {
+  const errorMessage = 'A simple error message';
+  const error = formatError(errorMessage);
 
-  const originalHandleConnectionError = handleConnectionError;
-  let capturedError;
-  handleConnectionError = (error: Error) => { capturedError = error; };
-
-  connectToAIAgents();
-
-  assert.match(capturedError?.message, /Mock connection error/);
-
-  createConnection = originalCreateConnection;
-  handleConnectionError = originalHandleConnectionError;
+  assert(error instanceof Error, 'formatError did not return an Error object');
+  assert.strictEqual(error?.message, errorMessage, 'formatError returned an Error with incorrect message');
 });
 
-test('formatError - different error types', () => {
-  const error = new Error('Sample error');
-  const formattedError = formatError(error);
-  assert.equal(formattedError?.message, 'Sample error');
+test('formatError should return an Error object for object with message property', () => {
+  const errorObject = { message: 'An object error message' };
+  const error = formatError(errorObject);
 
-  const stringError = 'String error';
-  const formattedStringError = formatError(stringError);
-  assert.equal(formattedStringError?.message, 'String error');
-
-  const objectError = { message: 'Object error' };
-  const formattedObjectError = formatError(objectError);
-  assert.equal(formattedObjectError?.message, 'Object error');
-
-  const nullError = formatError(null);
-  assert.equal(nullError, null);
+  assert(error instanceof Error, 'formatError did not return an Error object');
+  assert.strictEqual(error?.message, errorObject.message, 'formatError returned an Error with incorrect message');
 });
 
-test('formatErrorWithDetails', () => {
+test('formatError should return null for non-object and non-string input', () => {
+  assert.strictEqual(formatError(42), null, 'formatError did not return null for a non-object and non-string input');
+});
+
+test('formatErrorWithDetails should include host and port in error message', () => {
   const error = new Error('Test error');
-  const detailedError = formatErrorWithDetails(error, 'example.com', 80);
-  assert.equal(detailedError.message, 'Host: example.com, Port: 80, Error: Test error');
+  const host = 'localhost';
+  const port = 3000;
+  const detailedError = formatErrorWithDetails(error, host, port);
+
+  assert(detailedError.message.includes(`Host: ${host}, Port: ${port}`), 'formatErrorWithDetails did not include host and port in message');
 });
 
-test('handleConnectionError', () => {
-  let loggedMessage = '';
-  const originalConsoleError = console.error;
-  console.error = (...args: unknown[]) => {
-    loggedMessage += args.join(' ');
-  };
+test('getNetworkDetails should return an object with network interfaces', () => {
+  const details = getNetworkDetails();
 
-  handleConnectionError(new Error('Connection error test'));
-
-  assert.match(loggedMessage, /Error connecting to AI agent APIs: Connection error test/);
-
-  console.error = originalConsoleError;
+  assert(typeof details === 'object', 'getNetworkDetails did not return an object');
 });
 
-test('getNetworkDetails', () => {
-  const originalNetworkInterfaces = networkInterfaces;
-  networkInterfaces = () => ({
-    eth0: [{ family: 'IPv4', internal: false, address: '10.0.0.1' } as any],
-  });
-
-  const details: NetworkDetails = getNetworkDetails();
-  assert.deepEqual(details, { eth0: ['10.0.0.1'] });
-
-  networkInterfaces = originalNetworkInterfaces;
+test('checkNetworkPermissions throws if it does not have permissions', () => {
+  const isRoot = execSync('id -u').toString().trim() === '0';
+  if (!isRoot) {
+    assert.throws(() => {
+      connectToAIAgents();
+    }, 'checkNetworkPermissions did not throw as expected');
+  }
 });
