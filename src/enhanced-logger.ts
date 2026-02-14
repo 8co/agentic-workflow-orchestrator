@@ -54,8 +54,8 @@ class EnhancedLogger {
     try {
       fs.appendFileSync(this.logFilePath, message);
     } catch (error: unknown) {
-      console.error(`[ERROR] Failed to write to log file: ${error instanceof Error ? error.message : String(error)}`);
-      
+      this.logErrorDetail('Failed to write to log file', error);
+
       // Attempt to recreate the log directory and file
       try {
         const logDirectory: string = path.dirname(this.logFilePath);
@@ -64,9 +64,15 @@ class EnhancedLogger {
         }
         fs.appendFileSync(this.logFilePath, message);
       } catch (recoveryError: unknown) {
-        console.error(`[ERROR] Recovery attempt failed: ${recoveryError instanceof Error ? recoveryError.message : String(recoveryError)}`);
+        this.logErrorDetail('Recovery attempt failed', recoveryError);
       }
     }
+  }
+
+  private logErrorDetail(context: string, error: unknown): void {
+    const errorMessage: string = error instanceof Error ? error.message : String(error);
+    const errorStack: string = error instanceof Error && error.stack ? ` Stack: ${error.stack}` : '';
+    console.error(`[ERROR] ${context}: ${errorMessage}.${errorStack}`);
   }
 
   logInfo(message: string): void {
