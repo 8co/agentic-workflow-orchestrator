@@ -2607,3 +2607,56 @@ tasks:
     started_at: 2026-02-14T01:11:53.291Z
     completed_at: 2026-02-14T01:11:59.924Z
     branch: auto/write-tests-state-manager-comprehensive
+  - id: write-tests-enhanced-logger-more-cases
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/enhanced-logger.ts
+    variables:
+      test_target: src/enhanced-logger.ts
+      test_description: >
+        Write comprehensive tests for EnhancedLogger including edge cases such as  file write errors and log message
+        formatting validation across different  levels (info, warn, error, debug).
+  - id: add-tests-state-manager-more-edge-cases
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/state-manager.ts
+    variables:
+      test_target: src/state-manager.ts
+      test_description: >
+        Add tests to cover more edge cases in the State Manager, focusing on  loading malformed JSON files and
+        simulating file access permission  issues during save operations.
+  - id: refactor-health-improve-error-messages
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/health.ts
+    variables:
+      modification_description: >
+        Refactor error logging in the health status functions to include more  descriptive messages that capture
+        specific error types and provide  actionable debug information.
+  - id: improve-type-safety-anthropic-adapter
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/adapters/anthropic-adapter.ts
+    variables:
+      modification_description: >
+        Enhance the type safety of the Anthropic Adapter by ensuring all  functions and response shapes use explicit
+        TypeScript types,  particularly in areas dealing with dynamic API responses.
+  - id: write-tests-aiagents-error-handling-improvement
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/aiAgents.ts
+    variables:
+      test_target: src/aiAgents.ts
+      test_description: >
+        Create tests for the AI Agents module to specifically target and verify  improvements in error handling logic,
+        especially when encountering network  connection errors or unexpected response formats.
