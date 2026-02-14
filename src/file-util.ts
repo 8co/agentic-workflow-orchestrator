@@ -1,4 +1,4 @@
-import { ensureDirectoryAndWriteFile, readFromFile } from './utils.js';
+import { ensureDirectoryAndWriteFile, readFromFile } from './file-helper.js';
 
 export { readFromFile };
 
