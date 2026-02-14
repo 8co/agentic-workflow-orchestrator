@@ -1,6 +1,6 @@
 tasks:
   - id: example-create-module
-    status: running
+    status: completed
     workflow: auto-implement
     prompt: prompts/auto-create-module.md
     context_files:
@@ -10,8 +10,10 @@ tasks:
       module_description: |
         Create a new utility module. This is a sample task demonstrating the queue format.
     started_at: 2026-02-14T13:56:40.206Z
+    completed_at: 2026-02-14T13:56:44.775Z
+    branch: auto/example-create-module
   - id: example-write-tests
-    status: pending
+    status: running
     workflow: auto-implement
     prompt: prompts/auto-write-test.md
     context_files:
@@ -20,6 +22,7 @@ tasks:
       test_target: src/example-module.ts
       test_description: |
         Write tests for the example module. This is a sample task demonstrating test generation.
+    started_at: 2026-02-14T13:56:44.778Z
   - id: improve-error-handling-in-cursor-adapter
     status: pending
     workflow: auto
