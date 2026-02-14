@@ -557,7 +557,7 @@ tasks:
     completed_at: 2026-02-14T00:23:22.833Z
     branch: auto/improve-type-safety-autonomous-runner
   - id: add-error-handling-autonomous-runner
-    status: running
+    status: completed
     workflow: auto
     prompt: prompts/auto-modify-file.md
     context_files:
@@ -567,8 +567,10 @@ tasks:
         Enhance error handling in the Autonomous Runner by adding specific error messages and handling known errors
         within the `executeStep` function.
     started_at: 2026-02-14T00:23:22.847Z
+    completed_at: 2026-02-14T00:23:40.419Z
+    branch: auto/add-error-handling-autonomous-runner
   - id: write-tests-queue-manager-edge-cases
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -578,6 +580,7 @@ tasks:
       test_description: >
         Add tests to cover edge cases in the Queue Manager such as handling missing task files or tasks with missing
         fields in the YAML.
+    started_at: 2026-02-14T00:23:40.431Z
   - id: refactor-git-ops-error-handling
     status: pending
     workflow: auto
