@@ -40,8 +40,13 @@ export function connectToAIAgents(): void {
     });
 
   } catch (error: unknown) {
-    const formattedError: Error = formatError(error) || new Error("An unknown error occurred while initiating connection.");
-    handleConnectionError(formattedError);
+    try {
+      const formattedError: Error = formatError(error) || new Error("An unknown error occurred while initiating connection.");
+      handleConnectionError(formattedError);
+    } catch (innerError: unknown) {
+      const criticalError: Error = formatError(innerError) || new Error("An unknown critical error occurred.");
+      logCriticalError(criticalError);
+    }
   }
 }
 
@@ -61,6 +66,12 @@ function logConnectionEvent(level: 'info' | 'success' | 'error', message: string
   const timestamp: string = new Date().toISOString();
   const networkDetails: string = JSON.stringify(getNetworkDetails(), null, 2);
   console.log(`[${timestamp}] [${level.toUpperCase()}] ${message} Context:`, context, 'Network Details:', networkDetails);
+}
+
+function logCriticalError(error: Error): void {
+  const errorMessage: string = `CRITICAL ERROR: ${error.message}`;
+  const errorStack: string = error.stack ? ` Stack trace: ${error.stack}` : '';
+  console.error(`[${new Date().toISOString()}] [CRITICAL] ${errorMessage}${errorStack}`);
 }
 
 export function formatError(error: unknown): Error | null {
