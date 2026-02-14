@@ -2948,3 +2948,25 @@ tasks:
     started_at: 2026-02-14T01:18:51.507Z
     completed_at: 2026-02-14T01:18:57.400Z
     branch: auto/write-tests-for-retryUtility
+  - id: write-tests-default-verify-commands
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/verify-runner.ts
+    variables:
+      test_target: src/verify-runner.ts
+      test_description: >
+        Write unit tests for the defaultVerifyCommands function to ensure it returns the correct set of verification
+        commands and handles edge cases appropriately.
+  - id: add-networkErrorUtil-edge-case-tests
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/utils/networkErrorUtil.ts
+    variables:
+      test_target: src/utils/networkErrorUtil.ts
+      test_description: >
+        Develop thorough tests for the isNetworkError function, including various edge cases to ensure it correctly
+        identifies different types of network-related errors.

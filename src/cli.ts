@@ -323,9 +323,10 @@ async function main() {
 
     case 'queue': {
       const scheduler = createScheduler({
-        basePath,
+        basePath: workingPath,
         adapters,
         defaultAgent: agent ?? config.defaultAgent,
+        projectConfig,
       });
       await scheduler.status();
       break;
