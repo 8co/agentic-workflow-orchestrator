@@ -6666,3 +6666,14 @@ tasks:
     started_at: 2026-02-14T03:05:42.517Z
     completed_at: 2026-02-14T03:05:53.205Z
     branch: auto/refactor-ai-agents-to-improve-handling
+  - id: add-tests-health-function
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/health.ts
+    variables:
+      test_target: src/health.ts
+      test_description: >
+        Write tests for the getHealthStatus function to validate its behavior under different system states, including
+        edge cases like extremely high memory usage.
