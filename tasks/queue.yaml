@@ -3691,7 +3691,7 @@ tasks:
       src/networkUtil.ts(11,21): error TS2552: Cannot find name 'Image'. Did you mean 'img'?
       ```
   - id: add-tests-anthropic-adapter-exception-scenarios
-    status: running
+    status: completed
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -3701,8 +3701,10 @@ tasks:
       test_description: |
         Add tests to handle exception scenarios like malformed responses or API key failures.
     started_at: 2026-02-14T01:50:15.114Z
+    completed_at: 2026-02-14T01:50:32.307Z
+    branch: auto/add-tests-anthropic-adapter-exception-scenarios
   - id: improve-type-safety-scheduler-module
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-modify-file.md
     context_files:
@@ -3710,6 +3712,7 @@ tasks:
     variables:
       modification_description: |
         Enhance type safety in the scheduler module by adding explicit type annotations.
+    started_at: 2026-02-14T01:50:32.376Z
   - id: add-error-handling-to-project-registry
     status: pending
     workflow: auto
