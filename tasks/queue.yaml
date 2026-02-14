@@ -339,7 +339,7 @@ tasks:
     completed_at: 2026-02-14T20:11:47.066Z
     branch: auto/create-protected-files-config
   - id: ps-validate-config-values
-    status: running
+    status: completed
     workflow: auto
     prompt: prompts/auto-modify-file.md
     project: prompt-scorer-api
@@ -355,3 +355,50 @@ tasks:
         Call validateConfig() at module load time. Keep the existing module.exports structure exactly as-is. Use
         CommonJS (require/module.exports). Do not add any new dependencies.
     started_at: 2026-02-14T20:24:55.194Z
+    completed_at: 2026-02-14T20:25:02.020Z
+    branch: auto/ps-validate-config-values
+  - id: ps-error-handling-service-methods
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    project: prompt-scorer-api
+    context_files:
+      - src/services/promptAnalyzer.js
+      - src/lib/dynamodb.js
+    variables:
+      modification_description: >
+        Improve error handling in the promptAnalyzer service methods. For each async function
+        (createPrompt, getPrompt, getUserPrompts, deletePrompt, analyzeAndStorePrompt,
+        getOptimizationSuggestions, generateAndStorePrompt, optimizeAndStorePrompt): 1) In the
+        catch block, log the FULL error object with structured context including the function name,
+        input parameters (userId, id), and the error stack trace — use console.error with an object
+        like { function: 'createPrompt', userId, error: error.message, stack: error.stack }. 2) For
+        DynamoDB errors, check error.name for 'ConditionalCheckFailedException',
+        'ResourceNotFoundException', 'ProvisionedThroughputExceededException' and log a specific
+        warning for each. 3) Keep the existing throw behavior (callers expect thrown errors) but wrap
+        the thrown error with the original error as a cause: throw new Error('message', { cause: error }).
+        Use CommonJS. Do not add dependencies. Keep module.exports exactly as-is.
+  - id: ps-add-tests-auth-handler
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    project: prompt-scorer-api
+    context_files:
+      - src/handlers/auth.js
+      - src/lib/auth.js
+    variables:
+      test_target: src/handlers/auth.js
+      test_description: >
+        Write Jest tests for the authorize and authenticateRequest functions in the auth handler.
+        Use Jest (the project's test framework). Create src/handlers/__tests__/auth.test.js. Mock
+        the ../lib/auth module (verifyToken and extractToken) using jest.mock. Test cases: 1) TOKEN
+        authorizer event: should return Allow policy with user context when token is valid. 2) TOKEN
+        authorizer event: should return Deny policy when authorizationToken is missing. 3) TOKEN
+        authorizer event: should return Deny policy when verifyToken throws. 4) HTTP API event:
+        should return Allow policy for public endpoint without auth header (/prompts/public GET).
+        5) HTTP API event: should return Deny policy when Authorization header is missing for
+        non-public endpoint. 6) authenticateRequest middleware: should add event.user when
+        requestContext.authorizer exists. 7) authenticateRequest middleware: should return 401 when
+        no auth header and no authorizer. Use CommonJS (require/module.exports). Do not use
+        TypeScript. Mock event objects should include methodArn, type, headers, path, httpMethod as
+        needed.
