@@ -447,3 +447,26 @@ tasks:
     started_at: 2026-02-14T00:14:07.393Z
     completed_at: 2026-02-14T00:14:20.048Z
     branch: auto/write-tests-queue-manager
+  - id: add-tests-health-module
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/health.ts
+    variables:
+      test_target: src/health.ts
+      test_description: >
+        Implement missing tests for all functions in the health module, ensuring both positive and  negative scenarios
+        are covered. Validate accurate health status reporting and logging mechanisms.
+  - id: create-testing-utility-module
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-create-module.md
+    context_files:
+      - src/utils.ts
+    variables:
+      module_name: testing-util
+      module_description: >
+        Create a utility module for common test functions like mocking file reads and writes,  shared test data
+        structures, and any repetitive setup or teardown logic for test suites.  This aims to reduce redundancy across
+        tests involving file operations.
