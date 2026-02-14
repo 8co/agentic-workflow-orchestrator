@@ -71,13 +71,18 @@ function generateErrorMessage(err: unknown): string {
 }
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  const timeout = new Promise<T>((_, reject) => {
-    const id = setTimeout(() => {
-      clearTimeout(id);
-      reject(new Error('timeout'));
-    }, ms);
-  });
-  return Promise.race([promise, timeout]);
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => {
+      const id = setTimeout(() => {
+        clearTimeout(id);
+        reject(new Error('timeout'));
+      }, ms);
+    }).catch((err) => {
+      console.error(`⏰ Timeout Error: ${err.message}`);
+      throw new Error('timeout');
+    })
+  ]);
 }
 
 export function createOpenAIAdapter(config: OpenAIConfig, adapterName: 'openai' | 'codex' = 'openai'): AgentAdapter {
