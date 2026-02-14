@@ -4,6 +4,8 @@
  * Prevents: code execution, file deletion, unbounded operations.
  */
 
+import * as fs from 'fs';
+
 export interface SecurityViolation {
   pattern: string;
   line: number;
@@ -168,3 +170,23 @@ export function requiresSecurityScan(filePath: string): boolean {
   return SECURITY_CRITICAL_FILES.some(critical => filePath.endsWith(critical));
 }
 
+/**
+ * Read a file and scan for security issues, with enhanced error handling
+ */
+export function readFileAndScan(filePath: string): SecurityScanResult {
+  try {
+    const code = fs.readFileSync(filePath, 'utf8');
+    return scanCode(code, filePath);
+  } catch (error) {
+    console.error(`Error reading file ${filePath}:`, (error as Error).message);
+    return {
+      safe: false,
+      violations: [{
+        pattern: '',
+        line: 0,
+        severity: 'critical',
+        message: `Error reading file: ${(error as Error).message}`
+      }]
+    };
+  }
+}
