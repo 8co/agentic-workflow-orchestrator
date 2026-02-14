@@ -40,7 +40,7 @@ interface CompletionChoice {
   finish_reason: string;
 }
 
-function getErrorMessage(err: Error): string {
+function mapErrorMessage(message: string): string | undefined {
   const errorMapping: Record<string, string> = {
     'Network Error': 'Network error occurred. Please check your connection and try again.',
     'timeout': 'Request timed out. Please try again later.',
@@ -54,13 +54,20 @@ function getErrorMessage(err: Error): string {
     '429': 'Too many requests: You have hit the rate limit. Try again later.',
     'Malformed response': 'Received a malformed response from OpenAI. Please try again later.'
   };
-
+  
   for (const key in errorMapping) {
-    if (err.message.includes(key)) {
+    if (message.includes(key)) {
       return errorMapping[key];
     }
   }
-  return 'An unexpected error occurred. Please try again later.';
+  return undefined;
+}
+
+function generateErrorMessage(err: unknown): string {
+  if (err instanceof Error) {
+    return mapErrorMessage(err.message) || 'An unexpected error occurred. Please try again later.';
+  }
+  return 'An unknown error occurred.';
 }
 
 export function createOpenAIAdapter(config: OpenAIConfig, adapterName: 'openai' | 'codex' = 'openai'): AgentAdapter {
@@ -131,13 +138,7 @@ export function createOpenAIAdapter(config: OpenAIConfig, adapterName: 'openai' 
         };
       } catch (err: unknown) {
         const durationMs: number = Date.now() - start;
-        let errorMessage: string;
-
-        if (err instanceof Error) {
-          errorMessage = getErrorMessage(err);
-        } else {
-          errorMessage = 'An unknown error occurred.';
-        }
+        const errorMessage: string = generateErrorMessage(err);
 
         console.log(`\n❌ Error Details: ${err instanceof Error ? err.stack : String(err)}`);
         console.log(`│ ❌ Error: ${errorMessage}`);
