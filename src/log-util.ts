@@ -15,7 +15,7 @@ class LogUtil {
 
   private log(level: LogLevel, message: string, error?: Error): void {
     try {
-      const logMessage = error ? `${message} - Error: ${error.message}` : message;
+      const logMessage: string = error ? `${message} - Error: ${error.message}` : message;
       switch (level) {
         case 'info':
           this.logger.info(logMessage);
@@ -33,7 +33,7 @@ class LogUtil {
           throw new Error(`Invalid log level: ${level}`);
       }
     } catch (loggingError) {
-      const errorMessage = loggingError instanceof Error ? loggingError.message : 'Unknown error';
+      const errorMessage: string = loggingError instanceof Error ? loggingError.message : 'Unknown error';
       this.logger.error(`Logging failed for original message: ${message}. Error: ${errorMessage}`);
     }
   }
