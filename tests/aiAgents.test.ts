@@ -1,47 +1,99 @@
-import { test } from 'node:test';
+import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert';
 import { connectToAIAgents, formatError, getNetworkDetails, NetworkDetails } from '../src/aiAgents.js';
 import { networkInterfaces } from 'os';
+import sinon from 'sinon';
 
-test('connectToAIAgents should log connection errors correctly', () => {
-  const consoleErrorMock = jest.spyOn(console, 'error').mockImplementation();
-  const consoleLogMock = jest.spyOn(console, 'log').mockImplementation();
+// Helper function to capture console.error output
+function captureConsoleError(callback: () => void): string {
+  let errorOutput = '';
+  const originalConsoleError = console.error;
 
-  connectToAIAgents();
+  console.error = (message?: any, ...optionalParams: any[]) => {
+    errorOutput += `${message} ${optionalParams.join(' ')}`;
+  };
 
-  assert(consoleLogMock.mock.calls[0][0] === "🔗 Connecting to AI agent APIs...");
-  assert(consoleErrorMock.mock.calls.length > 0);
-  assert(consoleErrorMock.mock.calls[0][0].includes("❌ Error connecting to AI agent APIs: Simulation of a connection error."));
+  try {
+    callback();
+  } finally {
+    console.error = originalConsoleError;
+  }
 
-  consoleErrorMock.mockRestore();
-  consoleLogMock.mockRestore();
-});
+  return errorOutput;
+}
 
-test('formatError should correctly format known errors and return null for unknown types', () => {
-  const errorInstance = new Error('Test Error');
-  const formattedError = formatError(errorInstance);
-  
-  assert(formattedError instanceof Error);
-  assert.strictEqual(formattedError?.message, 'Test Error');
+describe('AI Agent Connection', () => {
+  describe('connectToAIAgents', () => {
+    it('should log connection errors with network details', () => {
+      const errorOutput = captureConsoleError(() => {
+        connectToAIAgents();
+      });
 
-  const stringError = formatError('String Error');
-  assert(stringError instanceof Error);
-  assert.strictEqual(stringError?.message, 'String Error');
+      assert.match(errorOutput, /❌ Error connecting to AI agent APIs: Simulation of a connection error/);
+      assert.match(errorOutput, /Network Details:/);
+    });
+  });
 
-  const unknownError = formatError(123);
-  assert.strictEqual(unknownError, null);
-});
+  describe('formatError', () => {
+    it('should format Error objects correctly', () => {
+      const error = new Error('Test Error');
+      const formattedError = formatError(error);
+      assert.strictEqual(formattedError, error);
+    });
 
-test('getNetworkDetails should return non-internal IPv4 interfaces', () => {
-  const originalNetworkInterfaces = networkInterfaces;
-  const mockNetworkInterfaces = jest.fn(() => ({
-    eth0: [{ family: 'IPv4', internal: false, address: '192.168.1.1', cidr: null, mac: '', netmask: '', scopeid: 0 }],
-    lo: [{ family: 'IPv4', internal: true, address: '127.0.0.1', cidr: null, mac: '', netmask: '', scopeid: 0 }]
-  }));
-  jest.spyOn(os, 'networkInterfaces').mockImplementation(mockNetworkInterfaces);
+    it('should convert string errors to Error objects', () => {
+      const errorString = 'Test Error String';
+      const formattedError = formatError(errorString);
+      assert.strictEqual(formattedError?.message, errorString);
+    });
 
-  const networkDetails: NetworkDetails = getNetworkDetails();
-  assert.deepStrictEqual(networkDetails, { eth0: ['192.168.1.1'] });
+    it('should return null for unknown error types', () => {
+      const formattedError = formatError({});
+      assert.strictEqual(formattedError, null);
+    });
+  });
 
-  jest.mocked(networkInterfaces).mockRestore();
+  describe('getNetworkDetails', () => {
+    let mockedNetworkInterfaces: sinon.SinonStub;
+
+    beforeEach(() => {
+      mockedNetworkInterfaces = sinon.stub(networkInterfaces);
+    });
+
+    afterEach(() => {
+      mockedNetworkInterfaces.restore();
+    });
+
+    it('should return network details with IPv4 addresses', () => {
+      mockedNetworkInterfaces.returns({
+        eth0: [
+          { address: '192.168.1.5', family: 'IPv4', internal: false }
+        ]
+      });
+
+      const networkDetails = getNetworkDetails();
+      const expected: NetworkDetails = { eth0: ['192.168.1.5'] };
+      assert.deepStrictEqual(networkDetails, expected);
+    });
+
+    it('should not include internal or non-IPv4 addresses', () => {
+      mockedNetworkInterfaces.returns({
+        eth0: [
+          { address: '192.168.1.5', family: 'IPv4', internal: false },
+          { address: '10.0.0.1', family: 'IPv4', internal: true }, // internal
+          { address: 'fe80::1', family: 'IPv6', internal: false }, // IPv6
+        ]
+      });
+
+      const networkDetails = getNetworkDetails();
+      const expected: NetworkDetails = { eth0: ['192.168.1.5'] };
+      assert.deepStrictEqual(networkDetails, expected);
+    });
+
+    it('should return an empty object if no networks are available', () => {
+      mockedNetworkInterfaces.returns({});
+      const networkDetails = getNetworkDetails();
+      assert.deepStrictEqual(networkDetails, {});
+    });
+  });
 });
