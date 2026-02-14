@@ -61,8 +61,8 @@ class EnhancedLogger {
         attempt++;
         this.logRetryErrorDetail(attempt, error);
 
-        // Attempt to recreate the log directory if necessary
         if (attempt < this.maxRetries) {
+          // Attempt to recreate the log directory if necessary
           this.recoverLogDirectory();
         } else {
           // Emit a final warning to console if all retries have failed
@@ -75,6 +75,10 @@ class EnhancedLogger {
   private logRetryErrorDetail(attempt: number, error: unknown): void {
     const errorDescription: string = this.getErrorDescription(error);
     console.error(`[ERROR] Attempt ${attempt} to write to log file failed: ${errorDescription}`);
+
+    if (this.isTimeoutError(error)) {
+      console.error(`[ERROR] The operation timed out. Retrying attempt ${attempt + 1}...`);
+    }
   }
 
   private logFinalFailure(attempt: number, error: unknown): void {
@@ -108,6 +112,10 @@ class EnhancedLogger {
 
   private isError(obj: unknown): obj is Error {
     return obj instanceof Error;
+  }
+
+  private isTimeoutError(error: unknown): boolean {
+    return this.isError(error) && error.message.includes('ETIMEDOUT');
   }
 
   logInfo(message: string): void {
