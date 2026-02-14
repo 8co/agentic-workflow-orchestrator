@@ -4522,7 +4522,7 @@ tasks:
     completed_at: 2026-02-14T02:04:27.407Z
     branch: auto/refactor-log-util-error-handling
   - id: add-tests-scheduler-error-handling
-    status: running
+    status: failed
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -4533,8 +4533,45 @@ tasks:
         Write tests to simulate various error and exception scenarios within the scheduler module, focusing on handling
         unexpected failures gracefully.
     started_at: 2026-02-14T02:04:27.479Z
+    completed_at: 2026-02-14T02:05:01.975Z
+    error: >-
+      # Verification Errors
+
+
+      The following commands failed. Fix ALL errors.
+
+
+      ## TypeScript Build (exit 2)
+
+      ```
+
+      src/scheduler.test.ts(3,19): error TS2307: Cannot find module 'sinon' or its corresponding type declarations.
+
+      src/scheduler.test.ts(10,3): error TS2739: Type '{ summary: any; next: any; markRunning: any; markCompleted: any;
+      markFailed: any; print: any; }' is missing the following properties from type '{ list(): Promise<QueueTask[]>;
+      next(): Promise<QueueTask | null>; summary(): Promise<Record<TaskStatus, number>>; ... 4 more ...; print():
+      Promise<...>; }': list, resetTask
+
+      src/scheduler.test.ts(42,3): error TS2322: Type '"agent-type"' is not assignable to type 'AgentType'.
+
+      src/scheduler.test.ts(58,21): error TS2339: Property 'resolves' does not exist on type '() => Promise<QueueTask |
+      null>'.
+
+      src/scheduler.test.ts(61,14): error TS2339: Property 'resolves' does not exist on type '(workflowPath: string,
+      basePath: string, overrides?: Record<string, string> | undefined) => Promise<AutoExecutionResult>'.
+
+      src/scheduler.test.ts(73,21): error TS2339: Property 'resolves' does not exist on type '() => Promise<QueueTask |
+      null>'.
+
+      src/scheduler.test.ts(76,14): error TS2339: Property 'rejects' does not exist on type '(workflowPath: string,
+      basePath: string, overrides?: Record<string, string> | undefined) => Promise<AutoExecutionResult>'.
+
+      src/scheduler.test.ts(89,21): error TS2339: Property 'resolves' does not exist on type '() => Promise<QueueTask |
+      null>'.
+
+      ```
   - id: implement-observability-utility
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-create-module.md
     context_files:
@@ -4544,3 +4581,4 @@ tasks:
       module_description: >
         Develop a utility module to enhance observability, including common functions for monitoring application
         performance metrics and generating insights.
+    started_at: 2026-02-14T02:05:02.062Z
