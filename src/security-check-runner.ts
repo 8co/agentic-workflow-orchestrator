@@ -25,83 +25,91 @@ async function getChangedFiles(cwd: string): Promise<string[]> {
     proc.stdout.on('data', (data: Buffer) => { stdout += data.toString(); });
     proc.on('close', (code) => {
       if (code !== 0) {
-        res([]); // No git repo or no changes
+        console.warn('No git repository or no changes detected.');
+        res([]);
       } else {
         const files = stdout.trim().split('\n').filter(Boolean);
         res(files);
       }
     });
-    proc.on('error', () => res([]));
+    proc.on('error', (error) => {
+      console.error(`Error executing git command: ${error.message}`);
+      res([]);
+    });
   });
 }
 
 async function main() {
-  const cwd = process.cwd();
+  try {
+    const cwd = process.cwd();
   
-  console.log('🔒 Running security scan...\n');
+    console.log('🔒 Running security scan...\n');
 
-  // Get changed files
-  const changedFiles = await getChangedFiles(cwd);
+    // Get changed files
+    const changedFiles = await getChangedFiles(cwd);
 
-  if (changedFiles.length === 0) {
-    console.log('✅ No changed files to scan');
-    process.exit(0);
-  }
-
-  // Filter to security-critical files
-  const filesToScan = changedFiles.filter(requiresSecurityScan);
-
-  if (filesToScan.length === 0) {
-    console.log(`   Scanned ${changedFiles.length} file(s) - none are security-critical`);
-    console.log('✅ Security scan passed\n');
-    process.exit(0);
-  }
-
-  console.log(`   Found ${filesToScan.length} security-critical file(s) to scan:\n`);
-
-  let allSafe = true;
-  const results: Array<{ file: string; result: SecurityScanResult }> = [];
-
-  // Scan each file
-  for (const file of filesToScan) {
-    const fullPath = resolve(cwd, file);
-    
-    try {
-      const code = await readFile(fullPath, 'utf-8');
-      const result = scanCode(code, file);
-      results.push({ file, result });
-
-      if (!result.safe) {
-        allSafe = false;
-      }
-    } catch (error) {
-      console.error(`   ⚠️  Could not read ${file}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    if (changedFiles.length === 0) {
+      console.log('✅ No changed files to scan');
+      process.exit(0);
     }
-  }
 
-  // Display results
-  for (const { file, result } of results) {
-    console.log(formatViolations(result, file));
-    console.log('');
-  }
+    // Filter to security-critical files
+    const filesToScan = changedFiles.filter(requiresSecurityScan);
 
-  // Summary
-  const failed = results.filter(r => !r.result.safe).length;
-  const passed = results.filter(r => r.result.safe).length;
+    if (filesToScan.length === 0) {
+      console.log(`   Scanned ${changedFiles.length} file(s) - none are security-critical`);
+      console.log('✅ Security scan passed\n');
+      process.exit(0);
+    }
 
-  if (allSafe) {
-    console.log(`✅ Security scan passed: ${passed}/${results.length} files safe\n`);
-    process.exit(0);
-  } else {
-    console.log(`❌ Security scan failed: ${failed} file(s) with violations\n`);
-    console.log('   Critical or high-risk patterns detected.');
-    console.log('   Review the violations above and fix before committing.\n');
+    console.log(`   Found ${filesToScan.length} security-critical file(s) to scan:\n`);
+
+    let allSafe = true;
+    const results: Array<{ file: string; result: SecurityScanResult }> = [];
+
+    // Scan each file
+    for (const file of filesToScan) {
+      const fullPath = resolve(cwd, file);
+      
+      try {
+        const code = await readFile(fullPath, 'utf-8');
+        const result = scanCode(code, file);
+        results.push({ file, result });
+
+        if (!result.safe) {
+          allSafe = false;
+        }
+      } catch (error) {
+        console.error(`   ⚠️  Could not read ${file}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    }
+
+    // Display results
+    for (const { file, result } of results) {
+      console.log(formatViolations(result, file));
+      console.log('');
+    }
+
+    // Summary
+    const failed = results.filter(r => !r.result.safe).length;
+    const passed = results.filter(r => r.result.safe).length;
+
+    if (allSafe) {
+      console.log(`✅ Security scan passed: ${passed}/${results.length} files safe\n`);
+      process.exit(0);
+    } else {
+      console.log(`❌ Security scan failed: ${failed} file(s) with violations\n`);
+      console.log('   Critical or high-risk patterns detected.');
+      console.log('   Review the violations above and fix before committing.\n');
+      process.exit(1);
+    }
+  } catch (err) {
+    console.error('❌ Security check failed:', err instanceof Error ? err.message : 'Unknown error');
     process.exit(1);
   }
 }
 
 main().catch((err) => {
-  console.error('❌ Security check failed:', err.message ?? err);
+  console.error('❌ Unexpected error:', err instanceof Error ? err.message : 'Unknown error');
   process.exit(1);
 });
-
