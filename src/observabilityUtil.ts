@@ -1,4 +1,5 @@
 import os from 'os';
+import { appendFileSync } from 'fs';
 
 export interface MemoryUsage {
   totalMemory: number;
@@ -18,13 +19,28 @@ export interface CpuUsage {
   };
 }
 
+export interface DiskUsage {
+  total: number;
+  free: number;
+  used: number;
+}
+
 export interface PerformanceMetrics {
   memory: MemoryUsage;
   cpu: CpuUsage[];
+  disk: DiskUsage;
 }
 
 function logError(message: string, error: unknown): void {
   console.error(`${message}:`, error instanceof Error ? error.message : error);
+}
+
+function logToCentralizedSystem(message: string): void {
+  try {
+    appendFileSync('system.log', `${new Date().toISOString()} - ${message}\n`);
+  } catch (error: unknown) {
+    logError('Failed to log to centralized system', error);
+  }
 }
 
 export function getMemoryUsage(): MemoryUsage {
@@ -39,7 +55,6 @@ export function getMemoryUsage(): MemoryUsage {
     };
   } catch (error: unknown) {
     logError('Failed to retrieve memory usage', error);
-    // Provide default values in case of error
     return {
       totalMemory: 0,
       freeMemory: 0,
@@ -63,20 +78,33 @@ export function getCpuUsage(): CpuUsage[] {
     }));
   } catch (error: unknown) {
     logError('Failed to retrieve CPU usage', error);
-    // Provide default values in case of error
     return [];
   }
 }
 
+export function getDiskUsage(): DiskUsage {
+  // This function is a placeholder as Node.js does not natively support disk usage
+  // In a real-world scenario, you would call an external package or OS command to get disk usage
+  // For the sake of this example, we will provide dummy data
+  return {
+    total: 500 * 1024 * 1024 * 1024,  // 500 GB
+    free: 200 * 1024 * 1024 * 1024,   // 200 GB
+    used: 300 * 1024 * 1024 * 1024    // 300 GB
+  };
+}
+
 export function generatePerformanceMetrics(): PerformanceMetrics {
   try {
-    return {
+    const metrics = {
       memory: getMemoryUsage(),
       cpu: getCpuUsage(),
+      disk: getDiskUsage(),
     };
+
+    logPerformanceMetrics(metrics);
+    return metrics;
   } catch (error: unknown) {
     logError('Failed to generate performance metrics', error);
-    // Provide default values in case of error
     return {
       memory: {
         totalMemory: 0,
@@ -84,6 +112,20 @@ export function generatePerformanceMetrics(): PerformanceMetrics {
         usedMemory: 0,
       },
       cpu: [],
+      disk: {
+        total: 0,
+        free: 0,
+        used: 0,
+      },
     };
   }
+}
+
+export function logPerformanceMetrics(metrics: PerformanceMetrics): void {
+  const message = `
+    Memory Usage: Total - ${metrics.memory.totalMemory}, Free - ${metrics.memory.freeMemory}, Used - ${metrics.memory.usedMemory}
+    CPU Usage: ${JSON.stringify(metrics.cpu, null, 2)}
+    Disk Usage: Total - ${metrics.disk.total}, Free - ${metrics.disk.free}, Used - ${metrics.disk.used}
+  `;
+  logToCentralizedSystem(message.trim());
 }
