@@ -3003,3 +3003,54 @@ tasks:
     started_at: 2026-02-14T01:19:55.103Z
     completed_at: 2026-02-14T01:20:00.288Z
     branch: auto/add-error-handling-ai-agents
+  - id: write-missing-tests-enhanced-logger
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/enhanced-logger.ts
+    variables:
+      test_target: src/enhanced-logger.ts
+      test_description: |
+        Write tests for the missing edge cases and error handling paths in the EnhancedLogger module.
+  - id: add-tests-state-manager-save-error-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/state-manager.ts
+    variables:
+      test_target: src/state-manager.ts
+      test_description: |
+        Develop tests for error handling during the save operation in the StateManager, including file access issues.
+  - id: write-tests-aiagents-detailed-error-handling-edge-cases
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/aiAgents.ts
+    variables:
+      test_target: src/aiAgents.ts
+      test_description: >
+        Implement tests for comprehensive error handling in AI Agents connections, covering network issues and invalid
+        responses.
+  - id: enhance-type-safety-file-helper-functions
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/file-helper.ts
+    variables:
+      modification_description: >
+        Enhance type safety in file-helper.ts by adding appropriate TypeScript annotations and ensuring parameter types
+        are accurate.
+  - id: refactor-health-memory-logging-clarity
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/health.ts
+    variables:
+      modification_description: >
+        Refactor the memory usage logging in the health module to improve clarity and readability, ensuring consistent
+        log formatting.
