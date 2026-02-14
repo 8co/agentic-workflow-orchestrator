@@ -164,3 +164,46 @@ tasks:
     started_at: 2026-02-14T00:02:07.200Z
     completed_at: 2026-02-14T00:02:10.830Z
     branch: auto/create-log-util
+  - id: add-tests-openai-adapter
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/adapters/openai-adapter.ts
+    variables:
+      test_target: src/adapters/openai-adapter.ts
+      test_description: >
+        Write comprehensive tests for the OpenAI adapter module, ensuring all functions and edge cases are covered,
+        including network error scenarios.
+  - id: refactor-error-handling-cursor-adapter
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/adapters/cursor-adapter.ts
+    variables:
+      modification_description: >
+        Improve the error handling in the Cursor adapter by adding specific checks for known error conditions and
+        logging error details more effectively.
+  - id: add-tests-health
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/health.ts
+    variables:
+      test_target: src/health.ts
+      test_description: >
+        Implement unit tests for the getHealthStatus function, covering various edge cases such as failed package.json
+        reads and high memory usage warnings.
+  - id: create-file-util-module
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-create-module.md
+    context_files:
+      - src/file-writer.ts
+    variables:
+      module_name: file-util
+      module_description: >
+        Create a utility module for common file operations like reading and writing files with error handling, to
+        replace repeated logic in existing code.
