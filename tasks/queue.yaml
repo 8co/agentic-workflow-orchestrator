@@ -1595,3 +1595,56 @@ tasks:
       undefined'.
 
       ```
+  - id: write-tests-ai-agents-error-handling-edge-cases
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/aiAgents.ts
+    variables:
+      test_target: src/aiAgents.ts
+      test_description: >
+        Write tests focusing on edge cases for error handling within the aiAgents module, ensuring comprehensive
+        coverage.
+  - id: add-tests-main-function-error-cases
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/index.ts
+    variables:
+      test_target: src/index.ts
+      test_description: >
+        Write tests to cover error handling cases for the main function ensuring robust error handling and comprehensive
+        coverage.
+  - id: write-tests-health-logger-edge-cases
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/health.ts
+    variables:
+      test_target: src/health.ts
+      test_description: >
+        Implement tests for edge cases in the health.ts logger to ensure all logging scenarios are properly handled and
+        logged.
+  - id: refactor-autonomous-runner-formatError
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/autonomous-runner.ts
+    variables:
+      modification_description: >
+        Refactor the existing error formatting logic in autonomous-runner.ts to enhance readability and maintainability,
+        ensuring consistency across different types of errors.
+  - id: add-type-safety-to-enhanced-logger
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/enhanced-logger.ts
+    variables:
+      modification_description: >
+        Improve type safety in enhanced-logger.ts by adding TypeScript types to variables and functions where
+        applicable, ensuring consistent type definitions across the module.
