@@ -4935,3 +4935,35 @@ tasks:
     started_at: 2026-02-14T02:28:17.742Z
     completed_at: 2026-02-14T02:28:24.135Z
     branch: auto/add-error-handling-to-observability-util
+  - id: add-tests-to-ai-agents
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/aiAgents.ts
+    variables:
+      test_target: src/aiAgents.ts
+      test_description: >
+        Add comprehensive tests for the aiAgents module to cover all functions and ensure proper error handling and edge
+        case management.
+  - id: add-missing-tests-file-helper
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/file-helper.ts
+    variables:
+      test_target: src/file-helper.ts
+      test_description: |
+        Write missing tests to cover all edge cases and error scenarios in the file-helper module.
+  - id: add-tests-to-security-check-runner-enhanced
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/security-check-runner.ts
+    variables:
+      test_target: src/security-check-runner.ts
+      test_description: >
+        Develop enhanced tests for the security-check-runner module to verify its robustness in handling git operations
+        and security violations effectively.
