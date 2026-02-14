@@ -59,23 +59,23 @@ export class ProjectRegistry {
       this.projects.clear();
 
       for (const project of config.projects) {
-        // Validate required fields
-        if (!project.id || !project.name || !project.path) {
-          console.warn(`⚠️  Skipping invalid project entry: ${JSON.stringify(project)}`);
-          continue;
+        try {
+          this.validateProjectConfig(project);
+
+          // Resolve path relative to orchestrator root if not absolute
+          if (!isAbsolute(project.path)) {
+            project.path = resolve(this.orchestratorRoot, project.path);
+          }
+
+          // Set defaults
+          project.scan_dirs = project.scan_dirs ?? ['src'];
+          project.skip_patterns = project.skip_patterns ?? [];
+          project.package_manager = project.package_manager ?? 'npm';
+
+          this.projects.set(project.id, project);
+        } catch (validationError: unknown) {
+          console.warn(`⚠️  Skipping invalid project entry: ${JSON.stringify(project)}. Reason: ${(validationError as Error).message}`);
         }
-
-        // Resolve path relative to orchestrator root if not absolute
-        if (!isAbsolute(project.path)) {
-          project.path = resolve(this.orchestratorRoot, project.path);
-        }
-
-        // Set defaults
-        project.scan_dirs = project.scan_dirs ?? ['src'];
-        project.skip_patterns = project.skip_patterns ?? [];
-        project.package_manager = project.package_manager ?? 'npm';
-
-        this.projects.set(project.id, project);
       }
 
       console.log(`✅ Loaded ${this.projects.size} project(s) from ${this.configPath}`);
@@ -96,6 +96,15 @@ export class ProjectRegistry {
       } else {
         throw new Error(`Failed to load projects.yaml: ${(err as Error).message}`);
       }
+    }
+  }
+
+  /**
+   * Validate the necessary fields in a ProjectConfig
+   */
+  private validateProjectConfig(project: ProjectConfig): void {
+    if (!project.id || !project.name || !project.path) {
+      throw new Error('Project config missing required fields: id, name, or path');
     }
   }
 
