@@ -62,7 +62,7 @@ tasks:
     completed_at: 2026-02-14T18:53:37.031Z
     branch: auto/create-diff-preview
   - id: create-dependency-graph
-    status: running
+    status: completed
     workflow: auto-implement
     prompt: prompts/auto-create-module.md
     context_files:
@@ -81,8 +81,10 @@ tasks:
         function toJSON(graph: Map<string, DependencyNode>): string that serializes the graph to a JSON string. Use
         node:fs/promises and node:path only. Named exports only.
     started_at: 2026-02-14T18:53:37.035Z
+    completed_at: 2026-02-14T18:53:46.134Z
+    branch: auto/create-dependency-graph
   - id: create-task-cost-tracker
-    status: pending
+    status: running
     workflow: auto-implement
     prompt: prompts/auto-create-module.md
     context_files:
@@ -100,6 +102,7 @@ tasks:
         is unknown. Export function trackTaskCost(cost: TaskCost): Promise<void> that appends to 'task-costs.jsonl'.
         Export function getSpendingSummary(): Promise<{ totalCost: number, costByModel: Record<string, number>,
         taskCount: number }> that reads the JSONL and aggregates. Use node:fs/promises only. Named exports only.
+    started_at: 2026-02-14T18:53:46.138Z
   - id: create-codebase-health-score
     status: pending
     workflow: auto-implement
