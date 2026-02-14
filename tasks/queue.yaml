@@ -6390,7 +6390,7 @@ tasks:
     completed_at: 2026-02-14T02:57:24.953Z
     branch: auto/add-type-safety-to-cli-observability
   - id: add-tests-anthropic-adapter-execution
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -6400,6 +6400,7 @@ tasks:
       test_description: >
         Write tests for the execution method of the Anthropic adapter, covering successful execution, retry scenarios,
         and error handling.
+    started_at: 2026-02-14T02:58:45.219Z
   - id: add-tests-file-helper-module
     status: pending
     workflow: auto
