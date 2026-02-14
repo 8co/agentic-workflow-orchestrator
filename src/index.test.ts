@@ -1,74 +1,87 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
 import { main } from './index.js';
-import assert from 'node:assert';
-import test from 'node:test';
+import { initializeOrchestrationEngine } from './orchestrationEngine.js';
+import { loadWorkflowConfigurations } from './workflowConfig.js';
+import { connectToAIAgents } from './aiAgents.js';
 
-// Mock implementations for the imported functions
-function mockInitializeOrchestrationEngine(shouldThrow: boolean = false) {
-  return shouldThrow ? () => { throw new Error("Initialization Error") } : () => {};
+// Mock the imported modules
+let initializeOrchestrationEngineCalled = false;
+let loadWorkflowConfigurationsCalled = false;
+let connectToAIAgentsCalled = false;
+
+function mockInitializeOrchestrationEngine() {
+  initializeOrchestrationEngineCalled = true;
 }
 
-function mockLoadWorkflowConfigurations(shouldThrow: boolean = false) {
-  return shouldThrow ? () => { throw new Error("Configuration Error") } : () => {};
+function mockLoadWorkflowConfigurations() {
+  loadWorkflowConfigurationsCalled = true;
 }
 
-function mockConnectToAIAgents(shouldThrow: boolean = false) {
-  return shouldThrow ? () => { throw new Error("Connection Error") } : () => {};
+function mockConnectToAIAgents() {
+  connectToAIAgentsCalled = true;
 }
 
-// Override the original implementations with the mocks for testing
-await import('./orchestrationEngine.js').then(module => {
-  Object.defineProperty(module, 'initializeOrchestrationEngine', {
-    value: mockInitializeOrchestrationEngine(),
-    writable: true
-  });
+// Replace actual functions with mocks
+(global as any).initializeOrchestrationEngine = mockInitializeOrchestrationEngine;
+(global as any).loadWorkflowConfigurations = mockLoadWorkflowConfigurations;
+(global as any).connectToAIAgents = mockConnectToAIAgents;
+
+test('main should initialize the system correctly', () => {
+  initializeOrchestrationEngineCalled = false;
+  loadWorkflowConfigurationsCalled = false;
+  connectToAIAgentsCalled = false;
+  
+  main();
+
+  assert.ok(initializeOrchestrationEngineCalled, 'initializeOrchestrationEngine should be called');
+  assert.ok(loadWorkflowConfigurationsCalled, 'loadWorkflowConfigurations should be called');
+  assert.ok(connectToAIAgentsCalled, 'connectToAIAgents should be called');
 });
 
-await import('./workflowConfig.js').then(module => {
-  Object.defineProperty(module, 'loadWorkflowConfigurations', {
-    value: mockLoadWorkflowConfigurations(),
-    writable: true
-  });
+test('main should handle errors in initializeOrchestrationEngine', () => {
+  (global as any).initializeOrchestrationEngine = () => { throw new Error('Initialization Error'); };
+
+  const consoleErrorMock = (global as any).console.error = (error: string) => {
+    assert.match(error, /❌ Error during orchestration engine initialization:/, 'Error should be logged for initialization');
+  };
+  
+  main();
+
+  assert.strictEqual(loadWorkflowConfigurationsCalled, false, 'loadWorkflowConfigurations should not be called');
+  assert.strictEqual(connectToAIAgentsCalled, false, 'connectToAIAgents should not be called');
+
+  // Restore the original function
+  console.error = consoleErrorMock;
 });
 
-await import('./aiAgents.js').then(module => {
-  Object.defineProperty(module, 'connectToAIAgents', {
-    value: mockConnectToAIAgents(),
-    writable: true
-  });
+test('main should handle errors in loadWorkflowConfigurations', () => {
+  (global as any).initializeOrchestrationEngine = mockInitializeOrchestrationEngine;
+  (global as any).loadWorkflowConfigurations = () => { throw new Error('Configuration Error'); };
+
+  const consoleErrorMock = (global as any).console.error = (error: string) => {
+    assert.match(error, /❌ Error during workflow configurations loading:/, 'Error should be logged for configuration loading');
+  };
+  
+  main();
+
+  assert.strictEqual(connectToAIAgentsCalled, false, 'connectToAIAgents should not be called');
+
+  // Restore the original function
+  console.error = consoleErrorMock;
 });
 
-test('main function - successful initialization', () => {
-  assert.doesNotThrow(() => {
-    main();
-  });
-});
+test('main should handle errors in connectToAIAgents', () => {
+  (global as any).initializeOrchestrationEngine = mockInitializeOrchestrationEngine;
+  (global as any).loadWorkflowConfigurations = mockLoadWorkflowConfigurations;
+  (global as any).connectToAIAgents = () => { throw new Error('Connection Error'); };
 
-test('main function - orchestration engine error', () => {
-  Object.defineProperty(import('./orchestrationEngine.js'), 'initializeOrchestrationEngine', {
-    value: mockInitializeOrchestrationEngine(true)
-  });
+  const consoleErrorMock = (global as any).console.error = (error: string) => {
+    assert.match(error, /❌ Error during AI agents connection:/, 'Error should be logged for AI agents connection');
+  };
+  
+  main();
 
-  assert.throws(() => {
-    main();
-  }, new Error('Initialization Error'));
-});
-
-test('main function - workflow configuration error', () => {
-  Object.defineProperty(import('./workflowConfig.js'), 'loadWorkflowConfigurations', {
-    value: mockLoadWorkflowConfigurations(true)
-  });
-
-  assert.throws(() => {
-    main();
-  }, new Error('Configuration Error'));
-});
-
-test('main function - AI agent connection error', () => {
-  Object.defineProperty(import('./aiAgents.js'), 'connectToAIAgents', {
-    value: mockConnectToAIAgents(true)
-  });
-
-  assert.throws(() => {
-    main();
-  }, new Error('Connection Error'));
+  // Restore the original function
+  console.error = consoleErrorMock;
 });
