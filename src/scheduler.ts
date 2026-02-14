@@ -9,10 +9,26 @@
  */
 
 import { resolve } from 'node:path';
+import { spawn } from 'node:child_process';
 import { createQueueManager, type QueueTask } from './queue-manager.js';
 import { createAutonomousRunner, type AutoStep, type AutoWorkflow } from './autonomous-runner.js';
 import { runVerification, defaultVerifyCommands } from './verify-runner.js';
 import type { AgentAdapter, AgentType } from './types.js';
+
+/**
+ * Run a git command and return stdout.
+ */
+function gitCmd(args: string[], cwd: string): Promise<{ success: boolean; output: string }> {
+  return new Promise((res) => {
+    let stdout = '';
+    let stderr = '';
+    const proc = spawn('git', args, { cwd, shell: false });
+    proc.stdout.on('data', (d: Buffer) => { stdout += d.toString(); });
+    proc.stderr.on('data', (d: Buffer) => { stderr += d.toString(); });
+    proc.on('close', (code) => res({ success: code === 0, output: (stdout + stderr).trim() }));
+    proc.on('error', (e) => res({ success: false, output: e.message }));
+  });
+}
 
 // --- Types ---
 
@@ -29,6 +45,7 @@ interface TaskRunResult {
   success: boolean;
   error?: string;
   durationMs: number;
+  branch?: string;
 }
 
 // --- Scheduler ---
@@ -108,6 +125,7 @@ export function createScheduler(config: SchedulerConfig) {
           taskId: task.id,
           success: true,
           durationMs: Date.now() - start,
+          branch: result.branch,
         };
       } else {
         const error = result.steps.find((s) => s.status === 'failed')?.error ?? 'Unknown error';
@@ -196,6 +214,55 @@ export function createScheduler(config: SchedulerConfig) {
       console.log(`   Total time: ${Math.round(totalMs / 1000)}s`);
       console.log(`   Health:    ${healthCheck.allPassed ? '✅ clean' : '⚠️  issues detected'}`);
       console.log('═'.repeat(50));
+
+      // Merge successful branches into main and push
+      const successBranches = results
+        .filter((r) => r.success && r.branch)
+        .map((r) => r.branch as string);
+
+      if (successBranches.length > 0 && healthCheck.allPassed) {
+        console.log('\n' + '─'.repeat(50));
+        console.log('🔀 MERGE & PUSH');
+        console.log('─'.repeat(50));
+
+        // Stash any uncommitted changes (queue.yaml updates)
+        await gitCmd(['stash'], basePath);
+
+        // Switch to main
+        const checkoutResult = await gitCmd(['checkout', 'main'], basePath);
+        if (checkoutResult.success) {
+          // Merge all successful branches at once
+          const mergeResult = await gitCmd(['merge', ...successBranches], basePath);
+          if (mergeResult.success) {
+            console.log(`   ✅ Merged ${successBranches.length} branch(es) into main`);
+
+            // Restore stashed queue changes
+            await gitCmd(['stash', 'pop'], basePath);
+
+            // Commit queue state
+            await gitCmd(['add', '-A'], basePath);
+            await gitCmd(['commit', '-m', `Batch complete: ${passed} passed, ${failed} failed`], basePath);
+
+            // Push
+            const pushResult = await gitCmd(['push', 'origin', 'main'], basePath);
+            if (pushResult.success) {
+              console.log('   🚀 Pushed to origin/main');
+            } else {
+              console.log(`   ⚠️  Push failed: ${pushResult.output.slice(0, 100)}`);
+            }
+          } else {
+            console.log(`   ⚠️  Merge failed: ${mergeResult.output.slice(0, 100)}`);
+            // Abort merge and restore
+            await gitCmd(['merge', '--abort'], basePath);
+            await gitCmd(['stash', 'pop'], basePath);
+          }
+        } else {
+          console.log(`   ⚠️  Could not switch to main: ${checkoutResult.output.slice(0, 100)}`);
+          await gitCmd(['stash', 'pop'], basePath);
+        }
+      } else if (successBranches.length > 0) {
+        console.log('\n   ⚠️  Skipping merge — health check failed. Branches remain local.');
+      }
 
       await queue.print();
 
