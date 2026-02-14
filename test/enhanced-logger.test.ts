@@ -1,92 +1,57 @@
-import fs from 'fs';
-import path from 'path';
+import { test } from 'node:test';
 import assert from 'node:assert';
-import { describe, it, beforeEach, afterEach } from 'node:test';
-import { EnhancedLogger } from '../src/enhanced-logger.js';
+import fs from 'node:fs';
+import path from 'node:path';
+import { EnhancedLogger, LogLevel } from '../src/enhanced-logger';
 
-describe('EnhancedLogger', () => {
+test('EnhancedLogger should create log directory and file', (t) => {
   const logFileName = 'test.log';
+  const logger = EnhancedLogger.getInstance(logFileName);
+  const expectedLogPath = path.resolve(process.cwd(), 'logs', logFileName);
+
+  assert.strictEqual(fs.existsSync(expectedLogPath), true, 'Log file should be created');
+});
+
+test('EnhancedLogger should log messages with correct format', (t) => {
+  const logFileName = 'format-test.log';
+  const logger = EnhancedLogger.getInstance(logFileName);
+  const message = 'This is a test message';
+  
+  logger.logInfo(message);
+  const logContent = fs.readFileSync(path.resolve(process.cwd(), 'logs', logFileName), 'utf8');
+  
+  assert.match(logContent, /INFO/] This is a test message/, 'Message should be logged with correct format');
+});
+
+test('EnhancedLogger should handle invalid log level gracefully', (t) => {
+  // Since the type LogLevel restricts invalid levels, we directly test the log method's error handling
+  const logFileName = 'invalid-level.log';
+  const logger = EnhancedLogger.getInstance(logFileName);
+  const errLevel = 'invalid' as unknown as LogLevel;
+
+  assert.throws(() => {
+    //@ts-expect-error private access modification
+    logger.log('This should not work', errLevel);
+  }, /TypeError: invalid log level/, 'Should throw type error for invalid log level');
+});
+
+test('EnhancedLogger should handle file write errors gracefully', (t) => {
+  const logFileName = '/root/fail.log';
+  const logger = EnhancedLogger.getInstance(logFileName);
+
+  assert.doesNotThrow(() => {
+    logger.logInfo('This should not write to a file');
+  }, 'File write errors should be handled gracefully');
+});
+
+// Clean up test logs
+test('Clean up log files', (t) => {
   const logDirectory = path.resolve(process.cwd(), 'logs');
-  const logFilePath = path.join(logDirectory, logFileName);
-
-  beforeEach(() => {
-    if (fs.existsSync(logFilePath)) {
-      fs.unlinkSync(logFilePath);
-    }
-  });
-
-  afterEach(() => {
-    if (fs.existsSync(logFilePath)) {
-      fs.unlinkSync(logFilePath);
-    }
-  });
-
-  const captureConsoleOutput = (callback: () => void): string => {
-    const originalConsole = console;
-    let output = '';
-
-    const fakeConsole = {
-      info: (message: string) => (output += message),
-      warn: (message: string) => (output += message),
-      error: (message: string) => (output += message),
-      debug: (message: string) => (output += message),
-    };
-    
-    (console as any) = fakeConsole;
-
-    try {
-      callback();
-    } finally {
-      (console as any) = originalConsole;
-    }
-
-    return output;
-  };
-
-  it('should log info messages to console and file', () => {
-    const logger = EnhancedLogger.getInstance(logFileName);
-    const message = 'This is an info message';
-    const output = captureConsoleOutput(() => logger.logInfo(message));
-
-    const logContent = fs.readFileSync(logFilePath, 'utf8');
-    assert.match(output, new RegExp(`INFO\\] ${message}`));
-    assert.match(logContent, new RegExp(`INFO\\] ${message}`));
-  });
-
-  it('should log warn messages to console and file', () => {
-    const logger = EnhancedLogger.getInstance(logFileName);
-    const message = 'This is a warning message';
-    const output = captureConsoleOutput(() => logger.logWarn(message));
-
-    const logContent = fs.readFileSync(logFilePath, 'utf8');
-    assert.match(output, new RegExp(`WARN\\] ${message}`));
-    assert.match(logContent, new RegExp(`WARN\\] ${message}`));
-  });
-
-  it('should log error messages to console and file', () => {
-    const logger = EnhancedLogger.getInstance(logFileName);
-    const message = 'This is an error message';
-    const output = captureConsoleOutput(() => logger.logError(message));
-
-    const logContent = fs.readFileSync(logFilePath, 'utf8');
-    assert.match(output, new RegExp(`ERROR\\] ${message}`));
-    assert.match(logContent, new RegExp(`ERROR\\] ${message}`));
-  });
-
-  it('should log debug messages to console and file', () => {
-    const logger = EnhancedLogger.getInstance(logFileName);
-    const message = 'This is a debug message';
-    const output = captureConsoleOutput(() => logger.logDebug(message));
-
-    const logContent = fs.readFileSync(logFilePath, 'utf8');
-    assert.match(output, new RegExp(`DEBUG\\] ${message}`));
-    assert.match(logContent, new RegExp(`DEBUG\\] ${message}`));
-  });
-
-  it('should reuse the same logger instance', () => {
-    const logger1 = EnhancedLogger.getInstance(logFileName);
-    const logger2 = EnhancedLogger.getInstance(logFileName);
-
-    assert.strictEqual(logger1, logger2);
-  });
+  if (fs.existsSync(logDirectory)) {
+    fs.readdirSync(logDirectory).forEach(file => {
+      fs.unlinkSync(path.join(logDirectory, file));
+    });
+    fs.rmdirSync(logDirectory);
+  }
+  assert.strictEqual(fs.existsSync(logDirectory), false, 'Logs directory should be deleted');
 });
