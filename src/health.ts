@@ -15,29 +15,29 @@ interface HealthStatus {
 }
 
 const logger = createLogger('health');
-const MAX_RETRIES = 3;
-const INITIAL_RETRY_DELAY = 100; // in milliseconds
+const MAX_RETRIES: number = 3;
+const INITIAL_RETRY_DELAY: number = 100; // in milliseconds
 
 export function getHealthStatus(): HealthStatus {
   let version: string | undefined;
-  let memoryUsageMB = 0;
+  let memoryUsageMB: number = 0;
   let status: 'ok' | 'degraded' | 'down' = 'ok';
 
   try {
-    version = retryOperation(extractPackageVersion);
-  } catch (error) {
+    version = retryOperation<string | undefined>(extractPackageVersion);
+  } catch (error: unknown) {
     logDetailedError('Version extraction error', 'Failed to parse package.json for version.', error);
     status = 'degraded';
   }
 
   try {
-    memoryUsageMB = retryOperation(getSafeMemoryUsageMB);
-  } catch (error) {
+    memoryUsageMB = retryOperation<number>(getSafeMemoryUsageMB);
+  } catch (error: unknown) {
     logDetailedError('Memory usage retrieval error', 'Unable to calculate memory usage.', error);
     status = 'degraded';
   }
 
-  const uptime = retryOperation(getUptimeSafely);
+  const uptime: number | null = retryOperation<number | null>(getUptimeSafely);
 
   if (uptime === null) {
     logDetailedError('Uptime retrieval error', 'Failed to retrieve system uptime.', new Error('Uptime is NaN'));
@@ -57,7 +57,7 @@ export function getHealthStatus(): HealthStatus {
   return healthStatus;
 }
 
-function retryOperation<T>(operation: () => T, retriesLeft = MAX_RETRIES, delay = INITIAL_RETRY_DELAY): T {
+function retryOperation<T>(operation: () => T, retriesLeft: number = MAX_RETRIES, delay: number = INITIAL_RETRY_DELAY): T {
   try {
     return operation();
   } catch (error) {
@@ -70,7 +70,7 @@ function retryOperation<T>(operation: () => T, retriesLeft = MAX_RETRIES, delay 
 }
 
 function sleep(ms: number): void {
-  const start = Date.now();
+  const start: number = Date.now();
   while (Date.now() - start < ms) {
     // Busy wait
   }
@@ -78,10 +78,10 @@ function sleep(ms: number): void {
 
 function extractPackageVersion(): string | undefined {
   try {
-    const packageJsonPath = join(process.cwd(), 'package.json');
-    const packageJsonContent = readFileSync(packageJsonPath, 'utf-8');
-    const packageJson = JSON.parse(packageJsonContent) as PackageJson;
-    const version = packageJson.version ?? 'unknown';
+    const packageJsonPath: string = join(process.cwd(), 'package.json');
+    const packageJsonContent: string = readFileSync(packageJsonPath, 'utf-8');
+    const packageJson: PackageJson = JSON.parse(packageJsonContent) as PackageJson;
+    const version: string = packageJson.version ?? 'unknown';
     logger.debug(`Package version extracted: ${version}`);
     return version !== 'unknown' ? version : undefined;
   } catch (error) {
@@ -91,7 +91,7 @@ function extractPackageVersion(): string | undefined {
 
 function getSafeMemoryUsageMB(): number {
   try {
-    const heapUsed = process.memoryUsage().heapUsed;
+    const heapUsed: number = process.memoryUsage().heapUsed;
     if (isNaN(heapUsed)) throw new Error('Heap used is NaN');
     return Number((heapUsed / 1048576).toFixed(2));
   } catch (error) {
@@ -100,7 +100,7 @@ function getSafeMemoryUsageMB(): number {
 }
 
 function getUptimeSafely(): number | null {
-  const uptime = Number(process.uptime().toFixed(2));
+  const uptime: number = Number(process.uptime().toFixed(2));
   return isNaN(uptime) ? null : uptime;
 }
 
@@ -120,8 +120,8 @@ function logHealthStatus({ uptime, memoryUsage, version }: HealthStatus): void {
 }
 
 function logMemoryUsageWarnings(memoryUsage: number): void {
-  const formattedMemoryUsage = memoryUsage.toFixed(2) + ' MB';
-  const warnings = [
+  const formattedMemoryUsage: string = memoryUsage.toFixed(2) + ' MB';
+  const warnings: Array<{ threshold: number; level: 'error' | 'warn' | 'info'; message: string }> = [
     { threshold: 700, level: 'error', message: `Critical memory usage detected: ${formattedMemoryUsage}. Immediate attention required!` },
     { threshold: 500, level: 'warn', message: `High memory usage detected: ${formattedMemoryUsage}. Consider investigating memory usage.` },
     { threshold: 300, level: 'info', message: `Moderate memory usage: ${formattedMemoryUsage}. Running smoothly but keep monitoring.` },
@@ -138,7 +138,7 @@ function logMemoryUsageWarnings(memoryUsage: number): void {
 }
 
 function logDetailedError(type: string, context: string, error: unknown): void {
-  const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-  const stackTrace = error instanceof Error && error.stack ? `\nStack Trace: ${error.stack}` : '';
+  const errorMessage: string = error instanceof Error ? error.message : 'Unknown error';
+  const stackTrace: string = error instanceof Error && error.stack ? `\nStack Trace: ${error.stack}` : '';
   logger.error(`${type}: ${context} - ${errorMessage}${stackTrace}`);
 }
