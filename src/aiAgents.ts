@@ -3,13 +3,14 @@ import { networkInterfaces, NetworkInterfaceInfo } from 'os';
 import { createConnection, Socket } from 'net';
 
 export function connectToAIAgents(): void {
-  console.log("🔗 Connecting to AI agent APIs...");
+  logConnectionEvent('info', "Initiating connection to AI agent APIs...", {});
+
   try {
     const aiAgentHost: string = 'ai-agent-api.example.com';
     const aiAgentPort: number = 443;
 
     const socket: Socket = createConnection({ host: aiAgentHost, port: aiAgentPort }, () => {
-      console.log('✅ Successfully connected to AI agent APIs.');
+      logConnectionEvent('success', 'Successfully connected to AI agent APIs.', { host: aiAgentHost, port: aiAgentPort });
       socket.end();
     });
 
@@ -26,7 +27,7 @@ export function connectToAIAgents(): void {
 
     socket.on('close', (hadError: boolean): void => {
       if (!hadError) {
-        console.log('🔌 Connection closed gracefully.');
+        logConnectionEvent('info', 'Connection closed gracefully.', { host: aiAgentHost, port: aiAgentPort });
       }
     });
 
@@ -34,6 +35,12 @@ export function connectToAIAgents(): void {
     const formattedError: Error = formatError(error) || new Error("An unknown error occurred while initiating connection.");
     handleConnectionError(formattedError);
   }
+}
+
+function logConnectionEvent(level: 'info' | 'success' | 'error', message: string, context: Record<string, unknown>): void {
+  const timestamp: string = new Date().toISOString();
+  const networkDetails: string = JSON.stringify(getNetworkDetails(), null, 2);
+  console.log(`[${timestamp}] [${level.toUpperCase()}] ${message} Context:`, context, 'Network Details:', networkDetails);
 }
 
 export function formatError(error: unknown): Error | null {
@@ -55,11 +62,9 @@ export function formatErrorWithDetails(error: Error, host: string, port: number)
 }
 
 export function handleConnectionError(error: Error): void {
-  const errorMessage: string = `❌ Error connecting to AI agent APIs: ${error.message}`;
+  const errorMessage: string = `Error connecting to AI agent APIs: ${error.message}`;
   const errorStack: string = error.stack ? ` Stack trace: ${error.stack}` : '';
-  const networkDetails: string = JSON.stringify(getNetworkDetails(), null, 2);
-
-  console.error(`${errorMessage}\n${errorStack}\nNetwork Details: ${networkDetails}`);
+  logConnectionEvent('error', errorMessage, { stack: errorStack });
 }
 
 export type NetworkDetails = Record<string, string[]>;
