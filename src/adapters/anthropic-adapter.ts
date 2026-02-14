@@ -1,0 +1,195 @@
+/**
+ * Anthropic Agent Adapter
+ * Executes prompts via Claude API and returns structured responses
+ */
+
+import Anthropic from '@anthropic-ai/sdk';
+import { writeFile, mkdir } from 'node:fs/promises';
+import { dirname } from 'node:path';
+import type { AgentAdapter, AgentRequest, AgentResponse } from '../types.js';
+import { isNetworkError } from '../utils/networkErrorUtil.js';
+
+interface AnthropicConfig {
+  apiKey: string;
+  model: string;
+}
+
+interface TextBlock {
+  type: 'text';
+  text: string;
+}
+
+interface ValidAnthropicResponse {
+  content: Array<TextBlock>;
+  usage: {
+    input_tokens: number;
+    output_tokens: number;
+  };
+  stop_reason: string;
+}
+
+function isAPILimitError(err: unknown): boolean {
+  return (
+    typeof err === 'object' &&
+    err !== null &&
+    'response' in err &&
+    (err as { response: { status: number } }).response.status === 429
+  );
+}
+
+function isInvalidResponseError(response: unknown): response is Partial<ValidAnthropicResponse> {
+  return (
+    typeof response !== 'object' || response === null || !('content' in response) || !('usage' in response)
+  );
+}
+
+function isUnexpectedResponseError(response: unknown): boolean {
+  return (
+    typeof response === 'object' &&
+    response !== null &&
+    'status' in response &&
+    (response as { status: number }).status >= 400
+  );
+}
+
+function isTimeoutError(err: unknown): boolean {
+  return err instanceof Error && err.message.includes('timeout');
+}
+
+function isRateLimitError(err: unknown): boolean {
+  return (
+    typeof err === 'object' &&
+    err !== null &&
+    'response' in err &&
+    (err as { response: { status: number } }).response.status === 429
+  );
+}
+
+async function retry<T>(fn: () => Promise<T>, retries: number, delayMs: number): Promise<T> {
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      if (attempt === retries - 1) throw err;
+      await new Promise((res) => setTimeout(res, delayMs));
+    }
+  }
+  throw new Error('Retry attempts exhausted');
+}
+
+export function createAnthropicAdapter(config: AnthropicConfig): AgentAdapter {
+  const client = new Anthropic({ apiKey: config.apiKey });
+
+  return {
+    name: 'anthropic',
+
+    async execute(request: AgentRequest): Promise<AgentResponse> {
+      const start: number = Date.now();
+      const maxRetries: number = 3;
+      const retryDelayMs: number = 1000; // 1 second delay
+
+      try {
+        console.log('\n┌─────────────────────────────────────────');
+        console.log(`│ 🧠 Anthropic (${config.model}) — Executing`);
+        console.log('├─────────────────────────────────────────');
+
+        const systemPrompt: string = request.context
+          ? `You are an expert software engineer. Follow all instructions precisely.\n\nContext:\n${request.context}`
+          : 'You are an expert software engineer. Follow all instructions precisely. Return only the requested output — no preamble, no explanation unless asked.';
+
+        const message: unknown = await retry(
+          (): Promise<unknown> =>
+            client.messages.create({
+              model: config.model,
+              max_tokens: 4096,
+              system: systemPrompt,
+              messages: [
+                {
+                  role: 'user',
+                  content: request.prompt,
+                },
+              ],
+            }),
+          maxRetries,
+          retryDelayMs
+        );
+
+        if (isInvalidResponseError(message)) {
+          console.error('Invalid response structure:', message);
+          throw new Error('API returned unexpected data structure.');
+        } else if (isUnexpectedResponseError(message)) {
+          console.error('Unexpected API response status:', message);
+          throw new Error('Unexpected API response status.');
+        }
+
+        // explicit cast to ValidAnthropicResponse after checks
+        const validResponse: ValidAnthropicResponse = message as ValidAnthropicResponse;
+
+        // Extract text from response
+        const textBlocks: TextBlock[] = validResponse.content.filter(
+          (block: TextBlock): block is TextBlock => block.type === 'text'
+        );
+        const output: string = textBlocks.map((b: TextBlock) => b.text).join('\n');
+
+        const durationMs: number = Date.now() - start;
+
+        // Write to output file if specified
+        if (request.outputPath) {
+          await mkdir(dirname(request.outputPath), { recursive: true });
+          await writeFile(request.outputPath, output, 'utf-8');
+          console.log(`│ 📄 Output written to: ${request.outputPath}`);
+        }
+
+        // Log preview
+        const lines: string[] = output.split('\n');
+        const preview: string = lines.slice(0, 10).join('\n');
+        console.log('│');
+        console.log(preview.replace(/^/gm, '│  '));
+        if (lines.length > 10) {
+          console.log(`│  ... (${lines.length - 10} more lines)`);
+        }
+
+        console.log('│');
+        console.log(`│ ⏱  Duration: ${durationMs}ms`);
+        console.log(`│ 📊 Tokens: ${validResponse.usage.input_tokens} in / ${validResponse.usage.output_tokens} out`);
+        console.log(`│ 🛑 Stop: ${validResponse.stop_reason}`);
+        console.log('└─────────────────────────────────────────\n');
+
+        return {
+          success: true,
+          output,
+          durationMs,
+        };
+      } catch (err: unknown) {
+        let error: string = 'An unknown error occurred.';
+        const durationMs: number = Date.now() - start;
+
+        if (isNetworkError(err)) {
+          error = 'Network error: Unable to reach the API. Retrying...';
+        } else if (isAPILimitError(err)) {
+          error = 'API limit reached: Too many requests. Please try again later.';
+        } else if (isTimeoutError(err)) {
+          error = 'Network error: Request timed out. Please check your connection.';
+        } else if (isRateLimitError(err)) {
+          error = 'Rate limit error: Too many requests in a short amount of time.';
+        } else if (err instanceof Error) {
+          error = `Error: ${err.message}`;
+        } else if (typeof err === 'object' && err !== null) {
+          error = `Unexpected error object: ${JSON.stringify(err)}`;
+        } else {
+          error = `Unexpected error type: ${String(err)}`;
+        }
+
+        console.error(`│ ❌ Error: ${error}`);
+        console.error(`│ ⏱  Duration: ${durationMs}ms`);
+        console.log('└─────────────────────────────────────────\n');
+
+        return {
+          success: false,
+          error,
+          durationMs,
+        };
+      }
+    },
+  };
+}
