@@ -9,6 +9,7 @@ import { resolve, join, relative, extname } from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import type { AgentAdapter, AgentRequest } from './types.js';
 import { createQueueManager, type QueueTask } from './queue-manager.js';
+import type { ProjectConfig } from './project-registry.js';
 
 // --- Types ---
 
@@ -21,6 +22,8 @@ export interface ProposerConfig {
   maxFileSize?: number;    // Skip files larger than this (bytes)
   includeGlobs?: string[]; // Only include these directories
   skipReview?: boolean;     // Skip the self-review step (default: false)
+  projectConfig?: ProjectConfig; // Multi-project support
+  orchestratorRoot?: string;     // Path to orchestrator (for prompts)
 }
 
 interface ProposedTask {
