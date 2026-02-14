@@ -40,6 +40,29 @@ interface CompletionChoice {
   finish_reason: string;
 }
 
+function getErrorMessage(err: Error): string {
+  const errorMapping: Record<string, string> = {
+    'Network Error': 'Network error occurred. Please check your connection and try again.',
+    'timeout': 'Request timed out. Please try again later.',
+    '401': 'Unauthorized: Invalid API key or permissions issue.',
+    '403': 'Forbidden: You do not have permission to access this resource.',
+    '404': 'Not found: The requested resource could not be found.',
+    '500': 'Internal server error. Try again after some time.',
+    '502': 'Bad Gateway: Invalid response from the upstream server.',
+    '503': 'Service unavailable: OpenAI temporarily unavailable. Try again after some time.',
+    '504': 'Gateway timeout: Upstream server failed to send a request in time.',
+    '429': 'Too many requests: You have hit the rate limit. Try again later.',
+    'Malformed response': 'Received a malformed response from OpenAI. Please try again later.'
+  };
+
+  for (const key in errorMapping) {
+    if (err.message.includes(key)) {
+      return errorMapping[key];
+    }
+  }
+  return 'An unexpected error occurred. Please try again later.';
+}
+
 export function createOpenAIAdapter(config: OpenAIConfig, adapterName: 'openai' | 'codex' = 'openai'): AgentAdapter {
   if (!isValidOpenAIConfig(config)) {
     throw new Error('Invalid OpenAI configuration');
@@ -72,7 +95,6 @@ export function createOpenAIAdapter(config: OpenAIConfig, adapterName: 'openai' 
           max_tokens: 4096,
         });
 
-        // Ensure the types align specifically with what we expect in CompletionResponse
         if (!completion || !Array.isArray(completion.choices) || completion.choices.length === 0 || !completion.choices[0].message?.content) {
           throw new Error('Malformed response from OpenAI service');
         }
@@ -82,14 +104,12 @@ export function createOpenAIAdapter(config: OpenAIConfig, adapterName: 'openai' 
 
         console.log(`\n💬 Response Details: ${JSON.stringify(completion, null, 2)}`);
 
-        // Write to output file if specified
         if (request.outputPath) {
           await mkdir(dirname(request.outputPath), { recursive: true });
           await writeFile(request.outputPath, output, 'utf-8');
           console.log(`│ 📄 Output written to: ${request.outputPath}`);
         }
 
-        // Log preview
         const lines: string[] = output.split('\n');
         const preview: string = lines.slice(0, 10).join('\n');
         console.log('│');
@@ -114,23 +134,7 @@ export function createOpenAIAdapter(config: OpenAIConfig, adapterName: 'openai' 
         let errorMessage: string;
 
         if (err instanceof Error) {
-          if (err.message.includes('Network Error')) {
-            errorMessage = 'Network error occurred. Please check your connection and try again.';
-          } else if (err.message.includes('timeout')) {
-            errorMessage = 'Request timed out. Please try again later.';
-          } else if (err.message.includes('401')) {
-            errorMessage = 'Unauthorized: Invalid API key or permissions issue.';
-          } else if (err.message.includes('500')) {
-            errorMessage = 'Internal server error. Try again after some time.';
-          } else if (err.message.includes('429')) {
-            errorMessage = 'Too many requests: You have hit the rate limit. Try again later.';
-          } else if (err.message.includes('503')) {
-            errorMessage = 'Service unavailable: OpenAI temporarily unavailable. Try again after some time.';
-          } else if (err.message.includes('Malformed response')) {
-            errorMessage = 'Received a malformed response from OpenAI. Please try again later.';
-          } else {
-            errorMessage = 'An unexpected error occurred. Please try again later.';
-          }
+          errorMessage = getErrorMessage(err);
         } else {
           errorMessage = 'An unknown error occurred.';
         }
