@@ -922,7 +922,7 @@ tasks:
     completed_at: 2026-02-14T00:31:34.448Z
     branch: auto/add-error-handling-testing-util
   - id: write-tests-state-manager
-    status: running
+    status: failed
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -933,3 +933,30 @@ tasks:
         Develop tests for the StateManager to ensure that save, load, and list methods function correctly and handle
         both valid states and edge cases like missing files or corrupted JSON gracefully.
     started_at: 2026-02-14T00:31:34.461Z
+    completed_at: 2026-02-14T00:31:58.961Z
+    error: >-
+      # Verification Errors
+
+
+      The following commands failed. Fix ALL errors.
+
+
+      ## TypeScript Build (exit 2)
+
+      ```
+
+      src/state-manager.test.ts(20,9): error TS2739: Type '{ executionId: string; startedAt: string; }' is missing the
+      following properties from type 'TestWorkflowExecution': workflowName, status, steps, variables
+
+      src/state-manager.test.ts(44,9): error TS2739: Type '{ executionId: string; startedAt: string; }' is missing the
+      following properties from type 'TestWorkflowExecution': workflowName, status, steps, variables
+
+      src/state-manager.test.ts(50,9): error TS2739: Type '{ executionId: string; startedAt: string; }' is missing the
+      following properties from type 'TestWorkflowExecution': workflowName, status, steps, variables
+
+      src/state-manager.test.ts(73,9): error TS2739: Type '{ executionId: string; startedAt: string; }' is missing the
+      following properties from type 'TestWorkflowExecution': workflowName, status, steps, variables
+
+      src/state-manager.test.ts(83,9): error TS2304: Cannot find name 'writeFile'.
+
+      ```
