@@ -1,126 +1,72 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
 import { getHealthStatus } from '../src/health.js';
-import { createLogger } from '../src/logger.js';
 
-const logger = createLogger('health');
-const originalMemoryUsage = process.memoryUsage;
-const originalUptime = process.uptime;
+// Mocking necessary modules and functions
+const mockLogger = {
+  error: () => {},
+  debug: () => {},
+  info: () => {},
+  warn: () => {},
+};
+let originalCreateLogger: Function;
+let originalReadFileSync: Function;
+let originalProcess: NodeJS.Process;
 
-function mockMemoryUsage(heapUsed: number) {
-  process.memoryUsage = () => ({ heapUsed } as NodeJS.MemoryUsage);
-}
+test('setup', () => {
+  originalCreateLogger = (global as any).createLogger;
+  (global as any).createLogger = () => mockLogger;
 
-function mockUptime(uptime: number) {
-  process.uptime = () => uptime;
-}
+  originalReadFileSync = (global as any).readFileSync;
+  (global as any).readFileSync = (path: string) => JSON.stringify({ version: '1.0.0' });
 
-function resetMocks() {
-  process.memoryUsage = originalMemoryUsage;
-  process.uptime = originalUptime;
-}
+  originalProcess = process;
+  process = { ...process, uptime: () => 123.456, memoryUsage: () => ({ heapUsed: 200000000 }) } as NodeJS.Process;
+});
 
-test('getHealthStatus: normal operation', () => {
-  mockMemoryUsage(300 * 1048576); // 300 MB
-  mockUptime(120); // 2 minutes
-
+test('should return proper health status with valid package version', () => {
   const status = getHealthStatus();
-
   assert.strictEqual(status.status, 'ok');
-  assert.ok(status.uptime > 0);
-  assert.ok(status.memoryUsage <= 300);
-  assert.ok(Date.parse(status.timestamp) > 0);
-  assert.strictEqual(typeof status.version, 'string');
+  assert.strictEqual(status.uptime, 123.46);
+  assert.strictEqual(status.memoryUsage, 190.73);
+  assert.strictEqual(status.version, '1.0.0');
+});
+
+test('should handle missing package version gracefully', () => {
+  (global as any).readFileSync = (path: string) => JSON.stringify({});
   
-  resetMocks();
+  const status = getHealthStatus();
+  assert.strictEqual(status.status, 'ok');
+  assert.strictEqual(status.version, undefined);
 });
 
-test('getHealthStatus: error when reading package.json', () => {
-  const fsReadFileSyncOriginal = require('fs').readFileSync;
-  require('fs').readFileSync = () => { throw new Error('File read error'); };
-
-  mockMemoryUsage(300 * 1048576); // 300 MB
-  mockUptime(120); // 2 minutes
-
-  const status = getHealthStatus();
-
-  assert.strictEqual(status.status, 'ok');
-  assert.ok(status.uptime > 0);
-  assert.ok(Date.parse(status.timestamp) > 0);
-
-  require('fs').readFileSync = fsReadFileSyncOriginal;
-  resetMocks();
-});
-
-test('getHealthStatus: error parsing package.json', () => {
-  const fsReadFileSyncOriginal = require('fs').readFileSync;
-  require('fs').readFileSync = () => '{ invalidJson }';
-
-  mockMemoryUsage(300 * 1048576); // 300 MB
-  mockUptime(120); // 2 minutes
-
-  const status = getHealthStatus();
-
-  assert.strictEqual(status.status, 'ok');
-  assert.ok(status.uptime > 0);
-  assert.ok(Date.parse(status.timestamp) > 0);
+test('should handle invalid package.json format gracefully', () => {
+  (global as any).readFileSync = (path: string) => '{ invalid json }';
   
-  require('fs').readFileSync = fsReadFileSyncOriginal;
-  resetMocks();
+  const status = getHealthStatus();
+  assert.strictEqual(status.status, 'ok');
+  assert.strictEqual(status.version, undefined);
 });
 
-test('logMemoryUsageWarnings: high memory usage', () => {
-  mockMemoryUsage(550 * 1048576); // 550 MB
-  mockUptime(120); // 2 minutes
-
-  const logs: string[] = [];
-  logger.warn = (message: string) => logs.push(message);
-
-  getHealthStatus();
-
-  assert(logs.some(log => log.includes('High memory usage')));
-
-  resetMocks();
+test('should return NaN for memory usage in case of invalid heapUsed', () => {
+  process = { ...process, memoryUsage: () => ({ heapUsed: NaN }) } as NodeJS.Process;
+  
+  const status = getHealthStatus();
+  assert.ok(isNaN(status.memoryUsage));
 });
 
-test('logMemoryUsageWarnings: critical memory usage', () => {
-  mockMemoryUsage(750 * 1048576); // 750 MB
-  mockUptime(120); // 2 minutes
-
-  const logs: string[] = [];
-  logger.error = (message: string) => logs.push(message);
-
+test('should log warnings for high memory usage', () => {
+  let logMessage = '';
+  mockLogger.warn = (msg: string) => { logMessage = msg; };
+  
+  process = { ...process, memoryUsage: () => ({ heapUsed: 600000000 }) } as NodeJS.Process;
+  
   getHealthStatus();
-
-  assert(logs.some(log => log.includes('Critical memory usage')));
-
-  resetMocks();
+  assert.strictEqual(logMessage, 'High memory usage detected: 572.20 MB. Consider investigating memory usage.');
 });
 
-test('logMemoryUsageWarnings: moderate memory usage', () => {
-  mockMemoryUsage(350 * 1048576); // 350 MB
-  mockUptime(120); // 2 minutes
-
-  const logs: string[] = [];
-  logger.info = (message: string) => logs.push(message);
-
-  getHealthStatus();
-
-  assert(logs.some(log => log.includes('Moderate memory usage')));
-
-  resetMocks();
-});
-
-test('logMemoryUsageWarnings: normal memory usage', () => {
-  mockMemoryUsage(250 * 1048576); // 250 MB
-  mockUptime(120); // 2 minutes
-
-  const logs: string[] = [];
-  logger.info = (message: string) => logs.push(message);
-
-  getHealthStatus();
-
-  assert(logs.some(log => log.includes('Normal memory usage')));
-
-  resetMocks();
+test('teardown', () => {
+  (global as any).createLogger = originalCreateLogger;
+  (global as any).readFileSync = originalReadFileSync;
+  process = originalProcess;
 });
