@@ -23,24 +23,12 @@ export function getHealthStatus(): HealthStatus {
   let memoryUsageMB: number = 0;
   let status: 'ok' | 'degraded' | 'down' = 'ok';
 
-  try {
-    version = retryOperation<string | undefined>(extractPackageVersion);
-  } catch (error: unknown) {
-    logDetailedError('Version extraction error', 'Failed to parse package.json for version.', error);
-    status = 'degraded';
-  }
+  version = handleOperation(retryOperation<string | undefined>(extractPackageVersion), 'Version extraction error', 'Failed to parse package.json for version.');
+  memoryUsageMB = handleOperation(retryOperation<number>(getSafeMemoryUsageMB), 'Memory usage retrieval error', 'Unable to calculate memory usage.');
 
-  try {
-    memoryUsageMB = retryOperation<number>(getSafeMemoryUsageMB);
-  } catch (error: unknown) {
-    logDetailedError('Memory usage retrieval error', 'Unable to calculate memory usage.', error);
-    status = 'degraded';
-  }
-
-  const uptime: number | null = retryOperation<number | null>(getUptimeSafely);
+  const uptime: number | null = handleOperation(retryOperation<number | null>(getUptimeSafely), 'Uptime retrieval error', 'Failed to retrieve system uptime.', true);
 
   if (uptime === null) {
-    logDetailedError('Uptime retrieval error', 'Failed to retrieve system uptime.', new Error('Uptime is NaN'));
     status = 'down';
   }
 
@@ -77,26 +65,18 @@ function sleep(ms: number): void {
 }
 
 function extractPackageVersion(): string | undefined {
-  try {
-    const packageJsonPath: string = join(process.cwd(), 'package.json');
-    const packageJsonContent: string = readFileSync(packageJsonPath, 'utf-8');
-    const packageJson: PackageJson = JSON.parse(packageJsonContent) as PackageJson;
-    const version: string = packageJson.version ?? 'unknown';
-    logger.debug(`Package version extracted: ${version}`);
-    return version !== 'unknown' ? version : undefined;
-  } catch (error) {
-    throw new Error('Failed to extract package version: ' + (error instanceof Error ? error.message : 'Unknown error'));
-  }
+  const packageJsonPath: string = join(process.cwd(), 'package.json');
+  const packageJsonContent: string = readFileSync(packageJsonPath, 'utf-8');
+  const packageJson: PackageJson = JSON.parse(packageJsonContent) as PackageJson;
+  const version: string = packageJson.version ?? 'unknown';
+  logger.debug(`Package version extracted: ${version}`);
+  return version !== 'unknown' ? version : undefined;
 }
 
 function getSafeMemoryUsageMB(): number {
-  try {
-    const heapUsed: number = process.memoryUsage().heapUsed;
-    if (isNaN(heapUsed)) throw new Error('Heap used is NaN');
-    return Number((heapUsed / 1048576).toFixed(2));
-  } catch (error) {
-    throw new Error('Failed to retrieve memory usage: ' + (error instanceof Error ? error.message : 'Unknown error'));
-  }
+  const heapUsed: number = process.memoryUsage().heapUsed;
+  if (isNaN(heapUsed)) throw new Error('Heap used is NaN');
+  return Number((heapUsed / 1048576).toFixed(2));
 }
 
 function getUptimeSafely(): number | null {
@@ -105,12 +85,8 @@ function getUptimeSafely(): number | null {
 }
 
 function logHealthMonitoringData(healthStatus: HealthStatus): void {
-  try {
-    logHealthStatus(healthStatus);
-    logMemoryUsageWarnings(healthStatus.memoryUsage);
-  } catch (error) {
-    logDetailedError('Logging error', 'Could not log health status and warnings.', error);
-  }
+  logHealthStatus(healthStatus);
+  logMemoryUsageWarnings(healthStatus.memoryUsage);
 }
 
 function logHealthStatus({ uptime, memoryUsage, version }: HealthStatus): void {
@@ -141,4 +117,19 @@ function logDetailedError(type: string, context: string, error: unknown): void {
   const errorMessage: string = error instanceof Error ? error.message : 'Unknown error';
   const stackTrace: string = error instanceof Error && error.stack ? `\nStack Trace: ${error.stack}` : '';
   logger.error(`${type}: ${context} - ${errorMessage}${stackTrace}`);
+}
+
+function handleOperation<T>(operationResult: T | null, errorType: string, errorMessage: string, isCritical: boolean = false): T {
+  if (operationResult === null && isCritical) {
+    logDetailedError(errorType, errorMessage, new Error(errorMessage));
+    return operationResult as T;
+  }
+  
+  try {
+    if (operationResult === null) throw new Error(errorMessage);
+    return operationResult;
+  } catch (error) {
+    logDetailedError(errorType, errorMessage, error);
+    return isCritical ? (null as T) : (typeof operationResult === 'undefined' ? (undefined as T) : ({} as T));
+  }
 }
