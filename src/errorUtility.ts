@@ -8,6 +8,8 @@ interface ErrorDetails {
   [key: string]: unknown;
 }
 
+type AdditionalData = Record<string, unknown>;
+
 export function formatErrorMessage(
   error: unknown,
   userFriendlyMessage: string = 'An unexpected error occurred.'
@@ -20,7 +22,7 @@ export function formatErrorMessage(
 
 export function logErrorDetails(
   error: unknown,
-  additionalData: Record<string, unknown> = {}
+  additionalData: AdditionalData = {}
 ): ErrorDetails {
   const errorDetails: ErrorDetails = {
     timestamp: new Date().toISOString(),
@@ -38,7 +40,7 @@ export function logErrorDetails(
   );
 
   console.error(logMessage); // For debugging purposes, we also print the error to the console.
-  writeErrorToFile(logMessage);
+  void writeErrorToFile(logMessage);
   return errorDetails;
 }
 
