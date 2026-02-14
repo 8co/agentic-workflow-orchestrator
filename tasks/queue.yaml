@@ -2012,3 +2012,45 @@ tasks:
     started_at: 2026-02-14T00:52:31.192Z
     completed_at: 2026-02-14T00:52:41.736Z
     branch: auto/add-tests-scheduler-edge-cases
+  - id: write-tests-enhanced-logger-error-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/enhanced-logger.ts
+    variables:
+      test_target: src/enhanced-logger.ts
+      test_description: >
+        Write tests to ensure the enhanced logger's error handling correctly captures and logs errors to both console
+        and file.
+  - id: write-tests-file-helper-edge-cases
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/file-helper.ts
+    variables:
+      test_target: src/file-helper.ts
+      test_description: >
+        Create tests that cover edge cases in the file helper module, such as invalid file paths and permission denied
+        errors.
+  - id: improve-type-safety aiAgents
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/aiAgents.ts
+    variables:
+      modification_description: >
+        Enhance type safety by specifying return types and adding type annotations to functions and variables throughout
+        the aiAgents module.
+  - id: refactor-health-status-logging
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/health.ts
+    variables:
+      modification_description: >
+        Refactor logging in the health status module to improve clarity and provide more detailed information on memory
+        usage and uptime.
