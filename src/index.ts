@@ -7,10 +7,15 @@ import { initializeOrchestrationEngine } from './orchestrationEngine.js';
 import { loadWorkflowConfigurations } from './workflowConfig.js';
 import { connectToAIAgents } from './aiAgents.js';
 
-function logError(context: string, error: unknown): void {
-  const errorMessage = error instanceof Error ? error.message : String(error);
-  const errorStack = error instanceof Error ? error.stack : 'No stack trace available';
-  const timestamp = new Date().toISOString();
+interface ErrorDetails {
+  context: string;
+  error: unknown;
+}
+
+function logError({ context, error }: ErrorDetails): void {
+  const errorMessage: string = error instanceof Error ? error.message : String(error);
+  const errorStack: string = error instanceof Error ? error.stack ?? 'No stack trace available' : 'No stack trace available';
+  const timestamp: string = new Date().toISOString();
 
   console.error(`
   ⛔️ [${timestamp}] Error Context: ${context}
@@ -26,12 +31,12 @@ function terminateProcess(): void {
 
 export function main(): void {
   console.log('🤖 Agentic Workflow Orchestrator - Starting...');
-  let criticalFailure = false;
+  let criticalFailure: boolean = false;
 
   try {
     initializeOrchestrationEngine();
   } catch (error) {
-    logError('orchestration engine initialization', error);
+    logError({ context: 'orchestration engine initialization', error });
     criticalFailure = true;
   }
 
@@ -39,7 +44,7 @@ export function main(): void {
     try {
       loadWorkflowConfigurations();
     } catch (error) {
-      logError('workflow configurations loading', error);
+      logError({ context: 'workflow configurations loading', error });
       criticalFailure = true;
     }
   }
@@ -48,7 +53,7 @@ export function main(): void {
     try {
       connectToAIAgents();
     } catch (error) {
-      logError('AI agents connection', error);
+      logError({ context: 'AI agents connection', error });
       criticalFailure = true;
     }
   }
