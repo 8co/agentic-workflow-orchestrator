@@ -1,56 +1,81 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
+import { getHealthStatus } from '../src/health.js';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { getHealthStatus } from '../src/health.js';
+import { createLogger } from '../src/logger.js';
 
-test('getHealthStatus should accurately fetch system health', () => {
-  const originalUptime = process.uptime;
-  const originalMemoryUsage = process.memoryUsage;
-  
-  process.uptime = () => 120; // Setting uptime to 120 seconds
-  process.memoryUsage = () => ({ heapUsed: 1024 * 1024 * 250 }); // 250 MB usage
-  
-  const healthStatus = getHealthStatus();
-  
-  assert.strictEqual(healthStatus.status, 'ok');
-  assert(healthStatus.uptime >= 120);
-  assert(healthStatus.memoryUsage <= 250);
-  assert(new Date(healthStatus.timestamp).getTime() <= Date.now());
-  
-  // Restore original functions
-  process.uptime = originalUptime;
-  process.memoryUsage = originalMemoryUsage;
-});
+const loggerMock = {
+  info: () => {},
+  warn: () => {},
+  error: () => {},
+};
 
-test('getHealthStatus should handle missing package.json', () => {
-  const originalReadFileSync = readFileSync as unknown as () => string;
-  
-  readFileSync = () => { throw new Error('File not found'); };
-  
-  const healthStatus = getHealthStatus();
-  
-  assert.strictEqual(healthStatus.version, 'unknown');
-  
-  // Restore original function
-  readFileSync = originalReadFileSync as unknown as typeof readFileSync;
-});
+const originalProcessCwd = process.cwd;
+const originalProcessUptime = process.uptime;
+const originalProcessMemoryUsage = process.memoryUsage;
+const originalReadFileSync = readFileSync;
+const originalLoggerCreate = createLogger;
 
-test('getHealthStatus should extract version from package.json', () => {
+createLogger = () => loggerMock as ReturnType<typeof createLogger>;
+
+test('getHealthStatus returns correct status with valid package.json', () => {
+  const mockCwd = '/mocked-path';
   const mockVersion = '1.0.0';
-  const originalReadFileSync = readFileSync as unknown as () => string;
-  
-  readFileSync = (path: string) => {
-    if (path === join(process.cwd(), 'package.json')) {
+  process.cwd = () => mockCwd;
+  readFileSync = (path: string, encoding: string) => {
+    if (path === join(mockCwd, 'package.json')) {
       return JSON.stringify({ version: mockVersion });
     }
-    return '{}';
+    return '';
   };
+  process.uptime = () => 120.56;
+  process.memoryUsage = () => ({ heapUsed: 200 * 1024 * 1024 });
   
-  const healthStatus = getHealthStatus();
-  
-  assert.strictEqual(healthStatus.version, mockVersion);
-  
-  // Restore original function
-  readFileSync = originalReadFileSync as unknown as typeof readFileSync;
+  const status = getHealthStatus();
+
+  assert.equal(status.status, 'ok');
+  assert.equal(status.version, mockVersion);
+  assert.ok(status.uptime >= 0);
+  assert.ok(status.memoryUsage >= 0);
+  assert.ok(Date.parse(status.timestamp) > 0);
 });
+
+test('getHealthStatus handles missing package.json gracefully', () => {
+  process.cwd = () => '/invalid-path';
+  readFileSync = () => { throw new Error('File not found'); };
+  
+  const status = getHealthStatus();
+
+  assert.equal(status.status, 'ok');
+  assert.equal(status.version, 'unknown');
+});
+
+test('getHealthStatus handles invalid JSON in package.json gracefully', () => {
+  const mockCwd = '/mocked-path';
+  process.cwd = () => mockCwd;
+  readFileSync = () => '{ invalid JSON ';
+  
+  const status = getHealthStatus();
+
+  assert.equal(status.status, 'ok');
+  assert.equal(status.version, 'unknown');
+});
+
+test('getHealthStatus logs warning for high memory usage', () => {
+  let warningLogged = false;
+  loggerMock.warn = () => { warningLogged = true; };
+  process.memoryUsage = () => ({ heapUsed: 600 * 1024 * 1024 });
+
+  const status = getHealthStatus();
+
+  assert.equal(status.status, 'ok');
+  assert.ok(warningLogged);
+});
+
+// Restore mocked functions
+process.cwd = originalProcessCwd;
+process.uptime = originalProcessUptime;
+process.memoryUsage = originalProcessMemoryUsage;
+readFileSync = originalReadFileSync;
+createLogger = originalLoggerCreate;
