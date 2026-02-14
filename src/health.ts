@@ -19,7 +19,7 @@ const logger = createLogger('health');
 export function getHealthStatus(): HealthStatus {
   let version: string | undefined;
   let memoryUsageMB = 0;
-  let status: 'ok' | 'degraded' = 'ok';
+  let status: 'ok' | 'degraded' | 'down' = 'ok';
 
   try {
     version = extractPackageVersion();
@@ -35,11 +35,16 @@ export function getHealthStatus(): HealthStatus {
     status = 'degraded';
   }
 
-  const uptime = Number(process.uptime().toFixed(2));
+  const uptime = getUptimeSafely();
+
+  if (uptime === null) {
+    logError('Uptime retrieval error', 'Failed to retrieve system uptime.', new Error('Uptime is NaN'));
+    status = 'down';
+  }
 
   const healthStatus: HealthStatus = {
     status,
-    uptime,
+    uptime: uptime || 0,
     memoryUsage: memoryUsageMB,
     timestamp: new Date().toISOString(),
     version,
@@ -51,18 +56,31 @@ export function getHealthStatus(): HealthStatus {
 }
 
 function extractPackageVersion(): string | undefined {
-  const packageJsonPath = join(process.cwd(), 'package.json');
-  const packageJsonContent = readFileSync(packageJsonPath, 'utf-8');
-  const packageJson = JSON.parse(packageJsonContent) as PackageJson;
-  const version = packageJson.version ?? 'unknown';
-  logger.debug(`Package version extracted: ${version}`);
-  return version !== 'unknown' ? version : undefined;
+  try {
+    const packageJsonPath = join(process.cwd(), 'package.json');
+    const packageJsonContent = readFileSync(packageJsonPath, 'utf-8');
+    const packageJson = JSON.parse(packageJsonContent) as PackageJson;
+    const version = packageJson.version ?? 'unknown';
+    logger.debug(`Package version extracted: ${version}`);
+    return version !== 'unknown' ? version : undefined;
+  } catch (error) {
+    throw new Error('Failed to extract package version: ' + (error instanceof Error ? error.message : 'Unknown error'));
+  }
 }
 
 function getSafeMemoryUsageMB(): number {
-  const heapUsed = process.memoryUsage().heapUsed;
-  if (isNaN(heapUsed)) throw new Error('Heap used is NaN');
-  return Number((heapUsed / 1048576).toFixed(2));
+  try {
+    const heapUsed = process.memoryUsage().heapUsed;
+    if (isNaN(heapUsed)) throw new Error('Heap used is NaN');
+    return Number((heapUsed / 1048576).toFixed(2));
+  } catch (error) {
+    throw new Error('Failed to retrieve memory usage: ' + (error instanceof Error ? error.message : 'Unknown error'));
+  }
+}
+
+function getUptimeSafely(): number | null {
+  const uptime = Number(process.uptime().toFixed(2));
+  return isNaN(uptime) ? null : uptime;
 }
 
 function logHealthMonitoringData(healthStatus: HealthStatus): void {
@@ -100,5 +118,5 @@ function logMemoryUsageWarnings(memoryUsage: number): void {
 
 function logError(type: string, context: string, error: unknown): void {
   const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-  logger.error(`${type}: ${context} ${errorMessage}`);
+  logger.error(`${type}: ${context} - ${errorMessage}`);
 }
