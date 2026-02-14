@@ -1386,7 +1386,7 @@ tasks:
     completed_at: 2026-02-14T00:42:07.400Z
     branch: auto/write-tests-adapters-anthropic-edge-cases
   - id: write-tests-openai-adapter-error-cases
-    status: running
+    status: completed
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -1397,8 +1397,10 @@ tasks:
         Write tests for error handling in the OpenAI Adapter. Focus on network errors, API key issues, and response
         validation.
     started_at: 2026-02-14T00:42:07.422Z
+    completed_at: 2026-02-14T00:42:13.950Z
+    branch: auto/write-tests-openai-adapter-error-cases
   - id: add-error-handling-to-enhanced-logger
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-modify-file.md
     context_files:
@@ -1407,6 +1409,7 @@ tasks:
       modification_description: >
         Add comprehensive error handling for file write operations in the EnhancedLogger class to prevent crashes on
         logging failures.
+    started_at: 2026-02-14T00:42:13.981Z
   - id: improve-type-safety-queue-manager
     status: pending
     workflow: auto
