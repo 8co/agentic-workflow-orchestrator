@@ -16,7 +16,7 @@ export function createCursorAdapter(): AgentAdapter {
     name: 'cursor',
 
     async execute(request: AgentRequest): Promise<AgentResponse> {
-      const start = Date.now();
+      const start: number = Date.now();
 
       try {
         console.log('\n┌─────────────────────────────────────────');
@@ -25,8 +25,8 @@ export function createCursorAdapter(): AgentAdapter {
         console.log('│');
 
         // Log the prompt (truncated for readability)
-        const lines = request.prompt.split('\n');
-        const preview = lines.slice(0, 20).join('\n');
+        const lines: string[] = request.prompt.split('\n');
+        const preview: string = lines.slice(0, 20).join('\n');
         console.log(preview.replace(/^/gm, '│  '));
         if (lines.length > 20) {
           console.log(`│  ... (${lines.length - 20} more lines)`);
@@ -41,7 +41,7 @@ export function createCursorAdapter(): AgentAdapter {
           console.log(`│ 📄 Output written to: ${request.outputPath}`);
         }
 
-        const durationMs = Date.now() - start;
+        const durationMs: number = Date.now() - start;
 
         console.log(`│ ⏱  Duration: ${durationMs}ms`);
         console.log('└─────────────────────────────────────────\n');
@@ -51,7 +51,7 @@ export function createCursorAdapter(): AgentAdapter {
           output: request.outputPath ?? '[stdout]',
           durationMs,
         };
-      } catch (err) {
+      } catch (err: unknown) {
         let errorMessage: string;
         if (err instanceof Error) {
           if ('code' in err) {
