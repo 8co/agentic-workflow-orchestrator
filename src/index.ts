@@ -9,12 +9,15 @@ import { connectToAIAgents } from './aiAgents.js';
 
 export function main(): void {
   console.log('🤖 Agentic Workflow Orchestrator - Starting...');
-  
-  initializeOrchestrationEngine();
-  loadWorkflowConfigurations();
-  connectToAIAgents();
-  
-  console.log('✅ System initialized');
+
+  try {
+    initializeOrchestrationEngine();
+    loadWorkflowConfigurations();
+    connectToAIAgents();
+    console.log('✅ System initialized');
+  } catch (error) {
+    console.error('❌ Error during system initialization:', error);
+  }
 }
 
 // Run if executed directly
