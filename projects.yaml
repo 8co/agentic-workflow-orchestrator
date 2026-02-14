@@ -1,0 +1,60 @@
+# Multi-Project Configuration
+# Define target projects for the orchestrator to work on
+
+projects:
+  # The orchestrator itself (default project)
+  - id: orchestrator
+    name: agentic-workflow-orchestrator
+    path: .
+    type: typescript-node
+    description: Autonomous AI agent system for continuous full-stack development
+    scan_dirs:
+      - src
+    skip_patterns:
+      - "*.test.ts"
+      - "*.spec.ts"
+    verify:
+      - command: npx
+        args: [tsc, --noEmit]
+    package_manager: npm
+
+  # Prompt Scorer Serverless API
+  - id: api
+    name: prompt-scorer-sls-api
+    path: ../prompt-scorer-sls-api
+    type: serverless-node
+    description: Serverless API service for evaluating and optimizing LLM prompts
+    scan_dirs:
+      - src
+      - resources
+    skip_patterns:
+      - "*.test.js"
+      - node_modules
+      - .serverless
+    verify:
+      - command: npm
+        args: [run, lint]
+        optional: true
+      - command: npx
+        args: [tsc, --noEmit]
+        optional: true
+    package_manager: npm
+
+  # Prompt Scorer UI
+  - id: ui
+    name: prompt-scorer-ui
+    path: ../prompt-scorer-ui
+    type: react-vite
+    description: React/Vite frontend for prompt scoring and analysis
+    scan_dirs:
+      - src
+    skip_patterns:
+      - "*.test.tsx"
+      - "*.test.ts"
+      - node_modules
+      - dist
+    verify:
+      - command: npm
+        args: [run, build]
+    package_manager: npm
+
