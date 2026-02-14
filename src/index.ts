@@ -10,39 +10,54 @@ import { connectToAIAgents } from './aiAgents.js';
 function logError(context: string, error: unknown): void {
   const errorMessage = error instanceof Error ? error.message : String(error);
   const errorStack = error instanceof Error ? error.stack : 'No stack trace available';
+  const timestamp = new Date().toISOString();
 
   console.error(`
-  ⛔️ Error Context: ${context}
+  ⛔️ [${timestamp}] Error Context: ${context}
   🔍 Message: ${errorMessage}
   🖼️ Stack Trace: ${errorStack}
   `);
 }
 
+function terminateProcess(): void {
+  console.error('🔥 Critical initialization failure. Terminating process.');
+  process.exit(1);
+}
+
 export function main(): void {
   console.log('🤖 Agentic Workflow Orchestrator - Starting...');
+  let criticalFailure = false;
 
   try {
     initializeOrchestrationEngine();
   } catch (error) {
     logError('orchestration engine initialization', error);
-    return;
+    criticalFailure = true;
   }
 
-  try {
-    loadWorkflowConfigurations();
-  } catch (error) {
-    logError('workflow configurations loading', error);
-    return;
+  if (!criticalFailure) {
+    try {
+      loadWorkflowConfigurations();
+    } catch (error) {
+      logError('workflow configurations loading', error);
+      criticalFailure = true;
+    }
   }
 
-  try {
-    connectToAIAgents();
-  } catch (error) {
-    logError('AI agents connection', error);
-    return;
+  if (!criticalFailure) {
+    try {
+      connectToAIAgents();
+    } catch (error) {
+      logError('AI agents connection', error);
+      criticalFailure = true;
+    }
   }
 
-  console.log('✅ System initialized');
+  if (criticalFailure) {
+    terminateProcess();
+  } else {
+    console.log('✅ System initialized');
+  }
 }
 
 // Run if executed directly
