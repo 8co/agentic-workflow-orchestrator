@@ -476,3 +476,44 @@ tasks:
     started_at: 2026-02-14T00:21:52.088Z
     completed_at: 2026-02-14T00:21:55.773Z
     branch: auto/create-testing-utility-module
+  - id: write-tests-aiAgents
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/aiAgents.ts
+    variables:
+      test_target: src/aiAgents.ts
+      test_description: |
+        Units tests for the AI agents connection logic, ensuring correct initialization  and integration of agent APIs.
+  - id: add-type-safety-to-queue-manager
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/queue-manager.ts
+    variables:
+      modification_description: >
+        Enhance type safety within the queue manager module, particularly for task  status management and function
+        return types, to prevent runtime errors and  improve code reliability.
+  - id: refactor-health-logger
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/health.ts
+    variables:
+      modification_description: >
+        Refactor the logging strategy within the health module to use standardized  log levels throughout the report
+        generation and error handling processes,  aligning with the existing logger's practices for consistency.
+  - id: add-tests-prompt-resolver
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/prompt-resolver.ts
+    variables:
+      test_target: src/prompt-resolver.ts
+      test_description: >
+        Unit tests for the prompt resolver to validate template loading, variable  injection, and step output resolution
+        functionalities.
