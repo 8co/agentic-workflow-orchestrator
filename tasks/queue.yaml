@@ -1556,7 +1556,7 @@ tasks:
     completed_at: 2026-02-14T00:45:02.614Z
     branch: auto/write-tests-state-manager-load-edge-cases
   - id: add-tests-anthropic-adapter-edge-cases
-    status: running
+    status: failed
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -1566,3 +1566,32 @@ tasks:
       test_description: |
         Write tests for edge cases like invalid API responses in anthropic-adapter.
     started_at: 2026-02-14T00:45:02.639Z
+    completed_at: 2026-02-14T00:45:31.308Z
+    error: >-
+      # Verification Errors
+
+
+      The following commands failed. Fix ALL errors.
+
+
+      ## TypeScript Build (exit 2)
+
+      ```
+
+      src/adapters/anthropic-adapter.test.ts(41,15): error TS2304: Cannot find name 'jest'.
+
+      src/adapters/anthropic-adapter.test.ts(44,5): error TS2322: Type 'null' is not assignable to type 'string |
+      undefined'.
+
+      src/adapters/anthropic-adapter.test.ts(57,5): error TS2322: Type 'null' is not assignable to type 'string |
+      undefined'.
+
+      src/adapters/anthropic-adapter.test.ts(69,5): error TS2322: Type 'null' is not assignable to type 'string |
+      undefined'.
+
+      src/adapters/anthropic-adapter.test.ts(79,15): error TS2304: Cannot find name 'jest'.
+
+      src/adapters/anthropic-adapter.test.ts(89,5): error TS2322: Type 'null' is not assignable to type 'string |
+      undefined'.
+
+      ```
