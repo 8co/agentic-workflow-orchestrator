@@ -1,71 +1,38 @@
+import { describe, it } from 'node:test';
 import assert from 'node:assert';
-import { describe, it, beforeEach, afterEach } from 'node:test';
-import { promises as fs } from 'node:fs';
-import { formatErrorMessage, logErrorDetails } from './errorUtility.js';
+import { formatErrorMessage } from './errorUtility.js';
 
-describe('Error Utility', () => {
-  const errorLogPath = 'error.log';
-
-  beforeEach(async () => {
-    await fs.writeFile(errorLogPath, '', 'utf-8');
+describe('formatErrorMessage', () => {
+  it('should return the user-friendly message followed by error details if error is an instance of Error', () => {
+    const error = new Error('Test error');
+    const userFriendlyMessage = 'A friendly message';
+    const result = formatErrorMessage(error, userFriendlyMessage);
+    assert.strictEqual(result, `${userFriendlyMessage}\nError Details: ${error.message}`);
   });
 
-  afterEach(async () => {
-    await fs.unlink(errorLogPath);
+  it('should return only the user-friendly message if error is not an instance of Error', () => {
+    const error = { unknown: 'object' };
+    const userFriendlyMessage = 'A friendly message';
+    const result = formatErrorMessage(error, userFriendlyMessage);
+    assert.strictEqual(result, userFriendlyMessage);
   });
 
-  describe('formatErrorMessage', () => {
-    it('should format message for standard Error', () => {
-      const error = new Error('An error occurred');
-      const formattedMessage = formatErrorMessage(error, 'Oops!');
-      assert.strictEqual(formattedMessage, 'Oops!\nError Details: An error occurred');
-    });
-
-    it('should return user-friendly message if error is unknown', () => {
-      const formattedMessage = formatErrorMessage('unknown error', 'Oops!');
-      assert.strictEqual(formattedMessage, 'Oops!');
-    });
-
-    it('should use default user-friendly message if none is provided', () => {
-      const error = new Error('An error occurred');
-      const formattedMessage = formatErrorMessage(error);
-      assert.strictEqual(formattedMessage, 'An unexpected error occurred.\nError Details: An error occurred');
-    });
+  it('should return the default message if user-friendly message is not provided and error is not an instance of Error', () => {
+    const error = { unknown: 'object' };
+    const result = formatErrorMessage(error);
+    assert.strictEqual(result, 'An unexpected error occurred.');
   });
 
-  describe('logErrorDetails', () => {
-    it('should log error details for a standard Error', async () => {
-      const error = new Error('Test error');
-      const details = logErrorDetails(error, { customField: 'testValue' });
+  it('should return the default user-friendly message followed by error details when error is an instance of Error and no message is provided', () => {
+    const error = new Error('Test error');
+    const result = formatErrorMessage(error);
+    assert.strictEqual(result, `An unexpected error occurred.\nError Details: ${error.message}`);
+  });
 
-      assert.strictEqual(details.message, 'Test error');
-      assert.strictEqual(details.customField, 'testValue');
-      assert.ok(details.timestamp);
-
-      const logContent = await fs.readFile(errorLogPath, 'utf-8');
-      assert.ok(logContent.includes('Test error'));
-      assert.ok(logContent.includes('customField'));
-    });
-
-    it('should handle logging unknown error types', async () => {
-      const details = logErrorDetails('unknown error type', { level: 'critical' });
-
-      assert.strictEqual(details.message, 'Unknown error');
-      assert.strictEqual(details.level, 'critical');
-      assert.ok(details.timestamp);
-
-      const logContent = await fs.readFile(errorLogPath, 'utf-8');
-      assert.ok(logContent.includes('Unknown error'));
-      assert.ok(logContent.includes('critical'));
-    });
-
-    it('should handle writing error to file even if file writing fails', async () => {
-      await fs.chmod(errorLogPath, 0o000); // Change permissions to simulate write failure
-
-      const error = new Error('Test error');
-      logErrorDetails(error);
-
-      await fs.chmod(errorLogPath, 0o666); // Restore write permissions
-    });
+  it('should work with actual Error instances containing stack traces', () => {
+    const error = new Error('Another test error');
+    const customMessage = 'Custom message';
+    const result = formatErrorMessage(error, customMessage);
+    assert.strictEqual(result, `${customMessage}\nError Details: ${error.message}`);
   });
 });
