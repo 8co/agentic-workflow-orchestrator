@@ -559,7 +559,7 @@ tasks:
     completed_at: 2026-02-14T20:53:07.896Z
     branch: auto/handle-edge-cases-in-auth-handler
   - id: implement-claim-parsing-helper
-    status: running
+    status: completed
     workflow: auto
     prompt: prompts/auto-create-module.md
     context_files:
@@ -573,6 +573,8 @@ tasks:
         This should handle stringified claims and return claims as an object.
     project: prompt-scorer-api
     started_at: 2026-02-14T20:53:19.325Z
+    completed_at: 2026-02-14T20:53:44.711Z
+    branch: auto/implement-claim-parsing-helper
   - id: add-serverless-schedule-event
     status: completed
     workflow: auto
@@ -604,7 +606,7 @@ tasks:
     project: prompt-scorer-api
     started_at: 2026-02-14T20:53:32.909Z
   - id: write-tests-for-analyze-prompt-handler
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -615,6 +617,7 @@ tasks:
         Develop unit tests for the analyze prompt handler to ensure proper functionality and error handling, and to
         verify that analyzed prompts are properly stored.
     project: prompt-scorer-api
+    started_at: 2026-02-14T20:53:44.728Z
   - id: error-handling-improvement-in-diagnostic
     status: pending
     workflow: auto
