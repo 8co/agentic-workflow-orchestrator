@@ -1,5 +1,5 @@
 // AI Agent Connection
-import { networkInterfaces } from 'os';
+import { networkInterfaces, NetworkInterfaceInfo } from 'os';
 
 export function connectToAIAgents(): void {
   console.log("🔗 Connecting to AI agent APIs...");
@@ -16,7 +16,7 @@ export function connectToAIAgents(): void {
   }
 }
 
-function formatError(error: unknown): Error | null {
+export function formatError(error: unknown): Error | null {
   if (error instanceof Error) {
     return error;
   }
@@ -26,7 +26,7 @@ function formatError(error: unknown): Error | null {
   return null;
 }
 
-function handleConnectionError(error: Error): void {
+export function handleConnectionError(error: Error): void {
   const errorMessage = `❌ Error connecting to AI agent APIs: ${error.message}`;
   const errorStack = error.stack ? ` Stack trace: ${error.stack}` : '';
   const networkDetails = JSON.stringify(getNetworkDetails(), null, 2);
@@ -34,19 +34,22 @@ function handleConnectionError(error: Error): void {
   console.error(`${errorMessage}\n${errorStack}\nNetwork Details: ${networkDetails}`);
 }
 
-function getNetworkDetails(): Record<string, string[]> {
+export type NetworkDetails = Record<string, string[]>;
+
+export function getNetworkDetails(): NetworkDetails {
   const nets = networkInterfaces();
-  const results: Record<string, string[]> = {};
+  const results: NetworkDetails = {};
 
   for (const name of Object.keys(nets)) {
-    for (const net of nets[name] || []) {
+    const netInfos = nets[name] || [];
+    netInfos.forEach((net: NetworkInterfaceInfo) => {
       if (net.family === 'IPv4' && !net.internal) {
         if (!results[name]) {
           results[name] = [];
         }
         results[name].push(net.address);
       }
-    }
+    });
   }
   return results;
 }
