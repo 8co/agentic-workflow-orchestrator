@@ -1,6 +1,7 @@
 // AI Agent Connection
 import { networkInterfaces, NetworkInterfaceInfo } from 'os';
 import { createConnection, Socket, TcpSocketConnectOpts } from 'net';
+import { accessSync, constants } from 'fs';
 
 export function connectToAIAgents(): void {
   logConnectionEvent('info', "Initiating connection to AI agent APIs...", {});
@@ -8,6 +9,8 @@ export function connectToAIAgents(): void {
   try {
     const aiAgentHost: string = 'ai-agent-api.example.com';
     const aiAgentPort: number = 443;
+
+    checkNetworkPermissions();
 
     const connectionOptions: TcpSocketConnectOpts = {
       host: aiAgentHost,
@@ -39,6 +42,18 @@ export function connectToAIAgents(): void {
   } catch (error: unknown) {
     const formattedError: Error = formatError(error) || new Error("An unknown error occurred while initiating connection.");
     handleConnectionError(formattedError);
+  }
+}
+
+function checkNetworkPermissions(): void {
+  try {
+    accessSync('/dev/net/tun', constants.R_OK | constants.W_OK);
+  } catch (err) {
+    if (err instanceof Error) {
+      const permissionError: Error = new Error(`Network permission error: ${err.message}`);
+      handleConnectionError(permissionError);
+      throw permissionError;
+    }
   }
 }
 
