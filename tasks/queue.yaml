@@ -6694,3 +6694,57 @@ tasks:
     started_at: 2026-02-14T03:07:23.501Z
     completed_at: 2026-02-14T03:07:34.063Z
     branch: auto/write-tests-anthropic-adapter-execution
+  - id: write-tests-cursor-adapter-error-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/adapters/cursor-adapter.ts
+    variables:
+      test_target: src/adapters/cursor-adapter.ts
+      test_description: >
+        Write comprehensive tests for error handling in the Cursor Adapter module, focusing on different scenarios of
+        file writing errors and exception handling.
+  - id: write-tests-enhanced-logger-timeout-enhancements
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/enhanced-logger.ts
+    variables:
+      test_target: src/enhanced-logger.ts
+      test_description: >
+        Create tests focused on timeout handling and retry mechanisms in the enhanced logger module to ensure robust
+        logging under delayed file operations.
+  - id: add-error-handling-ai-agents-timeout
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/aiAgents.ts
+    variables:
+      modification_description: >
+        Implement enhanced error handling in the connectToAIAgents function to handle timeout scenarios and retry
+        connections, logging detailed error information.
+  - id: write-tests-networkErrorUtil-timeout-cases
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/utils/networkErrorUtil.ts
+    variables:
+      test_target: src/utils/networkErrorUtil.ts
+      test_description: >
+        Develop tests for handling timeout errors in network operations, verifying correct identification and logging of
+        timeout errors using isTimeoutError.
+  - id: create-security-check-runner-enhanced-tests
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/security-check-runner.ts
+    variables:
+      test_target: src/security-check-runner.ts
+      test_description: >
+        Expand tests for the security-check-runner to cover edge cases such as non-git repositories, uncommitted
+        changes, and unauthorized file access attempts.
