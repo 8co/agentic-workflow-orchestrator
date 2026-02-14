@@ -1015,3 +1015,46 @@ tasks:
     started_at: 2026-02-14T00:32:41.322Z
     completed_at: 2026-02-14T00:32:45.766Z
     branch: auto/improve-type-safety-deploy
+  - id: write-tests-state-manager-load
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/state-manager.ts
+    variables:
+      test_target: src/state-manager.ts
+      test_description: >
+        Write unit tests for the load function in the state-manager module, ensuring it correctly reads and parses saved
+        workflow executions from the filesystem, handles file not found gracefully, and properly parses valid JSON.
+  - id: write-tests-health-edge-cases
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/health.ts
+    variables:
+      test_target: src/health.ts
+      test_description: >
+        Write tests for edge cases in the getHealthStatus function. Test scenarios include handling when package.json is
+        missing, or when JSON parsing fails. Ensure proper handling when memory usage or uptime are unexpectedly high or
+        low.
+  - id: add-error-handling-autonomous-runner-parseErrors
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/autonomous-runner.ts
+    variables:
+      modification_description: >
+        Add error handling to the autonomous-runner when parsing step outputs as YAML. Ensure that any parsing errors
+        are caught and logged, preventing runtime crashes.
+  - id: improve-type-safety-file-helper
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/file-helper.ts
+    variables:
+      modification_description: >
+        Enhance type safety in the file-helper module by defining strict types for all functions and adding guards to
+        handle potential null values or unexpected input.
