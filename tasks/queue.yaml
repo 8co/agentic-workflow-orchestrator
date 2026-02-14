@@ -702,3 +702,46 @@ tasks:
     started_at: 2026-02-14T00:25:18.333Z
     completed_at: 2026-02-14T00:25:26.120Z
     branch: auto/add-unified-error-utility
+  - id: write-tests-connectToAIAgents
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/aiAgents.ts
+    variables:
+      test_target: src/aiAgents.ts
+      test_description: >
+        Create unit tests for the `connectToAIAgents` function to ensure that all steps of the mock connection process
+        are logged correctly.
+  - id: implement-error-handler-workflow-runner
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/workflow-runner.ts
+    variables:
+      modification_description: >
+        Add robust error handling in the `createWorkflowRunner` function, specifically for promise rejections and
+        unhandled exceptions within workflow steps.
+  - id: create-generic-utility-retry
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-create-module.md
+    context_files:
+      - src/utils.ts
+    variables:
+      module_name: retryUtility
+      module_description: >
+        Develop a generic utility function `retryAsync` that retries a given asynchronous operation a specified number
+        of times, handling errors as specified.
+  - id: write-tests-file-util
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/file-util.ts
+    variables:
+      test_target: src/file-util.ts
+      test_description: >
+        Write comprehensive tests for `writeToFile` and `readFromFile` to validate correct file operations, including
+        edge cases such as directory creation errors.
