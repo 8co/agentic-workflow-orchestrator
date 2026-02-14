@@ -52,14 +52,32 @@ export function createCursorAdapter(): AgentAdapter {
           durationMs,
         };
       } catch (err) {
-        const error = err instanceof Error ? err.message : String(err);
+        let errorMessage: string;
+        if (err instanceof Error) {
+          if ('code' in err) {
+            switch ((err as NodeJS.ErrnoException).code) {
+              case 'ENOENT':
+                errorMessage = 'File path not found. Please ensure the directory exists.';
+                break;
+              case 'EACCES':
+                errorMessage = 'Permission denied. Check your access rights to the output path.';
+                break;
+              default:
+                errorMessage = `Unhandled error: ${err.message}`;
+            }
+          } else {
+            errorMessage = err.message;
+          }
+        } else {
+          errorMessage = String(err);
+        }
+        console.error(`Error executing Cursor Agent: ${errorMessage}`);
         return {
           success: false,
-          error,
+          error: errorMessage,
           durationMs: Date.now() - start,
         };
       }
     },
   };
 }
-
