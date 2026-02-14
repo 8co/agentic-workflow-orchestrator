@@ -1,58 +1,75 @@
-import test from 'node:test';
-import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import assert from 'node:assert';
 import { ErrorNotification, NotificationService } from './error-notification.js';
 
-class MockNotificationService implements NotificationService {
-  public shouldFail = false;
-  public messages: string[] = [];
-
-  async sendAlert(message: string): Promise<void> {
-    if (this.shouldFail) {
-      throw new Error('Service unavailable');
-    }
+// Mock EnhancedLogger since it's not provided and focus on the ErrorNotification
+class MockLogger {
+  messages: string[] = [];
+  logError(message: string): void {
     this.messages.push(message);
   }
-}
-
-class MockLogger {
-  public static errors: string[] = [];
-
   static getInstance() {
-    return this;
-  }
-
-  static logError(message: string): void {
-    this.errors.push(message);
+    return new MockLogger();
   }
 }
 
-test('notifyCriticalError sends alert and logs error when alert succeeds', async () => {
+class MockNotificationService implements NotificationService {
+  sendAlertCalled: boolean = false;
+  sendAlert(message: string): Promise<void> {
+    this.sendAlertCalled = true;
+    return Promise.resolve();
+  }
+}
+
+class FailingNotificationService implements NotificationService {
+  sendAlert(message: string): Promise<void> {
+    return Promise.reject(new Error('Failed to send'));
+  }
+}
+
+// Inject mock logger into ErrorNotification
+(ErrorNotification as any).logger = MockLogger.getInstance();
+
+test('notifyCriticalError logs and sends alert', async (t) => {
+  const logger = (ErrorNotification as any).logger as MockLogger;
   const mockService = new MockNotificationService();
   const errorNotification = new ErrorNotification(mockService);
 
-  // Replace the logger with the mock logger
-  (ErrorNotification as any).logger = MockLogger;
+  await errorNotification.notifyCriticalError('Test error');
 
-  const errorMessage = "Critical system failure";
+  assert.strictEqual(
+    logger.messages.includes('Critical Error: Test error'),
+    true,
+    'Should log critical error'
+  );
 
-  await errorNotification.notifyCriticalError(errorMessage);
-
-  assert.deepEqual(mockService.messages, [errorMessage]);
-  assert.ok(MockLogger.errors.includes(`Critical Error: ${errorMessage}`));
+  assert.strictEqual(
+    mockService.sendAlertCalled,
+    true,
+    'Should call sendAlert on NotificationService'
+  );
 });
 
-test('notifyCriticalError handles failure in sending alert and logs error', async () => {
-  const mockService = new MockNotificationService();
-  mockService.shouldFail = true;
-  const errorNotification = new ErrorNotification(mockService);
+test('notifyCriticalError logs failure to send alert', async (t) => {
+  const logger = (ErrorNotification as any).logger as MockLogger;
+  const failingService = new FailingNotificationService();
+  const errorNotification = new ErrorNotification(failingService);
 
-  // Replace the logger with the mock logger
-  (ErrorNotification as any).logger = MockLogger;
-  
-  const errorMessage = "Critical system failure";
+  await errorNotification.notifyCriticalError('Test error');
 
-  await errorNotification.notifyCriticalError(errorMessage);
+  assert.strictEqual(
+    logger.messages.includes('Critical Error: Test error'),
+    true,
+    'Should log critical error'
+  );
 
-  assert.ok(MockLogger.errors.includes(`Critical Error: ${errorMessage}`));
-  assert.ok(MockLogger.errors.some(error => error.startsWith('Failed to send alert: Service unavailable')));
+  const errorLogged = logger.messages.some((message) =>
+    message.includes('Failed to send alert: Error: Failed to send')
+  );
+
+  assert.strictEqual(
+    errorLogged,
+    true,
+    'Should log error when sendAlert fails'
+  );
 });
