@@ -1,121 +1,75 @@
-import { createCursorAdapter } from '../../src/adapters/cursor-adapter.js';
-import { AgentRequest } from '../../src/types.js';
+import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert';
-import { test } from 'node:test';
+import { createCursorAdapter } from '../../src/adapters/cursor-adapter.js';
+import type { AgentRequest, AgentResponse } from '../../src/types.js';
 import { writeFile, mkdir } from 'node:fs/promises';
-import { dirname } from 'node:path';
 
-const cursorAdapter = createCursorAdapter();
+// Mock implementations
+let mkdirMock: jest.Mock;
+let writeFileMock: jest.Mock;
 
-test('Cursor Adapter - Successful execution to outputPath', async (t) => {
-  let writtenContent = '';
-  const originalWriteFile = writeFile;
-  
-  await t.test('setup', async () => {
-    (await import('node:fs/promises')).writeFile = async (path: string, content: string) => {
-      writtenContent = content;
-    };
-  });
+beforeEach(() => {
+  mkdirMock = jest.fn().mockResolvedValue(undefined);
+  writeFileMock = jest.fn().mockResolvedValue(undefined);
 
-  try {
-    const request: AgentRequest = {
-      prompt: 'Test prompt\nLine 2\nLine 3',
-      outputPath: 'test-output-path/output.txt',
-    };
+  jest.mock('node:fs/promises', () => ({
+    mkdir: mkdirMock,
+    writeFile: writeFileMock,
+  }));
+});
 
-    const response = await cursorAdapter.execute(request);
+describe('Cursor Adapter', () => {
+  const cursorAdapter = createCursorAdapter();
+
+  it('should return success response when executing with valid prompt', async () => {
+    const request: AgentRequest = { prompt: 'Hello, world!', outputPath: '/tmp/test-output.txt' };
+    const response: AgentResponse = await cursorAdapter.execute(request);
 
     assert.strictEqual(response.success, true);
-    assert.strictEqual(response.output, request.outputPath);
-    assert.strictEqual(writtenContent, request.prompt);
-  } finally {
-    (await import('node:fs/promises')).writeFile = originalWriteFile;
-  }
-});
+    assert.strictEqual(response.output, '/tmp/test-output.txt');
+    assert.ok(response.durationMs >= 0);
+    assert.ok(mkdirMock.calledOnce);
+    assert.ok(writeFileMock.calledOnce);
+  });
 
-test('Cursor Adapter - Successful execution to stdout', async () => {
-  const request: AgentRequest = {
-    prompt: 'Test prompt',
-  };
+  it('should handle ENOENT error when output path does not exist', async () => {
+    mkdirMock.mockRejectedValueOnce({ code: 'ENOENT' });
 
-  const response = await cursorAdapter.execute(request);
-
-  assert.strictEqual(response.success, true);
-  assert.strictEqual(response.output, '[stdout]');
-});
-
-test('Cursor Adapter - Error with ENOENT', async (t) => {
-  const request: AgentRequest = {
-    prompt: 'Test prompt',
-    outputPath: '/invalid-directory/output.txt',
-  };
-
-  let mkdirCalledWith;
-  const originalMkdir = mkdir;
-  
-  try {
-    await t.test('setup', async () => {
-      (await import('node:fs/promises')).mkdir = async (path: string, options: any) => {
-        mkdirCalledWith = path;
-        throw new Error('ENOENT');
-      };
-    });
-
-    const response = await cursorAdapter.execute(request);
+    const request: AgentRequest = { prompt: 'Hello, world!', outputPath: '/non-existent-path/output.txt' };
+    const response: AgentResponse = await cursorAdapter.execute(request);
 
     assert.strictEqual(response.success, false);
-    assert.ok(response.error?.includes('File path not found'));
-  } finally {
-    (await import('node:fs/promises')).mkdir = originalMkdir;
-  }
-});
+    assert.strictEqual(response.error, 'File path not found. Please ensure the directory exists.');
+  });
 
-test('Cursor Adapter - Error with EACCES', async (t) => {
-  const request: AgentRequest = {
-    prompt: 'Test prompt',
-    outputPath: '/protected-directory/output.txt',
-  };
+  it('should handle EACCES error when lacking permission to write to output path', async () => {
+    writeFileMock.mockRejectedValueOnce({ code: 'EACCES' });
 
-  let mkdirCalledWith;
-  const originalMkdir = mkdir;
-
-  try {
-    await t.test('setup', async () => {
-      (await import('node:fs/promises')).mkdir = async (path: string, options: any) => {
-        mkdirCalledWith = path;
-        throw new Error('EACCES');
-      };
-    });
-
-    const response = await cursorAdapter.execute(request);
+    const request: AgentRequest = { prompt: 'Hello, world!', outputPath: '/protected-path/output.txt' };
+    const response: AgentResponse = await cursorAdapter.execute(request);
 
     assert.strictEqual(response.success, false);
-    assert.ok(response.error?.includes('Permission denied'));
-  } finally {
-    (await import('node:fs/promises')).mkdir = originalMkdir;
-  }
-});
+    assert.strictEqual(response.error, 'Permission denied. Check your access rights to the output path.');
+  });
 
-test('Cursor Adapter - Unhandled error', async (t) => {
-  const request: AgentRequest = {
-    prompt: 'Test prompt',
-    outputPath: '/some-path/output.txt',
-  };
+  it('should handle generic errors', async () => {
+    writeFileMock.mockRejectedValueOnce(new Error('Generic error'));
 
-  const originalWriteFile = writeFile;
-
-  try {
-    await t.test('setup', async () => {
-      (await import('node:fs/promises')).writeFile = async () => {
-        throw new Error('Unexpected Error');
-      };
-    });
-
-    const response = await cursorAdapter.execute(request);
+    const request: AgentRequest = { prompt: 'Hello, world!', outputPath: '/invalid-path/output.txt' };
+    const response: AgentResponse = await cursorAdapter.execute(request);
 
     assert.strictEqual(response.success, false);
-    assert.ok(response.error?.includes('Unhandled error: Unexpected Error'));
-  } finally {
-    (await import('node:fs/promises')).writeFile = originalWriteFile;
-  }
+    assert.strictEqual(response.error, 'Generic error');
+  });
+
+  it('should not attempt to write when no output path is provided', async () => {
+    const request: AgentRequest = { prompt: 'Just log this' };
+    const response: AgentResponse = await cursorAdapter.execute(request);
+
+    assert.strictEqual(response.success, true);
+    assert.strictEqual(response.output, '[stdout]');
+    assert.ok(response.durationMs >= 0);
+    assert.ok(mkdirMock.notCalled);
+    assert.ok(writeFileMock.notCalled);
+  });
 });
