@@ -4434,3 +4434,57 @@ tasks:
     started_at: 2026-02-14T02:02:31.394Z
     completed_at: 2026-02-14T02:02:36.422Z
     branch: auto/add-monitoring-utils
+  - id: write-tests-index-error-handling-scenarios
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/index.ts
+    variables:
+      test_target: src/index.ts
+      test_description: >
+        Write detailed tests to cover various error handling scenarios, ensuring that error logging in the main function
+        works correctly under multiple failure conditions.
+  - id: add-tests-security-scanner
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/security-scanner.ts
+    variables:
+      test_target: src/security-scanner.ts
+      test_description: >
+        Create comprehensive tests for the security scanner to validate proper detection of vulnerabilities and correct
+        categorization of threat levels.
+  - id: refactor-log-util-error-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/log-util.ts
+    variables:
+      modification_description: >
+        Refactor error handling in the LogUtil class to uniformly manage errors and enhance logging clarity for
+        unexpected conditions.
+  - id: add-tests-scheduler-error-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/scheduler.ts
+    variables:
+      test_target: src/scheduler.ts
+      test_description: >
+        Write tests to simulate various error and exception scenarios within the scheduler module, focusing on handling
+        unexpected failures gracefully.
+  - id: implement-observability-utility
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-create-module.md
+    context_files:
+      - src/cli-observability-commands.ts
+    variables:
+      module_name: observabilityUtil
+      module_description: >
+        Develop a utility module to enhance observability, including common functions for monitoring application
+        performance metrics and generating insights.
