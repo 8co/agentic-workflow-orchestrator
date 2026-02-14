@@ -126,3 +126,57 @@ tasks:
     started_at: 2026-02-14T13:58:16.099Z
     completed_at: 2026-02-14T13:58:39.780Z
     branch: auto/enhance-type-safety-autonomous-runner
+  - id: write-tests-anthropic-adapter
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/adapters/anthropic-adapter.ts
+    variables:
+      test_target: src/adapters/anthropic-adapter.ts
+      test_description: >
+        Write tests for the Anthropic Adapter to ensure all functions, especially error-handling mechanisms, function
+        correctly under expected scenarios and edge cases.
+  - id: enhance-type-safety-openai-adapter
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/adapters/openai-adapter.ts
+    variables:
+      modification_description: >
+        Improve type safety in the OpenAI Adapter by ensuring all function interfaces are explicitly typed, and unknown
+        types are properly handled using TypeScript conventions.
+  - id: refactor-error-handling-duplicate-patterns
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/utils/networkErrorUtil.ts
+      - src/adapters/openai-adapter.ts
+    variables:
+      modification_description: >
+        Create a utility function in networkErrorUtil.ts to manage duplicate error-handling patterns from multiple
+        adapters.
+  - id: add-tests-openai-adapter
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/adapters/openai-adapter.ts
+    variables:
+      test_target: src/adapters/openai-adapter.ts
+      test_description: >
+        Implement comprehensive tests for OpenAI Adapter coverage including API response structure validation, error
+        handling, and token usage calculations.
+  - id: create-config-validation-module
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-create-module.md
+    context_files:
+      - src/config.ts
+    variables:
+      module_name: configValidator
+      module_description: >
+        Create a module to validate configuration files and environment variables ensuring correct and secure settings
+        are applied, with clear error reporting for missing or incorrect variables.
