@@ -39,6 +39,11 @@ export const isTimeoutError = (error: unknown): error is TimeoutError => {
   );
 };
 
+// Predicate function to check if an error is of NetworkErrorTypes
+export const isNetworkErrorType = (error: unknown): error is NetworkErrorTypes => {
+  return isNetworkError(error) || isTimeoutError(error);
+};
+
 // Function to handle network errors by logging
 export const handleNetworkError = (error: unknown): void => {
   if (isNetworkError(error)) {
