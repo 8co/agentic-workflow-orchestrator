@@ -7,7 +7,7 @@ export function connectToAIAgents(): void {
     // Placeholder for real connection logic
     throw new Error("Simulation of a connection error."); // Example error for demonstration
   } catch (error: unknown) {
-    const formattedError = formatError(error);
+    const formattedError: Error | null = formatError(error);
     if (formattedError) {
       handleConnectionError(formattedError);
     } else {
@@ -27,9 +27,9 @@ export function formatError(error: unknown): Error | null {
 }
 
 export function handleConnectionError(error: Error): void {
-  const errorMessage = `❌ Error connecting to AI agent APIs: ${error.message}`;
-  const errorStack = error.stack ? ` Stack trace: ${error.stack}` : '';
-  const networkDetails = JSON.stringify(getNetworkDetails(), null, 2);
+  const errorMessage: string = `❌ Error connecting to AI agent APIs: ${error.message}`;
+  const errorStack: string = error.stack ? ` Stack trace: ${error.stack}` : '';
+  const networkDetails: string = JSON.stringify(getNetworkDetails(), null, 2);
 
   console.error(`${errorMessage}\n${errorStack}\nNetwork Details: ${networkDetails}`);
 }
@@ -37,19 +37,21 @@ export function handleConnectionError(error: Error): void {
 export type NetworkDetails = Record<string, string[]>;
 
 export function getNetworkDetails(): NetworkDetails {
-  const nets = networkInterfaces();
+  const nets: NodeJS.Dict<NetworkInterfaceInfo[]> = networkInterfaces();
   const results: NetworkDetails = {};
 
   for (const name of Object.keys(nets)) {
-    const netInfos = nets[name] || [];
-    netInfos.forEach((net: NetworkInterfaceInfo) => {
-      if (net.family === 'IPv4' && !net.internal) {
-        if (!results[name]) {
-          results[name] = [];
+    const netInfos: NetworkInterfaceInfo[] | undefined = nets[name];
+    if (netInfos) {
+      netInfos.forEach((net: NetworkInterfaceInfo) => {
+        if (net.family === 'IPv4' && !net.internal) {
+          if (!results[name]) {
+            results[name] = [];
+          }
+          results[name].push(net.address);
         }
-        results[name].push(net.address);
-      }
-    });
+      });
+    }
   }
   return results;
 }
