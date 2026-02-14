@@ -13,20 +13,40 @@ class LogUtil {
     return LogUtil.instance;
   }
 
+  private log(level: LogLevel, message: string, error?: Error): void {
+    const logMessage = error ? `${message} - Error: ${error.message}` : message;
+    switch (level) {
+      case 'info':
+        this.logger.info(logMessage);
+        break;
+      case 'warn':
+        this.logger.warn(logMessage);
+        break;
+      case 'error':
+        this.logger.error(logMessage);
+        break;
+      case 'debug':
+        this.logger.debug(logMessage);
+        break;
+      default:
+        this.logger.error(`Unexpected log level: ${level}. ${logMessage}`);
+    }
+  }
+
   logInfo(message: string): void {
-    this.logger.info(message);
+    this.log('info', message);
   }
 
   logWarn(message: string): void {
-    this.logger.warn(message);
+    this.log('warn', message);
   }
 
-  logError(message: string): void {
-    this.logger.error(message);
+  logError(message: string, error?: Error): void {
+    this.log('error', message, error);
   }
 
   logDebug(message: string): void {
-    this.logger.debug(message);
+    this.log('debug', message);
   }
 }
 
