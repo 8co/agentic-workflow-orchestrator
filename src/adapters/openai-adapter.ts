@@ -13,6 +13,28 @@ interface OpenAIConfig {
   model: string;
 }
 
+interface CompletionResponse {
+  id: string;
+  object: string;
+  created: number;
+  model: string;
+  choices: CompletionChoice[];
+  usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
+}
+
+interface CompletionChoice {
+  index: number;
+  message: {
+    role: string;
+    content: string;
+  };
+  finish_reason: string;
+}
+
 export function createOpenAIAdapter(config: OpenAIConfig, adapterName: 'openai' | 'codex' = 'openai'): AgentAdapter {
   const client = new OpenAI({ apiKey: config.apiKey });
 
@@ -20,32 +42,32 @@ export function createOpenAIAdapter(config: OpenAIConfig, adapterName: 'openai' 
     name: adapterName,
 
     async execute(request: AgentRequest): Promise<AgentResponse> {
-      const start = Date.now();
+      const start: number = Date.now();
 
       try {
         console.log('\n┌─────────────────────────────────────────');
         console.log(`│ 🤖 OpenAI (${config.model}) — Executing`);
         console.log('├─────────────────────────────────────────');
 
-        const systemContent = request.context
+        const systemContent: string = request.context
           ? `You are an expert software engineer. Follow all instructions precisely.\n\nContext:\n${request.context}`
           : 'You are an expert software engineer. Follow all instructions precisely. Return only the requested output — no preamble, no explanation unless asked.';
 
-        const completion = await client.chat.completions.create({
+        const completion: CompletionResponse = await client.chat.completions.create({
           model: config.model,
           messages: [
             { role: 'system', content: systemContent },
             { role: 'user', content: request.prompt },
           ],
           max_tokens: 4096,
-        });
+        }) as CompletionResponse;
 
         if (!completion || !Array.isArray(completion.choices) || completion.choices.length === 0 || !completion.choices[0]?.message?.content) {
           throw new Error('Malformed response from OpenAI service');
         }
 
-        const output = completion.choices[0].message.content;
-        const durationMs = Date.now() - start;
+        const output: string = completion.choices[0].message.content;
+        const durationMs: number = Date.now() - start;
 
         // Write to output file if specified
         if (request.outputPath) {
@@ -55,8 +77,8 @@ export function createOpenAIAdapter(config: OpenAIConfig, adapterName: 'openai' 
         }
 
         // Log preview
-        const lines = output.split('\n');
-        const preview = lines.slice(0, 10).join('\n');
+        const lines: string[] = output.split('\n');
+        const preview: string = lines.slice(0, 10).join('\n');
         console.log('│');
         console.log(preview.replace(/^/gm, '│  '));
         if (lines.length > 10) {
@@ -74,8 +96,8 @@ export function createOpenAIAdapter(config: OpenAIConfig, adapterName: 'openai' 
           output,
           durationMs,
         };
-      } catch (err) {
-        const durationMs = Date.now() - start;
+      } catch (err: unknown) {
+        const durationMs: number = Date.now() - start;
         let errorMessage: string;
 
         if (err instanceof Error) {
