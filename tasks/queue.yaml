@@ -1515,7 +1515,7 @@ tasks:
 
       ```
   - id: write-tests-openai-adapter-edge-cases
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -1525,3 +1525,4 @@ tasks:
       test_description: >
         Develop tests for rare or tricky edge cases in `createOpenAIAdapter`, particularly focusing on handling various
         API response errors.
+    started_at: 2026-02-14T00:44:05.841Z
