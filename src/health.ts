@@ -75,18 +75,17 @@ function logHealthStatus(uptime: number, memoryUsageMB: number, version?: string
 }
 
 function logMemoryUsageWarnings(memoryUsage: number): void {
+  const formattedMemoryUsage = memoryUsage.toFixed(2) + ' MB';
   const warnings = [
-    { threshold: 700, level: 'error', message: 'Critical memory usage detected: {memoryUsage} MB. Immediate attention required!' },
-    { threshold: 500, level: 'warn', message: 'High memory usage detected: {memoryUsage} MB. Consider investigating memory usage.' },
-    { threshold: 300, level: 'info', message: 'Moderate memory usage: {memoryUsage} MB. Running smoothly but keep monitoring.' },
+    { threshold: 700, level: 'error', message: `Critical memory usage detected: ${formattedMemoryUsage}. Immediate attention required!` },
+    { threshold: 500, level: 'warn', message: `High memory usage detected: ${formattedMemoryUsage}. Consider investigating memory usage.` },
+    { threshold: 300, level: 'info', message: `Moderate memory usage: ${formattedMemoryUsage}. Running smoothly but keep monitoring.` },
   ];
 
-  for (const { threshold, level, message } of warnings) {
-    if (memoryUsage > threshold) {
-      logger[level as keyof typeof logger](message.replace('{memoryUsage}', memoryUsage.toString()));
-      return;
-    }
+  const warning = warnings.find(w => memoryUsage > w.threshold);
+  if (warning) {
+    logger[warning.level as keyof typeof logger](warning.message);
+  } else {
+    logger.info(`Normal memory usage: ${formattedMemoryUsage}. System is healthy.`);
   }
-  
-  logger.info(`Normal memory usage: ${memoryUsage} MB. System is healthy.`);
 }
