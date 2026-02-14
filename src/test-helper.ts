@@ -14,20 +14,35 @@ export async function setupMockFiles(fileMocks: FileMock[]): Promise<void> {
     try {
       await fs.mkdir(dirname(path), { recursive: true });
       await fs.writeFile(path, content, 'utf-8');
-    } catch (error) {
-      logger.error(`Failed to setup mock file ${path}: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      throw new Error(`Failed to setup mock file ${path}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      logger.error(`Failed to setup mock file ${path}: ${errorMessage}`);
+      throw new Error(`Failed to setup mock file ${path}: ${errorMessage}`);
     }
+  }
+}
+
+async function fileExists(path: string): Promise<boolean> {
+  try {
+    await fs.access(path);
+    return true;
+  } catch {
+    return false;
   }
 }
 
 export async function teardownFiles(filePaths: string[]): Promise<void> {
   for (const path of filePaths) {
     try {
-      await fs.unlink(path);
-    } catch (error) {
-      logger.error(`Failed to teardown file ${path}: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      throw new Error(`Failed to teardown file ${path}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      if (await fileExists(path)) {
+        await fs.unlink(path);
+      } else {
+        logger.warn(`File ${path} does not exist, skipping teardown.`);
+      }
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      logger.error(`Failed to teardown file ${path}: ${errorMessage}`);
+      throw new Error(`Failed to teardown file ${path}: ${errorMessage}`);
     }
   }
 }
@@ -35,17 +50,19 @@ export async function teardownFiles(filePaths: string[]): Promise<void> {
 export async function mockEnvironment(path: string, content: string): Promise<void> {
   try {
     await fs.writeFile(path, content, 'utf-8');
-  } catch (error) {
-    logger.error(`Failed to mock environment file ${path}: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    throw new Error(`Failed to mock environment file ${path}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`Failed to mock environment file ${path}: ${errorMessage}`);
+    throw new Error(`Failed to mock environment file ${path}: ${errorMessage}`);
   }
 }
 
 export async function readEnvironment(path: string): Promise<string> {
   try {
     return await fs.readFile(path, 'utf-8');
-  } catch (error) {
-    logger.error(`Failed to read environment file ${path}: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    throw new Error(`Failed to read environment file ${path}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    logger.error(`Failed to read environment file ${path}: ${errorMessage}`);
+    throw new Error(`Failed to read environment file ${path}: ${errorMessage}`);
   }
 }
