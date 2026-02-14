@@ -5716,7 +5716,7 @@ tasks:
     completed_at: 2026-02-14T02:42:49.060Z
     branch: auto/add-edge-case-tests-anthropic-adapter
   - id: write-tests-openai-adapter-execution-edge-cases
-    status: running
+    status: completed
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -5727,8 +5727,10 @@ tasks:
         Introduce tests to handle execution edge cases in the OpenAIAdapter module, such as complete failures, partial
         successes, and unexpected API outputs.
     started_at: 2026-02-14T02:42:49.155Z
+    completed_at: 2026-02-14T02:43:09.327Z
+    branch: auto/write-tests-openai-adapter-execution-edge-cases
   - id: implement-edge-case-tests-for-queue-manager
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -5738,3 +5740,4 @@ tasks:
       test_description: >
         Add tests to cover edge cases in queue management, especially focusing on error states during task transitions
         and faulty queue file handling.
+    started_at: 2026-02-14T02:43:09.426Z
