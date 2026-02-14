@@ -2809,7 +2809,7 @@ tasks:
     completed_at: 2026-02-14T01:16:22.330Z
     branch: auto/write-tests-health-refactor-edge-cases
   - id: refactor-enhanced-logger-type-safety
-    status: running
+    status: completed
     workflow: auto
     prompt: prompts/auto-modify-file.md
     context_files:
@@ -2818,3 +2818,5 @@ tasks:
       modification_description: |
         Enhance the type safety in the EnhancedLogger class, especially for its methods handling error detail logging.
     started_at: 2026-02-14T01:16:22.375Z
+    completed_at: 2026-02-14T01:16:29.610Z
+    branch: auto/refactor-enhanced-logger-type-safety
