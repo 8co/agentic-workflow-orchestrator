@@ -40,6 +40,14 @@ function isUnexpectedResponseError(response: unknown): boolean {
   return typeof response === 'object' && response !== null && 'status' in response && (response as { status: number }).status >= 400;
 }
 
+function isTimeoutError(err: unknown): boolean {
+  return err instanceof Error && err.message.includes('timeout');
+}
+
+function isRateLimitError(err: unknown): boolean {
+  return typeof err === 'object' && err !== null && 'response' in err && (err as { response: { status: number } }).response.status === 429;
+}
+
 async function retry<T>(fn: () => Promise<T>, retries: number, delayMs: number): Promise<T> {
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
@@ -142,6 +150,10 @@ export function createAnthropicAdapter(config: AnthropicConfig): AgentAdapter {
           error = 'Network error: Unable to reach the API. Retrying...';
         } else if (isAPILimitError(err)) {
           error = 'API limit reached: Too many requests. Please try again later.';
+        } else if (isTimeoutError(err)) {
+          error = 'Network error: Request timed out. Please check your connection.';
+        } else if (isRateLimitError(err)) {
+          error = 'Rate limit error: Too many requests in a short amount of time.';
         } else if (err instanceof Error) {
           error = `Error: ${err.message}`;
         } else if (typeof err === 'object' && err !== null) {
