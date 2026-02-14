@@ -6139,7 +6139,7 @@ tasks:
     completed_at: 2026-02-14T02:51:30.952Z
     branch: auto/write-tests-aiagents-error-cases-handling
   - id: add-tests-adapters-anthropic-edge-cases
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -6149,6 +6149,7 @@ tasks:
       test_description: >
         Write comprehensive tests for the Anthropic adapter focusing on edge cases, including invalid configurations and
         unexpected API responses.
+    started_at: 2026-02-14T02:52:08.346Z
   - id: refactor-scheduler-error-handling
     status: pending
     workflow: auto
