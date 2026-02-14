@@ -1,55 +1,71 @@
-import { test } from 'node:test';
 import assert from 'node:assert';
+import { describe, it, beforeEach, afterEach } from 'node:test';
+import { promises as fs } from 'node:fs';
 import { formatErrorMessage, logErrorDetails } from './errorUtility.js';
 
-test('formatErrorMessage with Error instance', () => {
-  const error = new Error('Test error');
-  const result = formatErrorMessage(error, 'A user-friendly error occurred.');
-  assert.strictEqual(result, 'A user-friendly error occurred.\nError Details: Test error');
-});
+describe('Error Utility', () => {
+  const errorLogPath = 'error.log';
 
-test('formatErrorMessage with non-Error object', () => {
-  const result = formatErrorMessage({ some: 'object' }, 'Default error message.');
-  assert.strictEqual(result, 'Default error message.');
-});
+  beforeEach(async () => {
+    await fs.writeFile(errorLogPath, '', 'utf-8');
+  });
 
-test('formatErrorMessage with null', () => {
-  const result = formatErrorMessage(null, 'Null input encountered.');
-  assert.strictEqual(result, 'Null input encountered.');
-});
+  afterEach(async () => {
+    await fs.unlink(errorLogPath);
+  });
 
-test('logErrorDetails with Error instance', () => {
-  const error = new Error('Test error');
-  const errorDetails = logErrorDetails(error);
+  describe('formatErrorMessage', () => {
+    it('should format message for standard Error', () => {
+      const error = new Error('An error occurred');
+      const formattedMessage = formatErrorMessage(error, 'Oops!');
+      assert.strictEqual(formattedMessage, 'Oops!\nError Details: An error occurred');
+    });
 
-  assert.strictEqual(typeof errorDetails.timestamp, 'string');
-  assert.strictEqual(errorDetails.message, 'Test error');
-  assert.ok(typeof errorDetails.stack === 'string');
-});
+    it('should return user-friendly message if error is unknown', () => {
+      const formattedMessage = formatErrorMessage('unknown error', 'Oops!');
+      assert.strictEqual(formattedMessage, 'Oops!');
+    });
 
-test('logErrorDetails with additional data', () => {
-  const error = new Error('Test error');
-  const additionalData = { code: 500, context: 'UnitTest' };
-  const errorDetails = logErrorDetails(error, additionalData);
+    it('should use default user-friendly message if none is provided', () => {
+      const error = new Error('An error occurred');
+      const formattedMessage = formatErrorMessage(error);
+      assert.strictEqual(formattedMessage, 'An unexpected error occurred.\nError Details: An error occurred');
+    });
+  });
 
-  assert.strictEqual(errorDetails.message, 'Test error');
-  assert.strictEqual(errorDetails.code, 500);
-  assert.strictEqual(errorDetails.context, 'UnitTest');
-});
+  describe('logErrorDetails', () => {
+    it('should log error details for a standard Error', async () => {
+      const error = new Error('Test error');
+      const details = logErrorDetails(error, { customField: 'testValue' });
 
-test('logErrorDetails with non-Error object', () => {
-  const errorDetails = logErrorDetails('string error', { some: 'data' });
+      assert.strictEqual(details.message, 'Test error');
+      assert.strictEqual(details.customField, 'testValue');
+      assert.ok(details.timestamp);
 
-  assert.strictEqual(errorDetails.message, 'Unknown error');
-  assert.strictEqual(typeof errorDetails.timestamp, 'string');
-  assert.strictEqual(errorDetails.stack, undefined);
-  assert.strictEqual(errorDetails.some, 'data');
-});
+      const logContent = await fs.readFile(errorLogPath, 'utf-8');
+      assert.ok(logContent.includes('Test error'));
+      assert.ok(logContent.includes('customField'));
+    });
 
-test('logErrorDetails with null', () => {
-  const errorDetails = logErrorDetails(null);
+    it('should handle logging unknown error types', async () => {
+      const details = logErrorDetails('unknown error type', { level: 'critical' });
 
-  assert.strictEqual(errorDetails.message, 'Unknown error');
-  assert.strictEqual(typeof errorDetails.timestamp, 'string');
-  assert.strictEqual(errorDetails.stack, undefined);
+      assert.strictEqual(details.message, 'Unknown error');
+      assert.strictEqual(details.level, 'critical');
+      assert.ok(details.timestamp);
+
+      const logContent = await fs.readFile(errorLogPath, 'utf-8');
+      assert.ok(logContent.includes('Unknown error'));
+      assert.ok(logContent.includes('critical'));
+    });
+
+    it('should handle writing error to file even if file writing fails', async () => {
+      await fs.chmod(errorLogPath, 0o000); // Change permissions to simulate write failure
+
+      const error = new Error('Test error');
+      logErrorDetails(error);
+
+      await fs.chmod(errorLogPath, 0o666); // Restore write permissions
+    });
+  });
 });
