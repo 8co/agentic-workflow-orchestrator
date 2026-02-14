@@ -3753,7 +3753,7 @@ tasks:
     completed_at: 2026-02-14T01:51:05.892Z
     branch: auto/refactor-index-error-logging
   - id: add-anthropic-adapter-tests
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -3763,6 +3763,7 @@ tasks:
       test_description: >
         Write comprehensive tests for the Anthropic Adapter to cover all known edge cases, exceptions and API limit
         errors.
+    started_at: 2026-02-14T01:51:27.339Z
   - id: improve-anthropic-adapter-error-handling
     status: pending
     workflow: auto
