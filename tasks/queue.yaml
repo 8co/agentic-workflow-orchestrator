@@ -3690,3 +3690,50 @@ tasks:
       src/index.ts(22,25): error TS18046: 'error' is of type 'unknown'.
       src/networkUtil.ts(11,21): error TS2552: Cannot find name 'Image'. Did you mean 'img'?
       ```
+  - id: add-tests-anthropic-adapter-exception-scenarios
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/adapters/anthropic-adapter.ts
+    variables:
+      test_target: src/adapters/anthropic-adapter.ts
+      test_description: |
+        Add tests to handle exception scenarios like malformed responses or API key failures.
+  - id: improve-type-safety-scheduler-module
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/scheduler.ts
+    variables:
+      modification_description: |
+        Enhance type safety in the scheduler module by adding explicit type annotations.
+  - id: add-error-handling-to-project-registry
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/project-registry.ts
+    variables:
+      modification_description: |
+        Add error handling to manage invalid project configurations gracefully.
+  - id: write-tests-deploy-script-edge-case-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/scripts/deploy.ts
+    variables:
+      test_target: src/scripts/deploy.ts
+      test_description: |
+        Implement tests for edge case handling in the deploy script, such as invalid configuration files.
+  - id: refactor-index-error-logging
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/index.ts
+    variables:
+      modification_description: |
+        Refactor error logging within the index.ts file to ensure consistent and clear error messages.
