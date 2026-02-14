@@ -1,11 +1,16 @@
+export interface NetworkError {
+  code?: 'ENOTFOUND' | 'ECONNREFUSED' | 'ECONNRESET' | 'ETIMEDOUT' | 'EHOSTUNREACH' | 'EPIPE' | 'ENETUNREACH';
+  timeout?: boolean;
+}
+
 export function isNetworkError(err: unknown): boolean {
   if (typeof err !== 'object' || err === null) {
     return false;
   }
 
-  const errorObj = err as { code?: string, timeout?: boolean };
+  const errorObj = err as NetworkError;
 
-  const networkErrorCodes = [
+  const networkErrorCodes: NetworkError['code'][] = [
     'ENOTFOUND',   // DNS resolution error
     'ECONNREFUSED',// Connection refused
     'ECONNRESET',  // Connection reset by peer
