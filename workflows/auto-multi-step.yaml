@@ -1,0 +1,60 @@
+name: auto-logger-pipeline
+description: "Multi-step autonomous workflow: create logger → integrate into health module → write tests"
+target_dir: "."
+branch: "auto/logger-pipeline"
+variables:
+  project_name: "agentic-workflow-orchestrator"
+
+steps:
+  - id: create-logger
+    prompt: prompts/auto-create-module.md
+    context_files:
+      - src/types.ts
+      - package.json
+    max_attempts: 3
+    commit_message: "Add logger utility module"
+    variables:
+      module_name: "logger utility"
+      module_description: >
+        Create src/logger.ts — a lightweight structured logger for the orchestrator.
+        Export a function createLogger(prefix: string) that returns an object with
+        methods: info(msg: string), warn(msg: string), error(msg: string), and
+        debug(msg: string). Each method should print a formatted line to stdout:
+        [TIMESTAMP] [LEVEL] [prefix] message. Timestamp should be ISO format.
+        Also export type LogLevel = 'debug' | 'info' | 'warn' | 'error'.
+        The debug method should only print if the environment variable LOG_LEVEL=debug.
+        No external dependencies.
+
+  - id: integrate-logger
+    prompt: prompts/auto-modify-file.md
+    depends_on: create-logger
+    context_files:
+      - src/health.ts
+      - src/logger.ts
+    max_attempts: 3
+    commit_message: "Integrate logger into health check module"
+    variables:
+      modification_description: >
+        Update src/health.ts to use the new logger from src/logger.ts.
+        Import createLogger and create a logger instance with prefix 'health'.
+        Add an info log when getHealthStatus() is called, logging the status result.
+        Add a warn log if memoryUsage exceeds 500 MB.
+        Keep all existing functionality intact.
+
+  - id: write-tests
+    prompt: prompts/auto-write-test.md
+    depends_on: integrate-logger
+    context_files:
+      - src/logger.ts
+      - src/health.ts
+    max_attempts: 3
+    commit_message: "Add tests for logger module"
+    variables:
+      test_target: "src/logger.ts"
+      test_description: >
+        Write tests at src/logger.test.ts for the logger module.
+        Test that createLogger returns an object with info, warn, error, debug methods.
+        Test that each method does not throw.
+        Test the output format includes the prefix and log level.
+        Use node:test describe/it and node:assert.
+

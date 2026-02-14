@@ -1,0 +1,26 @@
+name: sample-feature-workflow
+description: Example workflow that plans, implements, and tests a feature
+variables:
+  project_name: "agentic-workflow-orchestrator"
+  target_dir: "src/"
+  feature_name: "health check endpoint"
+  feature_description: "Add a simple health check function that returns system status including uptime, memory usage, and current timestamp."
+steps:
+  - id: plan
+    agent: cursor
+    prompt: prompts/plan-feature.md
+    output: output/plan.md
+
+  - id: implement
+    agent: cursor
+    prompt: prompts/implement.md
+    depends_on: plan
+    output: output/implementation.md
+
+  - id: test
+    agent: cursor
+    prompt: prompts/write-tests.md
+    depends_on: implement
+    output: output/tests.md
+    retries: 1
+

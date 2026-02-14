@@ -1,0 +1,32 @@
+name: auto-usage-docs
+description: Autonomous workflow — generates usage documentation for the project
+target_dir: "."
+branch: "auto/usage-docs"
+variables:
+  project_name: "agentic-workflow-orchestrator"
+  doc_description: >
+    Write a comprehensive usage guide at docs/usage.md. Cover:
+    1. Prerequisites (Node.js, npm, API keys)
+    2. Installation and setup (.env configuration)
+    3. Two modes: "run" (generate-only) and "auto" (autonomous — writes code, verifies, commits)
+    4. Command reference for all CLI commands (run, auto, list, resume) with flags
+    5. How to create a workflow YAML (explain each field: name, target_dir, branch, variables, steps, context_files, verify, max_attempts)
+    6. How to create a prompt template (variable syntax {{var}}, step output chaining {{steps.id.output}})
+    7. End-to-end example: creating a workflow that adds a utility function autonomously
+    8. How the error feedback loop works (LLM writes code → build fails → errors fed back → retry)
+
+steps:
+  - id: write-docs
+    prompt: prompts/auto-document.md
+    context_files:
+      - src/cli.ts
+      - src/autonomous-runner.ts
+      - src/workflow-runner.ts
+      - src/types.ts
+      - workflows/auto-sample.yaml
+      - prompts/auto-implement.md
+      - .env.example
+      - package.json
+    max_attempts: 2
+    commit_message: "Add usage documentation"
+
