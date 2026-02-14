@@ -1,83 +1,58 @@
-import { test, beforeEach } from 'node:test';
-import assert from 'node:assert';
+import { strict as assert } from 'node:assert';
+import test from 'node:test';
 import fs from 'fs/promises';
 import { exec } from 'child_process';
-import { deploy } from '../src/scripts/deploy.js';
+import { deploy } from '../src/scripts/deploy';
 
-// Mock fs.promises.readFile
-const originalReadFile = fs.readFile;
-let mockedReadFile: jest.SpyInstance;
+// Mock the necessary functions
+const mockReadFile = async (path: string): Promise<Buffer> => {
+  if (path === 'valid/config.json') {
+    return Buffer.from(JSON.stringify({ deployScript: 'echo "Deploy"' }));
+  } else if (path === 'invalid/config.json') {
+    return Buffer.from("{ invalidJson: true }");
+  } else if (path === 'malformed/config.json') {
+    return Buffer.from('{"noDeployScript": true}');
+  }
+  throw new Error('File not found');
+};
 
-// Mock child_process.exec
-const originalExec = exec;
-let mockedExec: jest.SpyInstance;
+const mockExec = (cmd: string, callback: (error: Error | null, stdout: string, stderr: string) => void): void => {
+  if (cmd === 'echo "Deploy"') {
+    callback(null, 'Deployment script executed', '');
+  } else {
+    callback(new Error('Script failed'), '', 'Error executing script');
+  }
+};
 
-beforeEach(() => {
-  mockedReadFile = jest.spyOn(fs, 'readFile');
-  mockedExec = jest.spyOn(child_process, 'exec');
+// Tests
+test('Deploy successful', async () => {
+  fs.readFile = mockReadFile;
+  exec.mockExec = mockExec;
+
+  const result = await deploy('valid/config.json');
+  assert.deepStrictEqual(result, { success: true, message: 'Deployment succeeded' });
 });
 
-test('should deploy successfully with valid config and command', async () => {
-  // Arrange
-  const validConfig = JSON.stringify({ deployScript: 'echo "Hello"' });
-  mockedReadFile.mockResolvedValue(Buffer.from(validConfig));
-  mockedExec.mockImplementation((command, callback) => {
-    callback(null, 'Hello', '');
-  });
+test('Deploy fails with invalid JSON configuration', async () => {
+  fs.readFile = mockReadFile;
+  exec.mockExec = mockExec;
 
-  // Act
-  const result = await deploy('valid/path/to/config.json');
-
-  // Assert
-  assert.deepStrictEqual(result, {
-    success: true,
-    message: 'Deployment succeeded'
-  });
+  const result = await deploy('invalid/config.json');
+  assert.deepStrictEqual(result, { success: false, message: 'Deployment failed: Error parsing configuration file' });
 });
 
-test('should fail deployment with malformed JSON config', async () => {
-  // Arrange
-  const malformedConfig = JSON.stringify({ deployScript: 123 });
-  mockedReadFile.mockResolvedValue(Buffer.from(malformedConfig));
+test('Deploy fails with malformed configuration', async () => {
+  fs.readFile = mockReadFile;
+  exec.mockExec = mockExec;
 
-  // Act
-  const result = await deploy('path/to/malformed/config.json');
-
-  // Assert
-  assert.deepStrictEqual(result, {
-    success: false,
-    message: 'Deployment failed: Invalid configuration structure'
-  });
+  const result = await deploy('malformed/config.json');
+  assert.deepStrictEqual(result, { success: false, message: 'Deployment failed: Invalid configuration structure' });
 });
 
-test('should fail deployment if config read throws error', async () => {
-  // Arrange
-  mockedReadFile.mockRejectedValue(new Error('File not found'));
+test('Deploy fails with command execution error', async () => {
+  fs.readFile = mockReadFile;
+  exec.mockExec = mockExec;
 
-  // Act
-  const result = await deploy('path/to/missing/config.json');
-
-  // Assert
-  assert.deepStrictEqual(result, {
-    success: false,
-    message: 'Deployment failed: Error parsing configuration file'
-  });
-});
-
-test('should fail deployment if command execution fails', async () => {
-  // Arrange
-  const validConfig = JSON.stringify({ deployScript: 'invalidcmd' });
-  mockedReadFile.mockResolvedValue(Buffer.from(validConfig));
-  mockedExec.mockImplementation((command, callback) => {
-    callback(new Error('Command not found'), '', 'Command not found');
-  });
-
-  // Act
-  const result = await deploy('path/to/valid/config.json');
-
-  // Assert
-  assert.deepStrictEqual(result, {
-    success: false,
-    message: 'Deployment failed: Command failed: Command not found'
-  });
+  const result = await deploy('valid/config.json');
+  assert.deepStrictEqual(result, { success: false, message: 'Deployment failed: Command failed: Error executing script' });
 });
