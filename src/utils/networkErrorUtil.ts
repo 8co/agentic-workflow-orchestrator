@@ -50,6 +50,38 @@ export const handleNetworkError = (error: unknown): void => {
   }
 };
 
+// Utility function for mapping error messages
+export const mapErrorMessage = (message: string): string | undefined => {
+  const errorMapping: Record<string, string> = {
+    'Network Error': 'Network error occurred. Please check your connection and try again.',
+    'timeout': 'Request timed out. Please try again later.',
+    '401': 'Unauthorized: Invalid API key or permissions issue.',
+    '403': 'Forbidden: You do not have permission to access this resource.',
+    '404': 'Not found: The requested resource could not be found.',
+    '500': 'Internal server error. Try again after some time.',
+    '502': 'Bad Gateway: Invalid response from the upstream server.',
+    '503': 'Service unavailable: OpenAI temporarily unavailable. Try again after some time.',
+    '504': 'Gateway timeout: Upstream server failed to send a request in time.',
+    '429': 'Too many requests: You have hit the rate limit. Try again later.',
+    'Malformed response': 'Received a malformed response from OpenAI. Please try again later.'
+  };
+  
+  for (const key in errorMapping) {
+    if (message.includes(key)) {
+      return errorMapping[key];
+    }
+  }
+  return undefined;
+};
+
+// Utility function to generate error messages
+export const generateErrorMessage = (err: unknown): string => {
+  if (err instanceof Error) {
+    return mapErrorMessage(err.message) || 'An unexpected error occurred. Please try again later.';
+  }
+  return 'An unknown error occurred.';
+};
+
 // Example function simulating a network operation that can produce errors
 export const networkOperation = async (): Promise<void> => {
   try {
