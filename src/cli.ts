@@ -19,7 +19,9 @@ import { createOpenAIAdapter } from './adapters/openai-adapter.js';
 import { createAutonomousRunner } from './autonomous-runner.js';
 import { createScheduler } from './scheduler.js';
 import { createTaskProposer } from './task-proposer.js';
+import { createProjectRegistry } from './project-registry.js';
 import type { AgentAdapter, AgentType } from './types.js';
+import type { ProjectConfig } from './project-registry.js';
 
 const basePath = process.cwd();
 
@@ -28,6 +30,7 @@ function parseArgs(args: string[]) {
   const positional: string[] = [];
   const vars: Record<string, string> = {};
   let agent: AgentType | undefined;
+  let project: string | undefined;
 
   for (let i = 1; i < args.length; i++) {
     if (args[i] === '--var' && i + 1 < args.length) {
@@ -37,12 +40,15 @@ function parseArgs(args: string[]) {
     } else if (args[i] === '--agent' && i + 1 < args.length) {
       agent = args[i + 1] as AgentType;
       i++;
+    } else if (args[i] === '--project' && i + 1 < args.length) {
+      project = args[i + 1];
+      i++;
     } else {
       positional.push(args[i]);
     }
   }
 
-  return { command, positional, vars, agent };
+  return { command, positional, vars, agent, project };
 }
 
 function buildAdapters(config: ReturnType<typeof loadConfig>): Record<string, AgentAdapter> {

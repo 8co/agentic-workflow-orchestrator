@@ -2770,3 +2770,41 @@ tasks:
     started_at: 2026-02-14T01:15:11.319Z
     completed_at: 2026-02-14T01:15:17.439Z
     branch: auto/refactor-enhanced-logger-error-logging
+  - id: write-tests-error-handling-connectToAIAgents
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/aiAgents.ts
+    variables:
+      test_target: src/aiAgents.ts
+      test_description: |
+        Write tests for additional error handling and edge cases in the connectToAIAgents function.
+  - id: improve-type-safety-project-registry
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/project-registry.ts
+    variables:
+      modification_description: |
+        Improve type safety across the ProjectRegistry class and its methods.
+  - id: write-tests-health-refactor-edge-cases
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/health.ts
+    variables:
+      test_target: src/health.ts
+      test_description: |
+        Develop tests targeting edge cases that could arise from the new refactor in the health module's logic.
+  - id: refactor-enhanced-logger-type-safety
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/enhanced-logger.ts
+    variables:
+      modification_description: |
+        Enhance the type safety in the EnhancedLogger class, especially for its methods handling error detail logging.
