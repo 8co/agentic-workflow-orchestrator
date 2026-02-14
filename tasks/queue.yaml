@@ -2274,3 +2274,45 @@ tasks:
     started_at: 2026-02-14T01:00:37.626Z
     completed_at: 2026-02-14T01:00:42.380Z
     branch: auto/write-tests-health
+  - id: write-tests-aiagents-edge-cases
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/aiAgents.ts
+    variables:
+      test_target: src/aiAgents.ts
+      test_description: >
+        Add tests to cover edge cases for connectToAIAgents function, particularly focusing on network errors and
+        unhandled exceptions.
+  - id: improve-type-safety-openai-config
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/adapters/openai-adapter.ts
+    variables:
+      modification_description: >
+        Enhance type safety for the OpenAIConfig interface, ensuring that properties are explicitly typed and
+        validations are clear.
+  - id: refactor-file-utils-for-error-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/file-helper.ts
+    variables:
+      modification_description: >
+        Refactor existing functions in file-helper.ts to improve error handling by explicitly handling specific error
+        cases and returning meaningful error messages.
+  - id: add-tests-configuration-loader
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/workflowConfig.ts
+    variables:
+      test_target: src/workflowConfig.ts
+      test_description: >
+        Add unit tests for loadWorkflowConfigurations function to cover scenarios of missing configurations and error
+        during loading process.
