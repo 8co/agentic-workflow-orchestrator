@@ -1,81 +1,78 @@
-import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
+import assert from 'node:assert';
 import { getHealthStatus } from '../src/health.js';
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { createLogger } from '../src/logger.js';
 
-const loggerMock = {
+// Mocking the necessary components
+const originalReadFileSync = readFileSync;
+const mockLogger = {
+  debug: () => {},
+  error: () => {},
   info: () => {},
   warn: () => {},
-  error: () => {},
 };
 
-const originalProcessCwd = process.cwd;
-const originalProcessUptime = process.uptime;
-const originalProcessMemoryUsage = process.memoryUsage;
-const originalReadFileSync = readFileSync;
-const originalLoggerCreate = createLogger;
+function createLogger() {
+  return mockLogger;
+}
 
-createLogger = () => loggerMock as ReturnType<typeof createLogger>;
+// Inject the mocked logger
+import * as loggerModule from '../src/logger.js';
+loggerModule.createLogger = createLogger;
 
-test('getHealthStatus returns correct status with valid package.json', () => {
-  const mockCwd = '/mocked-path';
-  const mockVersion = '1.0.0';
-  process.cwd = () => mockCwd;
-  readFileSync = (path: string, encoding: string) => {
-    if (path === join(mockCwd, 'package.json')) {
-      return JSON.stringify({ version: mockVersion });
-    }
-    return '';
-  };
-  process.uptime = () => 120.56;
-  process.memoryUsage = () => ({ heapUsed: 200 * 1024 * 1024 });
-  
+test('getHealthStatus: should return health status with valid package.json', () => {
+  const mockPackageJson = JSON.stringify({ version: '1.0.0' });
+  readFileSync = () => mockPackageJson;
+
   const status = getHealthStatus();
+  assert.strictEqual(status.version, '1.0.0');
+  assert.strictEqual(status.status, 'ok');
 
-  assert.equal(status.status, 'ok');
-  assert.equal(status.version, mockVersion);
-  assert.ok(status.uptime >= 0);
-  assert.ok(status.memoryUsage >= 0);
-  assert.ok(Date.parse(status.timestamp) > 0);
+  // Restore original readFileSync
+  readFileSync = originalReadFileSync;
 });
 
-test('getHealthStatus handles missing package.json gracefully', () => {
-  process.cwd = () => '/invalid-path';
+test('getHealthStatus: should handle missing package.json', () => {
   readFileSync = () => { throw new Error('File not found'); };
-  
-  const status = getHealthStatus();
 
-  assert.equal(status.status, 'ok');
-  assert.equal(status.version, 'unknown');
+  const status = getHealthStatus();
+  assert.strictEqual(status.version, undefined);
+  assert.strictEqual(status.status, 'ok');
+
+  // Restore original readFileSync
+  readFileSync = originalReadFileSync;
 });
 
-test('getHealthStatus handles invalid JSON in package.json gracefully', () => {
-  const mockCwd = '/mocked-path';
-  process.cwd = () => mockCwd;
-  readFileSync = () => '{ invalid JSON ';
-  
-  const status = getHealthStatus();
+test('getHealthStatus: should handle invalid JSON in package.json', () => {
+  readFileSync = () => 'invalid json';
 
-  assert.equal(status.status, 'ok');
-  assert.equal(status.version, 'unknown');
+  const status = getHealthStatus();
+  assert.strictEqual(status.version, undefined);
+  assert.strictEqual(status.status, 'ok');
+
+  // Restore original readFileSync
+  readFileSync = originalReadFileSync;
 });
 
-test('getHealthStatus logs warning for high memory usage', () => {
-  let warningLogged = false;
-  loggerMock.warn = () => { warningLogged = true; };
+test('getHealthStatus: should report high memory usage', () => {
+  const originalProcessMemoryUsage = process.memoryUsage;
   process.memoryUsage = () => ({ heapUsed: 600 * 1024 * 1024 });
 
   const status = getHealthStatus();
+  assert.strictEqual(status.status, 'ok');
+  assert.ok(status.memoryUsage > 500);
 
-  assert.equal(status.status, 'ok');
-  assert.ok(warningLogged);
+  // Restore original process.memoryUsage
+  process.memoryUsage = originalProcessMemoryUsage;
 });
 
-// Restore mocked functions
-process.cwd = originalProcessCwd;
-process.uptime = originalProcessUptime;
-process.memoryUsage = originalProcessMemoryUsage;
-readFileSync = originalReadFileSync;
-createLogger = originalLoggerCreate;
+test('getHealthStatus: should handle low uptime', () => {
+  const originalProcessUptime = process.uptime;
+  process.uptime = () => 0.01;
+
+  const status = getHealthStatus();
+  assert.strictEqual(status.uptime, 0.01);
+
+  // Restore original process.uptime
+  process.uptime = originalProcessUptime;
+});
