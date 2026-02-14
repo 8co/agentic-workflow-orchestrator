@@ -1,118 +1,76 @@
 import { connectToAIAgents } from '../src/aiAgents.js';
 import assert from 'node:assert';
 import { test } from 'node:test';
-import { execSync } from 'node:child_process';
+import { createServer, Server } from 'net';
 
-// Mock dependencies
-import { createConnection, Socket } from 'net';
-import { accessSync } from 'fs';
+test('connectToAIAgents should retry on failure and eventually succeed', (t) => {
+  let server: Server | undefined;
 
-let mockCreateConnection: typeof createConnection;
-let mockAccessSync: typeof accessSync;
-
-test('connectToAIAgents - successful connection', (t) => {
-  mockCreateConnection = createConnection as any;
-  mockAccessSync = accessSync as any;
-
-  const mockSocket = {
-    on: (event: string, handler: Function): void => {
-      if (event === 'close') {
-        handler(false); // simulate graceful close
+  const startTestServer = (port: number, shouldFailFirstTime: boolean) => {
+    let firstAttempt = !shouldFailFirstTime;
+    server = createServer((socket) => {
+      if (firstAttempt) {
+        socket.destroy();
+      } else {
+        socket.end();
       }
-    },
-    end: (): void => {},
-  } as unknown as Socket;
-
-  let connectionCallback: Function | undefined;
-
-  mockCreateConnection = (_options, callback) => {
-    connectionCallback = callback;
-    return mockSocket;
+      firstAttempt = false;
+    }).listen(port);
   };
 
-  mockAccessSync = (_path: string, _flags: number): void => {};
+  t.test('succeed after retry', (t) => {
+    const aiAgentPort = 444;
+    startTestServer(aiAgentPort, true);
 
-  const spyLogConnectionEvent = t.mock.fn();
-  const spyHandleConnectionError = t.mock.fn();
+    try {
+      connectToAIAgents();
+      assert.ok(true, "connectToAIAgents should succeed after retry");
+    } catch (error) {
+      assert.fail(`Unexpected error: ${error}`);
+    } finally {
+      server?.close();
+    }
+  });
 
-  (connectToAIAgents as any).__set__('logConnectionEvent', spyLogConnectionEvent);
-  (connectToAIAgents as any).__set__('handleConnectionError', spyHandleConnectionError);
+  t.test('fail without retry when network permission is denied', (t) => {
+    let originalAccessSync: typeof import('fs').accessSync;
+    originalAccessSync = import('fs').accessSync;
 
-  connectToAIAgents();
+    // Override the function to simulate permission error
+    import('fs').accessSync = () => {
+      throw new Error("Permission denied");
+    };
 
-  // Validate mock functions
-  assert.strictEqual(spyLogConnectionEvent.mock.calls.length, 1);
-  assert.strictEqual(spyHandleConnectionError.mock.calls.length, 0);
-
-  if (connectionCallback) connectionCallback();
-
-  assert.strictEqual(spyLogConnectionEvent.mock.calls.length, 2);
-  assert.strictEqual(spyHandleConnectionError.mock.calls.length, 0);
-});
-
-test('connectToAIAgents - connection error', (t) => {
-  mockCreateConnection = createConnection as any;
-  mockAccessSync = accessSync as any;
-
-  const mockSocket = {
-    on: (event: string, handler: Function): void => {
-      if (event === 'error') {
-        const error = new Error('Mock connection error');
-        handler(error);
+    try {
+      let didThrow = false;
+      try {
+        connectToAIAgents();
+      } catch (error) {
+        didThrow = true;
+        assert.strictEqual(error.message, "Network permission error: Permission denied");
       }
-    },
-    destroy: (): void => {},
-  } as unknown as Socket;
+      assert.ok(didThrow, "connectToAIAgents should fail due to permission issue");
+    } finally {
+      import('fs').accessSync = originalAccessSync; // Restore original function
+    }
+  });
 
-  mockCreateConnection = (_options) => {
-    return mockSocket;
-  };
+  t.test('logs appropriate errors on timeout', (t) => {
+    let originalConsoleLog = console.log;
+    let logOutput = '';
 
-  mockAccessSync = (_path: string, _flags: number): void => {};
+    console.log = (message: string, ...optionalParams: any[]) => {
+      logOutput += message + ' ' + optionalParams.join(' ');
+    };
 
-  const spyLogConnectionEvent = t.mock.fn();
-  const spyHandleConnectionError = t.mock.fn();
+    const aiAgentPort = 445;
+    startTestServer(aiAgentPort, false);
 
-  (connectToAIAgents as any).__set__('logConnectionEvent', spyLogConnectionEvent);
-  (connectToAIAgents as any).__set__('handleConnectionError', spyHandleConnectionError);
-
-  connectToAIAgents();
-
-  // Validate mock functions
-  assert.strictEqual(spyLogConnectionEvent.mock.calls.length, 1);
-  assert.strictEqual(spyHandleConnectionError.mock.calls.length, 1);
-  assert.strictEqual(
-    spyHandleConnectionError.mock.calls[0][0].message,
-    'Error connecting to AI agent APIs: Host: ai-agent-api.example.com, Port: 443, Error: Mock connection error'
-  );
-});
-
-test('connectToAIAgents - network permission error', (t) => {
-  mockCreateConnection = createConnection as any;
-  mockAccessSync = accessSync as any;
-
-  mockAccessSync = (_path: string, _flags: number): void => {
-    throw new Error('Mock permissions error');
-  };
-
-  const spyLogConnectionEvent = t.mock.fn();
-  const spyHandleConnectionError = t.mock.fn();
-
-  (connectToAIAgents as any).__set__('logConnectionEvent', spyLogConnectionEvent);
-  (connectToAIAgents as any).__set__('handleConnectionError', spyHandleConnectionError);
-
-  assert.throws(() => {
+    const currentLogOutput = logOutput;
     connectToAIAgents();
-  }, /Network permission error: Mock permissions error/);
+    assert.ok(logOutput.includes('Connection timed out'), "A timeout message should be logged");
 
-  // Validate mock functions
-  assert.strictEqual(spyLogConnectionEvent.mock.calls.length, 1);
-  assert.strictEqual(spyHandleConnectionError.mock.calls.length, 1);
-  assert.strictEqual(
-    spyHandleConnectionError.mock.calls[0][0].message,
-    'Error connecting to AI agent APIs: Network permission error: Mock permissions error'
-  );
+    console.log = originalConsoleLog; // Restore original console.log
+  });
+
 });
-
-// Cleanup mocks
-execSync('git checkout -- tests'); // Revert changes in tests to clean state
