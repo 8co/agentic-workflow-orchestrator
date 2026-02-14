@@ -20,7 +20,7 @@ export async function ensureDirectoryAndWriteFile(
   try {
     await mkdir(dirname(fullPath), { recursive: true });
     await writeFile(fullPath, content, { encoding: 'utf-8', flag: 'w' });
-  } catch (error) {
+  } catch (error: unknown) {
     handleError(error, `Failed to write file ${fullPath}`);
   }
 }
@@ -38,7 +38,7 @@ export async function readFromFile(filePath: string): Promise<string | null> {
 
   try {
     return await readFile(filePath, 'utf-8');
-  } catch (error) {
+  } catch (error: unknown) {
     handleError(error, `Failed to read file ${filePath}`, true);
     return null;
   }
@@ -67,7 +67,16 @@ export function resolveFilePath(baseDir: string, relativePath: string): string {
  * @param suppressError - Determines if the error should be logged rather than thrown.
  */
 function handleError(error: unknown, message: string, suppressError: boolean = false): void {
-  const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+  let errorMessage: string = 'Unknown error';
+  
+  if (error instanceof Error) {
+    errorMessage = error.message;
+  } else if (typeof error === 'string') {
+    errorMessage = error;
+  } else if (typeof error === 'object' && error !== null && 'message' in error) {
+    errorMessage = String((error as { message: unknown }).message);
+  }
+
   if (suppressError) {
     console.error(`${message}: ${errorMessage}`);
   } else {
