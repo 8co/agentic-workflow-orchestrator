@@ -18,7 +18,7 @@ export async function ensureDirectoryAndWriteFile(
     await mkdir(dirname(fullPath), { recursive: true });
     await writeFile(fullPath, content, { encoding: 'utf-8', flag: 'w' });
   } catch (error: unknown) {
-    handleError(error, `Error in ensureDirectoryAndWriteFile for path ${fullPath}`);
+    handleError(error, `Failed to write to file at path '${fullPath}'. Ensure the path is correct and you have write permissions.`);
   }
 }
 
@@ -34,7 +34,7 @@ export async function readFromFile(filePath: string): Promise<string | null> {
   try {
     return await readFile(filePath, 'utf-8');
   } catch (error: unknown) {
-    handleError(error, `Error in readFromFile for path ${filePath}`, true);
+    handleError(error, `Failed to read from file at path '${filePath}'. Check if the file exists and you have read permissions.`, true);
     return null;
   }
 }
