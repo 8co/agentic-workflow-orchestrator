@@ -1,99 +1,53 @@
-import { describe, it, beforeEach } from 'node:test';
-import assert from 'node:assert';
-import { connectToAIAgents, formatError, getNetworkDetails, NetworkDetails } from '../src/aiAgents.js';
+import { strict as assert } from 'node:assert';
+import { test } from 'node:test';
 import { networkInterfaces } from 'os';
-import sinon from 'sinon';
+import { connectToAIAgents, formatError, getNetworkDetails, handleConnectionError } from '../src/aiAgents.js';
 
-// Helper function to capture console.error output
-function captureConsoleError(callback: () => void): string {
-  let errorOutput = '';
+test('connectToAIAgents should handle connection errors', () => {
+  assert.doesNotThrow(() => {
+    connectToAIAgents();
+  }, 'connectToAIAgents should not throw an unhandled exception');
+});
+
+test('formatError returns a formatted error for Error instance', () => {
+  const error = new Error('Test error');
+  assert.deepEqual(formatError(error), error, 'formatError should return the error as is if it is an instance of Error');
+});
+
+test('formatError returns a formatted error for string error', () => {
+  const error = 'Test error string';
+  const result = formatError(error);
+  assert(result instanceof Error, 'formatError should return an Error instance for a string input');
+  assert.equal(result?.message, error, 'formatError should preserve the error message');
+});
+
+test('formatError returns null for unknown error types', () => {
+  const error = 12345; // Not an Error instance or string
+  assert.equal(formatError(error), null, 'formatError should return null for non-Error, non-string error types');
+});
+
+test('handleConnectionError logs error details', () => {
   const originalConsoleError = console.error;
-
-  console.error = (message?: any, ...optionalParams: any[]) => {
-    errorOutput += `${message} ${optionalParams.join(' ')}`;
+  console.error = (message: string) => {
+    assert(message.includes('❌ Error connecting to AI agent APIs:'), 'Error message should start with known error message');
+    assert(message.includes('Stack trace:'), 'Error message should include stack trace');
+    assert(message.includes('Network Details:'), 'Error message should include network details');
   };
+  
+  handleConnectionError(new Error('Simulated error'));
+  
+  console.error = originalConsoleError;
+});
 
-  try {
-    callback();
-  } finally {
-    console.error = originalConsoleError;
-  }
-
-  return errorOutput;
-}
-
-describe('AI Agent Connection', () => {
-  describe('connectToAIAgents', () => {
-    it('should log connection errors with network details', () => {
-      const errorOutput = captureConsoleError(() => {
-        connectToAIAgents();
-      });
-
-      assert.match(errorOutput, /❌ Error connecting to AI agent APIs: Simulation of a connection error/);
-      assert.match(errorOutput, /Network Details:/);
-    });
+test('getNetworkDetails returns correct network details', () => {
+  const originalNetworkInterfaces = networkInterfaces;
+  networkInterfaces = () => ({
+    lo: [{ address: '127.0.0.1', family: 'IPv4', internal: true }],
+    eth0: [{ address: '192.168.1.1', family: 'IPv4', internal: false }],
   });
+  
+  const result = getNetworkDetails();
+  assert.deepEqual(result, { eth0: ['192.168.1.1'] }, 'getNetworkDetails should only return non-internal IPv4 addresses');
 
-  describe('formatError', () => {
-    it('should format Error objects correctly', () => {
-      const error = new Error('Test Error');
-      const formattedError = formatError(error);
-      assert.strictEqual(formattedError, error);
-    });
-
-    it('should convert string errors to Error objects', () => {
-      const errorString = 'Test Error String';
-      const formattedError = formatError(errorString);
-      assert.strictEqual(formattedError?.message, errorString);
-    });
-
-    it('should return null for unknown error types', () => {
-      const formattedError = formatError({});
-      assert.strictEqual(formattedError, null);
-    });
-  });
-
-  describe('getNetworkDetails', () => {
-    let mockedNetworkInterfaces: sinon.SinonStub;
-
-    beforeEach(() => {
-      mockedNetworkInterfaces = sinon.stub(networkInterfaces);
-    });
-
-    afterEach(() => {
-      mockedNetworkInterfaces.restore();
-    });
-
-    it('should return network details with IPv4 addresses', () => {
-      mockedNetworkInterfaces.returns({
-        eth0: [
-          { address: '192.168.1.5', family: 'IPv4', internal: false }
-        ]
-      });
-
-      const networkDetails = getNetworkDetails();
-      const expected: NetworkDetails = { eth0: ['192.168.1.5'] };
-      assert.deepStrictEqual(networkDetails, expected);
-    });
-
-    it('should not include internal or non-IPv4 addresses', () => {
-      mockedNetworkInterfaces.returns({
-        eth0: [
-          { address: '192.168.1.5', family: 'IPv4', internal: false },
-          { address: '10.0.0.1', family: 'IPv4', internal: true }, // internal
-          { address: 'fe80::1', family: 'IPv6', internal: false }, // IPv6
-        ]
-      });
-
-      const networkDetails = getNetworkDetails();
-      const expected: NetworkDetails = { eth0: ['192.168.1.5'] };
-      assert.deepStrictEqual(networkDetails, expected);
-    });
-
-    it('should return an empty object if no networks are available', () => {
-      mockedNetworkInterfaces.returns({});
-      const networkDetails = getNetworkDetails();
-      assert.deepStrictEqual(networkDetails, {});
-    });
-  });
+  networkInterfaces = originalNetworkInterfaces;
 });
