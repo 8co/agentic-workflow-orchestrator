@@ -6,6 +6,7 @@ type LogLevel = 'info' | 'warn' | 'error' | 'debug';
 class EnhancedLogger {
   private static instance: EnhancedLogger | null = null;
   private logFilePath: string;
+  private maxRetries: number = 3;
 
   private constructor(logFileName: string) {
     const logDirectory: string = path.resolve(process.cwd(), 'logs');
@@ -51,20 +52,26 @@ class EnhancedLogger {
   }
 
   private logToFile(message: string): void {
-    try {
-      fs.appendFileSync(this.logFilePath, message);
-    } catch (error: unknown) {
-      this.logErrorDetail('Failed to write to log file', error);
-
-      // Attempt to recreate the log directory and file
+    let attempt = 0;
+    while (attempt < this.maxRetries) {
       try {
-        const logDirectory: string = path.dirname(this.logFilePath);
-        if (!fs.existsSync(logDirectory)) {
-          fs.mkdirSync(logDirectory, { recursive: true });
-        }
         fs.appendFileSync(this.logFilePath, message);
-      } catch (recoveryError: unknown) {
-        this.logErrorDetail('Recovery attempt failed', recoveryError);
+        return;
+      } catch (error: unknown) {
+        attempt++;
+        this.logErrorDetail(`Attempt ${attempt} - Failed to write to log file`, error);
+
+        // Attempt to recreate the log directory and file
+        if (attempt < this.maxRetries) {
+          try {
+            const logDirectory: string = path.dirname(this.logFilePath);
+            if (!fs.existsSync(logDirectory)) {
+              fs.mkdirSync(logDirectory, { recursive: true });
+            }
+          } catch (recoveryError: unknown) {
+            this.logErrorDetail('Recovery attempt failed', recoveryError);
+          }
+        }
       }
     }
   }
