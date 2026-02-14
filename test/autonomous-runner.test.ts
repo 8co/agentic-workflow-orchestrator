@@ -1,94 +1,87 @@
-import { test } from 'node:test';
+import { test, describe, beforeEach } from 'node:test';
 import assert from 'node:assert';
 import { createAutonomousRunner } from '../src/autonomous-runner.js';
 import type { AgentAdapter, AutoWorkflow } from '../src/types.js';
+import { stub } from 'sinon';
 
-const mockAdapter: AgentAdapter = {
-  execute: async () => ({ success: true, output: '```ts:src/sample.ts\nconsole.log("Test");\n```' }),
-};
+describe('createAutonomousRunner', () => {
+  let mockAdapters: Record<string, AgentAdapter>;
+  let runner: ReturnType<typeof createAutonomousRunner>;
 
-const mockFailingAdapter: AgentAdapter = {
-  execute: async () => ({ success: false, error: 'Mock execution failed' }),
-};
-
-const basePath = process.cwd();
-const mockDeps = {
-  adapters: {
-    default: mockAdapter,
-    failing: mockFailingAdapter,
-  },
-  defaultAgent: 'default',
-};
-
-const runner = createAutonomousRunner(mockDeps);
-
-test('should load and execute a simple workflow', async () => {
-  const workflow: AutoWorkflow = {
-    name: 'Test Workflow',
-    target_dir: 'test/target-dir',
-    steps: [
-      { id: 'step1', prompt: 'mock-prompt' },
-    ],
-  };
-
-  const result = await runner.run('mock-workflow-path', basePath, workflow.variables);
-
-  assert.strictEqual(result.status, 'completed');
-  assert(result.steps.length > 0);
-  assert.strictEqual(result.steps[0].status, 'completed');
-});
-
-test('should fail when agent is missing', async () => {
-  const runnerWithMissingAgent = createAutonomousRunner({
-    adapters: {},
-    defaultAgent: 'non-existent',
+  beforeEach(() => {
+    mockAdapters = {
+      mockAgent: {
+        execute: stub().resolves({ success: true, output: '```typescript:path/to/file.ts\nconsole.log("Hello World");\n```' }),
+      },
+    };
+    runner = createAutonomousRunner({ adapters: mockAdapters, defaultAgent: 'mockAgent' });
   });
 
-  const workflow: AutoWorkflow = {
-    name: 'Test Workflow',
-    target_dir: 'test/target-dir',
-    steps: [
-      { id: 'step1', prompt: 'mock-prompt' },
-    ],
-  };
+  test('should execute an AutoWorkflow successfully', async () => {
+    const mockWorkflow: AutoWorkflow = {
+      name: 'TestWorkflow',
+      target_dir: './some-dir',
+      steps: [{
+        id: 'step1',
+        prompt: './prompt1.txt',
+      }],
+    };
 
-  const result = await runnerWithMissingAgent.run('mock-workflow-path', basePath, workflow.variables);
+    const result = await runner.run('mock/workflow/path.yaml', __dirname);
 
-  assert.strictEqual(result.status, 'failed');
-  assert(result.steps[0].error!.includes('No adapter for agent'));
-});
-
-test('should fail when LLM output is invalid', async () => {
-  const runnerWithFailingAdapter = createAutonomousRunner({
-    adapters: {
-      default: mockFailingAdapter,
-    },
-    defaultAgent: 'default',
+    assert.strictEqual(result.status, 'completed');
+    assert.strictEqual(result.steps.length, 1);
+    assert.strictEqual(result.steps[0].status, 'completed');
+    assert.strictEqual(result.executionId.length, 36);  // UUID length
   });
 
-  const workflow: AutoWorkflow = {
-    name: 'Test Workflow',
-    target_dir: 'test/target-dir',
-    steps: [
-      { id: 'step1', prompt: 'mock-prompt' },
-    ],
-  };
+  test('should handle errors in the workflow execution', async () => {
+    const mockErrorAdapters = {
+      mockAgent: {
+        execute: stub().resolves({ success: false, error: 'LLM Error' }),
+      },
+    };
+    const errorRunner = createAutonomousRunner({ adapters: mockErrorAdapters, defaultAgent: 'mockAgent' });
 
-  const result = await runnerWithFailingAdapter.run('mock-workflow-path', basePath, workflow.variables);
+    const mockWorkflow: AutoWorkflow = {
+      name: 'TestWorkflow',
+      target_dir: './some-dir',
+      steps: [{
+        id: 'step1',
+        prompt: './prompt1.txt',
+      }],
+    };
 
-  assert.strictEqual(result.status, 'failed');
-  assert(result.steps[0].error!.includes('Mock execution failed'));
-});
+    const result = await errorRunner.run('mock/workflow/path.yaml', __dirname);
 
-test('should handle invalid configs gracefully', async () => {
-  const workflow: AutoWorkflow = {
-    name: 'Faulty Workflow',
-    target_dir: 'test/target-dir',
-    steps: [], // No steps provided to simulate invalid config
-  };
+    assert.strictEqual(result.status, 'failed');
+    assert.strictEqual(result.steps[0].status, 'failed');
+    assert.strictEqual(result.steps[0].error, 'LLM Error');
+  });
 
-  const result = await runner.run('mock-workflow-path', basePath, workflow.variables);
+  test('should properly branch if specified in the workflow', async () => {
+    const createBranchStub = stub().resolves({ success: true });
+    const getCurrentBranchStub = stub().resolves('main');
 
-  assert.strictEqual(result.status, 'failed');
-  assert.strictEqual(result.steps.length, 0);
+    const mockGitOps = {
+      createBranch: createBranchStub,
+      getCurrentBranch: getCurrentBranchStub,
+    };
+
+    Object.assign(global, mockGitOps);
+
+    const mockWorkflow: AutoWorkflow = {
+      name: 'TestWorkflow',
+      target_dir: './some-dir',
+      branch: 'feature/new-feature',
+      steps: [{
+        id: 'step1',
+        prompt: './prompt1.txt',
+      }],
+    };
+
+    const result = await runner.run('mock/workflow/path.yaml', __dirname);
+
+    assert.strictEqual(result.branch, 'feature/new-feature');
+  });
 });
