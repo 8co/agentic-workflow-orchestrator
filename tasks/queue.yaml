@@ -1070,3 +1070,24 @@ tasks:
     started_at: 2026-02-14T00:33:42.180Z
     completed_at: 2026-02-14T00:33:47.291Z
     branch: auto/improve-type-safety-file-helper
+  - id: improve-type-safety-errorUtility
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/errorUtility.ts
+    variables:
+      modification_description: >
+        Enhance type safety in the errorUtility module by defining and using explicit types for function parameters and
+        return values.
+  - id: write-tests-autonomous-runner-edgeCases
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/autonomous-runner.ts
+    variables:
+      test_target: src/autonomous-runner.ts
+      test_description: >
+        Implement test cases that cover edge scenarios and error conditions in the autonomous-runner module to validate
+        its robustness and ensure adequate error handling.
