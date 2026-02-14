@@ -5639,3 +5639,47 @@ tasks:
     started_at: 2026-02-14T02:41:15.090Z
     completed_at: 2026-02-14T02:41:34.447Z
     branch: auto/create-unit-tests-for-new-utility-function-log-exceptions
+  - id: write-tests-anthropic-adapter-exception-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/adapters/anthropic-adapter.ts
+    variables:
+      test_target: src/adapters/anthropic-adapter.ts
+      test_description: >
+        Write tests to cover exception handling in the AnthropicAdapter module, especially focusing on the custom error
+        functions and the retry logic.
+  - id: add-edge-case-tests-anthropic-adapter
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/adapters/anthropic-adapter.ts
+    variables:
+      test_target: src/adapters/anthropic-adapter.ts
+      test_description: >
+        Cover additional edge cases in AnthropicAdapter, such as unexpected API responses or network errors during
+        retries.
+  - id: write-tests-openai-adapter-execution-edge-cases
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/adapters/openai-adapter.ts
+    variables:
+      test_target: src/adapters/openai-adapter.ts
+      test_description: >
+        Introduce tests to handle execution edge cases in the OpenAIAdapter module, such as complete failures, partial
+        successes, and unexpected API outputs.
+  - id: implement-edge-case-tests-for-queue-manager
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/queue-manager.ts
+    variables:
+      test_target: src/queue-manager.ts
+      test_description: >
+        Add tests to cover edge cases in queue management, especially focusing on error states during task transitions
+        and faulty queue file handling.
