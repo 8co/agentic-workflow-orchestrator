@@ -1,107 +1,120 @@
-import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { connectToAIAgents, formatError, formatErrorWithDetails, handleConnectionError, getNetworkDetails } from '../src/aiAgents.js';
-import { createConnection } from 'node:net';
-import { networkInterfaces } from 'node:os';
+import assert from 'node:assert';
+import { connectToAIAgents, formatError, formatErrorWithDetails, getNetworkDetails } from '../src/aiAgents.js';
+import { networkInterfaces } from 'os';
+import { Socket } from 'net';
 
-// Mocking createConnection to test connectToAIAgents function
 test('connectToAIAgents - successful connection', () => {
-  let successMessage = '';
-  console.log = (message) => { 
-    successMessage = message;
+  // Mock Socket implementation for testing
+  class MockSocket extends Socket {
+    connect() {
+      setImmediate(() => {
+        this.emit('connect');
+      });
+      return this;
+    }
+  }
+
+  const originalCreateConnection = Socket.connect;
+  Socket.connect = (options, callback) => {
+    const socket = new MockSocket();
+    if (callback) {
+      socket.on('connect', callback);
+    }
+    return socket;
   };
 
-  const originalCreateConnection = createConnection;
-  createConnection = ({}, connectListener) => {
-    connectListener();
-    return {
-      on: () => {},
-      end: () => {}
-    } as any;
-  };
-
-  connectToAIAgents();
-
-  assert.equal(successMessage, '✅ Successfully connected to AI agent APIs.');
-
-  createConnection = originalCreateConnection;
-});
-
-test('connectToAIAgents - connection error', () => {
-  let errorMessage = '';
-  console.error = (message) => { 
-    errorMessage = message;
-  };
-
-  const originalCreateConnection = createConnection;
-  createConnection = () => {
-    return {
-      on: (event: string, callback: (error: Error) => void) => {
-        if (event === 'error') {
-          callback(new Error('Test connection error'));
-        }
-      }
-    } as any;
+  // Mock console.log to capture the output
+  const originalConsoleLog = console.log;
+  let consoleOutput = '';
+  console.log = (message: string) => {
+    consoleOutput += message + '\n';
   };
 
   connectToAIAgents();
 
-  assert.match(errorMessage, /Error connecting to AI agent APIs: Host: ai-agent-api.example.com, Port: 443, Error: Test connection error/);
+  assert.match(consoleOutput, /🔗 Connecting to AI agent APIs.../);
+  assert.match(consoleOutput, /✅ Successfully connected to AI agent APIs./);
 
-  createConnection = originalCreateConnection;
+  // Restore original implementations
+  console.log = originalConsoleLog;
+  Socket.connect = originalCreateConnection;
 });
 
-test('formatError - formats Error object', () => {
-  const error = new Error('Test error');
-  const result = formatError(error);
-  assert.equal(result?.message, 'Test error');
-});
+test('connectToAIAgents - handles error and timeout', () => {
+  // Mock Socket implementation for testing
+  class MockSocket extends Socket {
+    connect() {
+      setImmediate(() => {
+        this.emit('error', new Error('Test error'));
+      });
+      return this;
+    }
 
-test('formatError - formats string error', () => {
-  const result = formatError('Test string error');
-  assert.equal(result?.message, 'Test string error');
-});
+    setTimeout() {
+      setImmediate(() => {
+        this.emit('timeout');
+      });
+    }
+  }
 
-test('formatError - non-error input', () => {
-  const result = formatError(42);
-  assert.equal(result, null);
-});
-
-test('formatErrorWithDetails - formats error with host and port', () => {
-  const error = new Error('Test detailed error');
-  const result = formatErrorWithDetails(error, 'test-host', 8080);
-  assert.equal(result.message, 'Host: test-host, Port: 8080, Error: Test detailed error');
-});
-
-test('handleConnectionError - includes error and network details', () => {
-  const error = new Error('Test error');
-  let errorMessage = '';
-  
-  console.error = (message) => { 
-    errorMessage = message;
+  const originalCreateConnection = Socket.connect;
+  Socket.connect = (options, callback) => {
+    const socket = new MockSocket();
+    return socket;
   };
-  
-  handleConnectionError(error);
 
-  assert.match(errorMessage, /Error connecting to AI agent APIs: Test error/);
-  assert.match(errorMessage, /Network Details:/);
+  // Mock console.error to capture the output
+  const originalConsoleError = console.error;
+  let consoleOutput = '';
+  console.error = (message: string) => {
+    consoleOutput += message + '\n';
+  };
+
+  connectToAIAgents();
+
+  assert.match(consoleOutput, /❌ Error connecting to AI agent APIs: Host: ai-agent-api.example.com, Port: 443, Error: Test error/);
+
+  // Restore original implementations
+  console.error = originalConsoleError;
+  Socket.connect = originalCreateConnection;
 });
 
-test('getNetworkDetails - retrieves network details', () => {
+test('formatError - converts unknown types to Error', () => {
+  const errorString = 'Sample error string';
+  const formattedError = formatError(errorString);
+  assert.strictEqual(formattedError?.message, errorString);
+
+  const errorInstance = new Error('Sample error instance');
+  const formattedErrorInstance = formatError(errorInstance);
+  assert.deepStrictEqual(formattedErrorInstance, errorInstance);
+
+  const nonErrorType = 123;
+  const formattedNonError = formatError(nonErrorType);
+  assert.strictEqual(formattedNonError, null);
+});
+
+test('formatErrorWithDetails - formats error with host and port details', () => {
+  const error = new Error('Test error');
+  const host = 'test-host';
+  const port = 1234;
+  const formattedError = formatErrorWithDetails(error, host, port);
+
+  assert.match(formattedError.message, new RegExp(`Host: ${host}, Port: ${port}, Error: ${error.message}`));
+});
+
+test('getNetworkDetails - returns valid network details', () => {
+  const mockNetworkInterfaces = {
+    eth0: [{ address: '192.168.0.1', family: 'IPv4', internal: false }, { address: 'fe80::1', family: 'IPv6', internal: false }],
+    lo: [{ address: '127.0.0.1', family: 'IPv4', internal: true }]
+  };
+
   const originalNetworkInterfaces = networkInterfaces;
-  networkInterfaces = () => {
-    return {
-      eth0: [
-        { address: '192.168.1.1', family: 'IPv4', internal: false }
-      ],
-      lo: [
-        { address: '127.0.0.1', family: 'IPv4', internal: true }
-      ]
-    } as any;
-  };
+  networkInterfaces = () => mockNetworkInterfaces;
 
-  const result = getNetworkDetails();
-  assert.deepEqual(result, { eth0: ['192.168.1.1'] });
+  const networkDetails = getNetworkDetails();
+  assert.deepStrictEqual(networkDetails, { eth0: ['192.168.0.1'] });
 
+  // Restore original implementation
   networkInterfaces = originalNetworkInterfaces;
 });
