@@ -4639,3 +4639,53 @@ tasks:
     started_at: 2026-02-14T02:05:57.992Z
     completed_at: 2026-02-14T02:06:10.201Z
     branch: auto/write-tests-state-manager-error-handling
+  - id: enhance-type-safety-scheduler
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/scheduler.ts
+    variables:
+      modification_description: >
+        Improve type safety in the scheduler module by adding strict TypeScript type annotations and ensuring type
+        consistency across all functions.
+  - id: implement-task-proposer-error-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/task-proposer.ts
+    variables:
+      modification_description: >
+        Implement comprehensive error handling in the task proposer module to manage potential exceptions and improve
+        reliability.
+  - id: write-tests-log-util-refactors
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/log-util.ts
+    variables:
+      test_target: src/log-util.ts
+      test_description: >
+        Write tests for refactored functions in the log util module to ensure they handle errors and log messages
+        correctly, covering edge cases.
+  - id: refactor-file-helper-error-logging
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/file-helper.ts
+    variables:
+      modification_description: |
+        Refactor error handling in the file helper module to improve clarity and add comprehensive error logging.
+  - id: add-error-handling-network-util
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/utils/networkErrorUtil.ts
+    variables:
+      modification_description: >
+        Add error handling to the network error utility module and include logging for easier troubleshooting of
+        network-related issues.
