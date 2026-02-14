@@ -13,7 +13,7 @@ export function connectToAIAgents(): void {
       socket.end();
     });
 
-    socket.on('error', (error: Error) => {
+    socket.on('error', (error: Error): void => {
       const formattedError: Error = formatErrorWithDetails(error, aiAgentHost, aiAgentPort) || new Error('Unknown error');
       handleConnectionError(formattedError);
     });
@@ -39,7 +39,7 @@ export function formatError(error: unknown): Error | null {
 }
 
 export function formatErrorWithDetails(error: Error, host: string, port: number): Error {
-  const detailedMessage = `Host: ${host}, Port: ${port}, Error: ${error.message}`;
+  const detailedMessage: string = `Host: ${host}, Port: ${port}, Error: ${error.message}`;
   return new Error(detailedMessage);
 }
 
@@ -60,7 +60,7 @@ export function getNetworkDetails(): NetworkDetails {
   for (const name of Object.keys(nets)) {
     const netInfos: NetworkInterfaceInfo[] | undefined = nets[name];
     if (netInfos) {
-      netInfos.forEach((net: NetworkInterfaceInfo) => {
+      netInfos.forEach((net: NetworkInterfaceInfo): void => {
         if (net.family === 'IPv4' && !net.internal) {
           if (!results[name]) {
             results[name] = [];
