@@ -1958,7 +1958,7 @@ tasks:
     completed_at: 2026-02-14T00:51:42.508Z
     branch: auto/add-error-handling-to-test-helper
   - id: add-tests-adapters-openai-error-handling
-    status: running
+    status: completed
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -1969,8 +1969,10 @@ tasks:
         Add unit tests to cover error handling scenarios in the OpenAI Adapter module, including network errors, API
         limit errors, and any other exceptions.
     started_at: 2026-02-14T00:52:03.553Z
+    completed_at: 2026-02-14T00:52:09.387Z
+    branch: auto/add-tests-adapters-openai-error-handling
   - id: write-tests-aiAgents-edge-cases
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -1980,6 +1982,7 @@ tasks:
       test_description: >
         Write unit tests to ensure all edge cases in the AI Agents connection logic are handled appropriately. This
         includes scenarios such as invalid network configurations and unexpected error types.
+    started_at: 2026-02-14T00:52:09.417Z
   - id: improve-type-safety-openai-adapter
     status: pending
     workflow: auto
