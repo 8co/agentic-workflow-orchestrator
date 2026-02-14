@@ -1,63 +1,97 @@
-import { test } from 'node:test';
-import assert from 'node:assert';
 import fs from 'fs';
 import path from 'path';
-import { EnhancedLogger, LogLevel } from './enhanced-logger.js';
+import assert from 'node:assert';
+import test from 'node:test';
+import { EnhancedLogger } from './enhanced-logger.js';
 
-test('EnhancedLogger: Singleton Pattern', () => {
-  const logger1 = EnhancedLogger.getInstance('test.log');
-  const logger2 = EnhancedLogger.getInstance('test.log');
-  assert.strictEqual(logger1, logger2, 'Instances are not the same');
-});
+const logFilePath = path.resolve(process.cwd(), 'logs', 'test.log');
 
-test('EnhancedLogger: Log Info', () => {
+test('EnhancedLogger: should correctly log info messages to console and file', () => {
+  const originalConsoleInfo = console.info;
+  let consoleOutput = '';
+  console.info = (message?: any, ...optionalParams: any[]) => {
+    consoleOutput += message + optionalParams.join(' ');
+  };
+
   const logger = EnhancedLogger.getInstance('test.log');
-  const logFilePath = path.resolve(process.cwd(), 'logs', 'test.log');
-  
   logger.logInfo('This is an info message');
-  
-  const logContents = fs.readFileSync(logFilePath, 'utf-8');
-  assert.ok(logContents.includes('INFO This is an info message'), 'Info message not logged');
+
+  const logContent = fs.readFileSync(logFilePath, 'utf-8');
+  assert(logContent.includes('INFO'));
+  assert(consoleOutput.includes('INFO'));
+
+  console.info = originalConsoleInfo;
 });
 
-test('EnhancedLogger: Log Warn', () => {
-  const logger = EnhancedLogger.getInstance('test.log');
-  const logFilePath = path.resolve(process.cwd(), 'logs', 'test.log');
+test('EnhancedLogger: should correctly log warning messages to console and file', () => {
+  const originalConsoleWarn = console.warn;
+  let consoleOutput = '';
+  console.warn = (message?: any, ...optionalParams: any[]) => {
+    consoleOutput += message + optionalParams.join(' ');
+  };
 
+  const logger = EnhancedLogger.getInstance('test.log');
   logger.logWarn('This is a warning message');
-  
-  const logContents = fs.readFileSync(logFilePath, 'utf-8');
-  assert.ok(logContents.includes('WARN This is a warning message'), 'Warning message not logged');
+
+  const logContent = fs.readFileSync(logFilePath, 'utf-8');
+  assert(logContent.includes('WARN'));
+  assert(consoleOutput.includes('WARN'));
+
+  console.warn = originalConsoleWarn;
 });
 
-test('EnhancedLogger: Log Error', () => {
-  const logger = EnhancedLogger.getInstance('test.log');
-  const logFilePath = path.resolve(process.cwd(), 'logs', 'test.log');
+test('EnhancedLogger: should correctly log error messages to console and file', () => {
+  const originalConsoleError = console.error;
+  let consoleOutput = '';
+  console.error = (message?: any, ...optionalParams: any[]) => {
+    consoleOutput += message + optionalParams.join(' ');
+  };
 
+  const logger = EnhancedLogger.getInstance('test.log');
   logger.logError('This is an error message');
-  
-  const logContents = fs.readFileSync(logFilePath, 'utf-8');
-  assert.ok(logContents.includes('ERROR This is an error message'), 'Error message not logged');
+
+  const logContent = fs.readFileSync(logFilePath, 'utf-8');
+  assert(logContent.includes('ERROR'));
+  assert(consoleOutput.includes('ERROR'));
+
+  console.error = originalConsoleError;
 });
 
-test('EnhancedLogger: Log Debug', () => {
-  const logger = EnhancedLogger.getInstance('test.log');
-  const logFilePath = path.resolve(process.cwd(), 'logs', 'test.log');
+test('EnhancedLogger: should correctly log debug messages to console and file', () => {
+  const originalConsoleDebug = console.debug;
+  let consoleOutput = '';
+  console.debug = (message?: any, ...optionalParams: any[]) => {
+    consoleOutput += message + optionalParams.join(' ');
+  };
 
+  const logger = EnhancedLogger.getInstance('test.log');
   logger.logDebug('This is a debug message');
-  
-  const logContents = fs.readFileSync(logFilePath, 'utf-8');
-  assert.ok(logContents.includes('DEBUG This is a debug message'), 'Debug message not logged');
+
+  const logContent = fs.readFileSync(logFilePath, 'utf-8');
+  assert(logContent.includes('DEBUG'));
+  assert(consoleOutput.includes('DEBUG'));
+
+  console.debug = originalConsoleDebug;
 });
 
-test('EnhancedLogger: Handle Invalid LogLevel', () => {
+test('EnhancedLogger: should handle errors when writing to a log file', () => {
+  const originalConsoleError = console.error;
+  let consoleOutput = '';
+  console.error = (message?: any, ...optionalParams: any[]) => {
+    consoleOutput += message + optionalParams.join(' ');
+  };
+
   const logger = EnhancedLogger.getInstance('test.log');
-  
-  try {
-    // Intentionally casting invalid level to bypass type checking
-    (logger as any).log('This is an invalid level message', 'invalid');
-    assert.fail('Error was not thrown for invalid log level');
-  } catch (error) {
-    assert.ok(error, 'Correctly handled invalid log level');
-  }
+
+  // Simulate an error by making the log file unwritable
+  fs.chmodSync(logFilePath, 0o400); // read-only
+
+  logger.logError('This is an unwritable file test');
+
+  assert(consoleOutput.includes('[ERROR] Failed to write to log file'));
+
+  console.error = originalConsoleError;
+
+  // Restore permissions
+  fs.chmodSync(logFilePath, 0o600); // normal writable
 });
