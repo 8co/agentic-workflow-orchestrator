@@ -6611,3 +6611,46 @@ tasks:
       src/health.test.ts(40,5): error TS2304: Cannot find name 'readFileSync'.
 
       ```
+  - id: write-anthropic-adapter-tests
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/adapters/anthropic-adapter.ts
+    variables:
+      test_target: src/adapters/anthropic-adapter.ts
+      test_description: >
+        Write comprehensive unit tests for Anthropic Adapter, covering edge cases such as invalid API responses and
+        network errors.
+  - id: write-tests-environment-configuration
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/config.ts
+    variables:
+      test_target: src/config.ts
+      test_description: >
+        Add unit tests for environment configuration loading and validation to ensure missing or invalid configurations
+        are handled gracefully.
+  - id: implement-observability-utilities
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-create-module.md
+    context_files:
+      - src/observabilityUtil.ts
+    variables:
+      module_name: observabilityUtil
+      module_description: >
+        Create utilities for logging system metrics such as memory usage, CPU load, and disk space. Implement functions
+        to report system health and log these metrics in a centralized logging system.
+  - id: refactor-ai-agents-to-improve-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/aiAgents.ts
+    variables:
+      modification_description: >
+        Introduce improved error handling and logging within the AI agents connection function, focusing on network
+        error detection and recovery strategies.
