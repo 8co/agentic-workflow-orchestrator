@@ -1,98 +1,106 @@
 import { strict as assert } from 'node:assert';
+import { test } from 'node:test';
 import { loadConfig, validateConfig } from '../src/config.js';
-import type { Config } from '../src/config.js';
+import type { AgentType, Config } from '../src/types.js';
 
-// Mocking process.env
-const ORIGINAL_ENV = process.env;
+test('loadConfig should load default configuration when no environment variables are set', () => {
+  // Save original environment variables
+  const originalEnv = process.env;
+  process.env = {};
 
-function resetEnv() {
-  process.env = { ...ORIGINAL_ENV };
-}
+  const config = loadConfig();
+  assert.deepEqual(config, {
+    anthropic: {
+      apiKey: '',
+      model: 'claude-sonnet-4-20250514',
+    },
+    openai: {
+      apiKey: '',
+      model: 'gpt-4o',
+    },
+    defaultAgent: 'anthropic',
+  });
 
-function mockEnv(values: { [key: string]: string }) {
-  process.env = { ...process.env, ...values };
-}
+  // Restore original environment variables
+  process.env = originalEnv;
+});
 
-// Tests
-(async () => {
+test('loadConfig should load configuration from environment variables', () => {
+  // Save original environment variables
+  const originalEnv = process.env;
+  
+  const testEnv = {
+    ANTHROPIC_API_KEY: 'test_ant_key',
+    ANTHROPIC_MODEL: 'custom-anthropic-model',
+    OPENAI_API_KEY: 'test_openai_key',
+    OPENAI_MODEL: 'custom-openai-model',
+    DEFAULT_AGENT: 'openai',
+  };
 
-  // Test loadConfig function
-  {
-    // Test case: loadConfig with all environment variables set
-    mockEnv({
-      ANTHROPIC_API_KEY: 'test_anthropic_api_key',
-      ANTHROPIC_MODEL: 'test_anthropic_model',
-      OPENAI_API_KEY: 'test_openai_api_key',
-      OPENAI_MODEL: 'test_openai_model',
-      DEFAULT_AGENT: 'openai',
-    });
-    const config: Config = loadConfig();
-    assert.equal(config.anthropic.apiKey, 'test_anthropic_api_key');
-    assert.equal(config.anthropic.model, 'test_anthropic_model');
-    assert.equal(config.openai.apiKey, 'test_openai_api_key');
-    assert.equal(config.openai.model, 'test_openai_model');
-    assert.equal(config.defaultAgent, 'openai');
-  }
+  process.env = testEnv;
 
-  {
-    // Test case: loadConfig with missing environment variables
-    resetEnv();
-    mockEnv({
-      ANTHROPIC_API_KEY: '',
-      OPENAI_API_KEY: '',
-      DEFAULT_AGENT: 'anthropic',
-    });
-    const config: Config = loadConfig();
-    assert.equal(config.anthropic.apiKey, '');
-    assert.equal(config.anthropic.model, 'claude-sonnet-4-20250514');
-    assert.equal(config.openai.apiKey, '');
-    assert.equal(config.openai.model, 'gpt-4o');
-    assert.equal(config.defaultAgent, 'anthropic');
-  }
+  const config = loadConfig();
+  assert.deepEqual(config, {
+    anthropic: {
+      apiKey: 'test_ant_key',
+      model: 'custom-anthropic-model',
+    },
+    openai: {
+      apiKey: 'test_openai_key',
+      model: 'custom-openai-model',
+    },
+    defaultAgent: 'openai',
+  });
 
-  // Test validateConfig function
-  {
-    // Test case: validateConfig raises error for missing ANTHROPIC_API_KEY
-    resetEnv();
-    mockEnv({ DEFAULT_AGENT: 'anthropic' });
-    const config: Config = loadConfig();
-    assert.throws(
-      () => validateConfig(config, 'anthropic'),
-      new Error('ANTHROPIC_API_KEY is required. Copy .env.example to .env and set your key.')
-    );
-  }
+  // Restore original environment variables
+  process.env = originalEnv;
+});
 
-  {
-    // Test case: validateConfig raises error for missing OPENAI_API_KEY with agent 'openai'
-    resetEnv();
-    mockEnv({ DEFAULT_AGENT: 'openai' });
-    const config: Config = loadConfig();
-    assert.throws(
-      () => validateConfig(config, 'openai'),
-      new Error('OPENAI_API_KEY is required. Copy .env.example to .env and set your key.')
-    );
-  }
+test('validateConfig should throw an error if ANTHROPIC_API_KEY is missing for anthropic agent', () => {
+  const config: Config = {
+    anthropic: { apiKey: '', model: 'claude-sonnet-4-20250514' },
+    openai: { apiKey: 'valid_openai_key', model: 'gpt-4o' },
+    defaultAgent: 'anthropic',
+  };
 
-  {
-    // Test case: validateConfig raises error for missing OPENAI_API_KEY with agent 'codex'
-    resetEnv();
-    mockEnv({ DEFAULT_AGENT: 'codex' });
-    const config: Config = loadConfig();
-    assert.throws(
-      () => validateConfig(config, 'codex'),
-      new Error('OPENAI_API_KEY is required. Copy .env.example to .env and set your key.')
-    );
-  }
+  assert.throws(() => validateConfig(config, 'anthropic'), {
+    message: 'ANTHROPIC_API_KEY is required. Copy .env.example to .env and set your key.',
+  });
+});
 
-  {
-    // Test case: validateConfig does not raise error when keys are present
-    resetEnv();
-    mockEnv({
-      ANTHROPIC_API_KEY: 'test_anthropic_api_key',
-      OPENAI_API_KEY: 'test_openai_api_key',
-    });
-    const config: Config = loadConfig();
-    assert.doesNotThrow(() => validateConfig(config, 'anthropic'));
-    assert.doesNotThrow(() => validateConfig(config, 'openai'));
-  }
-})();
+test('validateConfig should NOT throw an error if ANTHROPIC_API_KEY is present for anthropic agent', () => {
+  const config: Config = {
+    anthropic: { apiKey: 'valid_ant_key', model: 'claude-sonnet-4-20250514' },
+    openai: { apiKey: 'valid_openai_key', model: 'gpt-4o' },
+    defaultAgent: 'anthropic',
+  };
+
+  assert.doesNotThrow(() => validateConfig(config, 'anthropic'));
+});
+
+test('validateConfig should throw an error if OPENAI_API_KEY is missing for codex or openai agent', () => {
+  const config: Config = {
+    anthropic: { apiKey: 'valid_ant_key', model: 'claude-sonnet-4-20250514' },
+    openai: { apiKey: '', model: 'gpt-4o' },
+    defaultAgent: 'openai',
+  };
+
+  assert.throws(() => validateConfig(config, 'openai'), {
+    message: 'OPENAI_API_KEY is required. Copy .env.example to .env and set your key.',
+  });
+
+  assert.throws(() => validateConfig(config, 'codex'), {
+    message: 'OPENAI_API_KEY is required. Copy .env.example to .env and set your key.',
+  });
+});
+
+test('validateConfig should NOT throw an error if OPENAI_API_KEY is present for codex or openai agent', () => {
+  const config: Config = {
+    anthropic: { apiKey: 'valid_ant_key', model: 'claude-sonnet-4-20250514' },
+    openai: { apiKey: 'valid_openai_key', model: 'gpt-4o' },
+    defaultAgent: 'openai',
+  };
+
+  assert.doesNotThrow(() => validateConfig(config, 'openai'));
+  assert.doesNotThrow(() => validateConfig(config, 'codex'));
+});
