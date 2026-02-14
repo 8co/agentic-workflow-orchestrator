@@ -1,16 +1,25 @@
+export type NetworkErrorCode = 
+  | 'ENOTFOUND'
+  | 'ECONNREFUSED'
+  | 'ECONNRESET'
+  | 'ETIMEDOUT'
+  | 'EHOSTUNREACH'
+  | 'EPIPE'
+  | 'ENETUNREACH';
+
 export interface NetworkError {
-  code?: 'ENOTFOUND' | 'ECONNREFUSED' | 'ECONNRESET' | 'ETIMEDOUT' | 'EHOSTUNREACH' | 'EPIPE' | 'ENETUNREACH';
+  code?: NetworkErrorCode;
   timeout?: boolean;
 }
 
 export function isNetworkError(err: unknown): boolean {
-  if (typeof err !== 'object' || err === null) {
+  if (!isObject(err)) {
     return false;
   }
 
   const errorObj = err as NetworkError;
 
-  const networkErrorCodes: NetworkError['code'][] = [
+  const networkErrorCodes: NetworkErrorCode[] = [
     'ENOTFOUND',   // DNS resolution error
     'ECONNREFUSED',// Connection refused
     'ECONNRESET',  // Connection reset by peer
@@ -24,4 +33,8 @@ export function isNetworkError(err: unknown): boolean {
     (errorObj.code !== undefined && networkErrorCodes.includes(errorObj.code)) ||
     errorObj.timeout === true
   );
+}
+
+function isObject(value: unknown): value is object {
+  return typeof value === 'object' && value !== null;
 }
