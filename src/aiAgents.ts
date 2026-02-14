@@ -7,18 +7,29 @@ export function connectToAIAgents(): void {
     // Placeholder for real connection logic
     throw new Error("Simulation of a connection error."); // Example error for demonstration
   } catch (error: unknown) {
-    if (error instanceof Error) {
-      handleConnectionError(error);
+    const formattedError = formatError(error);
+    if (formattedError) {
+      handleConnectionError(formattedError);
     } else {
       console.error("❌ An unknown error occurred while connecting to AI agent APIs.");
     }
   }
 }
 
+function formatError(error: unknown): Error | null {
+  if (error instanceof Error) {
+    return error;
+  }
+  if (typeof error === 'string') {
+    return new Error(error);
+  }
+  return null;
+}
+
 function handleConnectionError(error: Error): void {
   const errorMessage = `❌ Error connecting to AI agent APIs: ${error.message}`;
   const errorStack = error.stack ? ` Stack trace: ${error.stack}` : '';
-  const networkDetails = JSON.stringify(getNetworkDetails());
+  const networkDetails = JSON.stringify(getNetworkDetails(), null, 2);
 
   console.error(`${errorMessage}\n${errorStack}\nNetwork Details: ${networkDetails}`);
 }
