@@ -1,5 +1,6 @@
 import { mkdir, writeFile, readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
+import { constants } from 'node:fs';
 
 /**
  * Ensures the directory for the given file path exists, then writes the file with the specified content.
@@ -18,10 +19,9 @@ export async function ensureDirectoryAndWriteFile(
 
   try {
     await mkdir(dirname(fullPath), { recursive: true });
-    await writeFile(fullPath, content, 'utf-8');
+    await writeFile(fullPath, content, { encoding: 'utf-8', flag: 'w' });
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    throw new Error(`Failed to write file ${fullPath}: ${errorMessage}`);
+    handleError(error, `Failed to write file ${fullPath}`);
   }
 }
 
@@ -38,7 +38,8 @@ export async function readFromFile(filePath: string): Promise<string | null> {
 
   try {
     return await readFile(filePath, 'utf-8');
-  } catch {
+  } catch (error) {
+    handleError(error, `Failed to read file ${filePath}`, true);
     return null;
   }
 }
@@ -56,4 +57,20 @@ export function resolveFilePath(baseDir: string, relativePath: string): string {
   }
 
   return resolve(baseDir, relativePath);
+}
+
+/**
+ * Handles the errors thrown by file operations, adds context and throws again if needed.
+ *
+ * @param error - The error object caught.
+ * @param message - The custom message that offers more context about the error location.
+ * @param suppressError - Determines if the error should be logged rather than thrown.
+ */
+function handleError(error: unknown, message: string, suppressError: boolean = false): void {
+  const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+  if (suppressError) {
+    console.error(`${message}: ${errorMessage}`);
+  } else {
+    throw new Error(`${message}: ${errorMessage}`);
+  }
 }
