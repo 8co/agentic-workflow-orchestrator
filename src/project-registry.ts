@@ -94,7 +94,7 @@ export class ProjectRegistry {
         this.projects.set('orchestrator', defaultProject);
         console.log('ℹ️  No projects.yaml found — using default (orchestrator itself)');
       } else {
-        throw new Error(`Failed to load projects.yaml: ${(err as Error).message}`);
+        console.error(`❌ Failed to load projects.yaml from ${this.configPath}: ${(err as Error).message}`);
       }
     }
   }
