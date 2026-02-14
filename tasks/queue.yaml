@@ -4863,3 +4863,50 @@ tasks:
     started_at: 2026-02-14T02:26:53.468Z
     completed_at: 2026-02-14T02:26:58.142Z
     branch: auto/write-tests-validation-enhancements
+  - id: add-tests-for-security-check-runner
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/security-check-runner.ts
+    variables:
+      test_target: src/security-check-runner.ts
+      test_description: |
+        Detailed tests to validate functionality, edge cases, and error handling of the Security Check Runner module.
+  - id: improve-type-safety-index
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/index.ts
+    variables:
+      modification_description: |
+        Enhance type safety by adding detailed TypeScript types and interfaces where applicable.
+  - id: add-type-safety-to-network-error-util
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/utils/networkErrorUtil.ts
+    variables:
+      modification_description: |
+        Improve type safety by refining types and interfaces used in the networkErrorUtil module.
+  - id: refactor-openai-adapter-error-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/adapters/openai-adapter.ts
+    variables:
+      modification_description: |
+        Refactor error handling to consolidate error message generation and improve clarity and robustness.
+  - id: add-error-handling-to-observability-util
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/observabilityUtil.ts
+    variables:
+      modification_description: >
+        Add comprehensive error handling to capture, log, and respond to errors and exceptions within the Observability
+        Utility module.
