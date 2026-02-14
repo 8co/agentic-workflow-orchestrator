@@ -4263,3 +4263,56 @@ tasks:
     started_at: 2026-02-14T01:59:35.765Z
     completed_at: 2026-02-14T01:59:42.775Z
     branch: auto/write-tests-autonomous-runner-retry
+  - id: write-missing-tests-enhanced-logger-error-scenarios
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/enhanced-logger.ts
+    variables:
+      test_target: src/enhanced-logger.ts
+      test_description: >
+        Tests to verify handling of unforeseen errors when logging to a file, ensuring unexpected issues do not disrupt
+        functionality.
+  - id: add-error-notification-tests
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/error-notification.ts
+    variables:
+      test_target: src/error-notification.ts
+      test_description: >
+        Unit tests to ensure the ErrorNotification class correctly logs and attempts to send notifications for critical
+        errors.
+  - id: implement-retry-on-enhanced-logger
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/enhanced-logger.ts
+    variables:
+      modification_description: >
+        Implement a retry mechanism in enhanced-logger to handle write errors gracefully, trying a few times before
+        failing.
+  - id: write-tests-openai-adapter-timeouts
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/adapters/openai-adapter.ts
+    variables:
+      test_target: src/adapters/openai-adapter.ts
+      test_description: |
+        Tests to ensure the OpenAI adapter correctly handles API timeouts and
+        retries appropriately.
+  - id: refactor-openai-adapter-error-mapping
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/adapters/openai-adapter.ts
+    variables:
+      modification_description: >
+        Refactor error mapping in the OpenAI adapter to handle a broader array of potential error codes and messages,
+        ensuring all are accurately reflected in logs.
