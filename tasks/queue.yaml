@@ -6895,3 +6895,26 @@ tasks:
         runs one autopilot cycle, and logs results to scheduled-runs.json. Include safeguards: skip if budget exceeded,
         alert if health check fails, max 1 hour timeout per cycle. Type-safe with ScheduledRunResult interface. Named
         exports only.
+  - id: webhook-sender-implementation
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-create-module.md
+    context_files:
+      - src/notification-system.ts
+    variables:
+      module_name: webhookSender
+      module_description: >
+        Implement a module that sends notifications via webhooks. This module should have functions for constructing and
+        sending HTTP requests to specified webhook URLs. Include error handling and logging capabilities.
+  - id: rollback-manager
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-create-module.md
+    context_files:
+      - src/git-ops.ts
+    variables:
+      module_name: rollbackManager
+      module_description: >
+        Implement a rollback manager to revert changes in case of failed deployments or errors. This module should
+        interface with git-ops to checkout previous stable commits automatically and manage state during rollbacks.
+        Include comprehensive error handling and logging during the rollback process.
