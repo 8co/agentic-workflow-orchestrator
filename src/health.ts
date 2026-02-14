@@ -15,6 +15,8 @@ interface HealthStatus {
 }
 
 const logger = createLogger('health');
+const MAX_RETRIES = 3;
+const INITIAL_RETRY_DELAY = 100; // in milliseconds
 
 export function getHealthStatus(): HealthStatus {
   let version: string | undefined;
@@ -22,20 +24,20 @@ export function getHealthStatus(): HealthStatus {
   let status: 'ok' | 'degraded' | 'down' = 'ok';
 
   try {
-    version = extractPackageVersion();
+    version = retryOperation(extractPackageVersion);
   } catch (error) {
     logError('Version extraction error', 'Failed to parse package.json for version.', error);
     status = 'degraded';
   }
 
   try {
-    memoryUsageMB = getSafeMemoryUsageMB();
+    memoryUsageMB = retryOperation(getSafeMemoryUsageMB);
   } catch (error) {
     logError('Memory usage retrieval error', 'Unable to calculate memory usage.', error);
     status = 'degraded';
   }
 
-  const uptime = getUptimeSafely();
+  const uptime = retryOperation(getUptimeSafely);
 
   if (uptime === null) {
     logError('Uptime retrieval error', 'Failed to retrieve system uptime.', new Error('Uptime is NaN'));
@@ -53,6 +55,25 @@ export function getHealthStatus(): HealthStatus {
   logHealthMonitoringData(healthStatus);
 
   return healthStatus;
+}
+
+function retryOperation<T>(operation: () => T, retriesLeft = MAX_RETRIES, delay = INITIAL_RETRY_DELAY): T {
+  try {
+    return operation();
+  } catch (error) {
+    if (retriesLeft > 0) {
+      sleep(delay);
+      return retryOperation(operation, retriesLeft - 1, delay * 2);
+    }
+    throw error;
+  }
+}
+
+function sleep(ms: number): void {
+  const start = Date.now();
+  while (Date.now() - start < ms) {
+    // Busy wait
+  }
 }
 
 function extractPackageVersion(): string | undefined {
