@@ -71,19 +71,34 @@ export function createOpenAIAdapter(config: OpenAIConfig, adapterName: 'openai' 
           durationMs,
         };
       } catch (err) {
-        const error = err instanceof Error ? err.message : String(err);
         const durationMs = Date.now() - start;
+        let errorMessage: string;
 
-        console.log(`│ ❌ Error: ${error}`);
+        if (err instanceof Error) {
+          if (err.message.includes('Network Error')) {
+            errorMessage = 'Network error occurred. Please check your connection and try again.';
+          } else if (err.message.includes('timeout')) {
+            errorMessage = 'Request timed out. Please try again later.';
+          } else if (err.message.includes('401')) {
+            errorMessage = 'Unauthorized: Invalid API key or permissions issue.';
+          } else if (err.message.includes('500')) {
+            errorMessage = 'Internal server error. Try again after some time.';
+          } else {
+            errorMessage = err.message;
+          }
+        } else {
+          errorMessage = 'An unknown error occurred.';
+        }
+
+        console.log(`│ ❌ Error: ${errorMessage}`);
         console.log('└─────────────────────────────────────────\n');
 
         return {
           success: false,
-          error,
+          error: errorMessage,
           durationMs,
         };
       }
     },
   };
 }
-
