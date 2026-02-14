@@ -4319,7 +4319,7 @@ tasks:
     completed_at: 2026-02-14T02:00:43.673Z
     branch: auto/write-tests-openai-adapter-timeouts
   - id: refactor-openai-adapter-error-mapping
-    status: running
+    status: completed
     workflow: auto
     prompt: prompts/auto-modify-file.md
     context_files:
@@ -4329,3 +4329,5 @@ tasks:
         Refactor error mapping in the OpenAI adapter to handle a broader array of potential error codes and messages,
         ensuring all are accurately reflected in logs.
     started_at: 2026-02-14T02:00:43.769Z
+    completed_at: 2026-02-14T02:00:55.719Z
+    branch: auto/refactor-openai-adapter-error-mapping
