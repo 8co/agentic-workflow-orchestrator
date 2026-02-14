@@ -69,8 +69,10 @@ async function retry<T>(fn: () => Promise<T>, retries: number, delayMs: number):
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
       return await fn();
-    } catch (err) {
-      if (attempt === retries - 1) throw err;
+    } catch (err: unknown) {
+      if (attempt === retries - 1) {
+        throw err;
+      }
       await new Promise((res) => setTimeout(res, delayMs));
     }
   }
@@ -92,7 +94,11 @@ function logError(err: unknown, start: number): { error: string; durationMs: num
   } else if (err instanceof Error) {
     error = `Error: ${err.message}`;
   } else if (typeof err === 'object' && err !== null) {
-    error = `Unexpected error object: ${JSON.stringify(err)}`;
+    try {
+      error = `Unexpected error object: ${JSON.stringify(err)}`;
+    } catch (jsonError) {
+      error = 'Unexpected error object: [unserializable object]';
+    }
   } else {
     error = `Unexpected error type: ${String(err)}`;
   }
