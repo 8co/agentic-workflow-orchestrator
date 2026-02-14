@@ -70,6 +70,16 @@ function generateErrorMessage(err: unknown): string {
   return 'An unknown error occurred.';
 }
 
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  const timeout = new Promise<T>((_, reject) => {
+    const id = setTimeout(() => {
+      clearTimeout(id);
+      reject(new Error('timeout'));
+    }, ms);
+  });
+  return Promise.race([promise, timeout]);
+}
+
 export function createOpenAIAdapter(config: OpenAIConfig, adapterName: 'openai' | 'codex' = 'openai'): AgentAdapter {
   if (!isValidOpenAIConfig(config)) {
     throw new Error('Invalid OpenAI configuration');
@@ -93,14 +103,17 @@ export function createOpenAIAdapter(config: OpenAIConfig, adapterName: 'openai' 
           ? `You are an expert software engineer. Follow all instructions precisely.\n\nContext:\n${request.context}`
           : 'You are an expert software engineer. Follow all instructions precisely. Return only the requested output — no preamble, no explanation unless asked.';
 
-        const completion = await client.chat.completions.create({
-          model: config.model,
-          messages: [
-            { role: 'system', content: systemContent },
-            { role: 'user', content: request.prompt },
-          ],
-          max_tokens: 4096,
-        });
+        const completion = await withTimeout(
+          client.chat.completions.create({
+            model: config.model,
+            messages: [
+              { role: 'system', content: systemContent },
+              { role: 'user', content: request.prompt },
+            ],
+            max_tokens: 4096,
+          }), 
+          30_000 // Timeout set to 30 seconds
+        );
 
         if (!completion || !Array.isArray(completion.choices) || completion.choices.length === 0 || !completion.choices[0].message?.content) {
           throw new Error('Malformed response from OpenAI service');
