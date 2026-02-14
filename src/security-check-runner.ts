@@ -86,8 +86,8 @@ async function main() {
   }
 
   // Summary
-  const failed = results.filter(r => !r.safe).length;
-  const passed = results.filter(r => r.safe).length;
+  const failed = results.filter(r => !r.result.safe).length;
+  const passed = results.filter(r => r.result.safe).length;
 
   if (allSafe) {
     console.log(`✅ Security scan passed: ${passed}/${results.length} files safe\n`);
