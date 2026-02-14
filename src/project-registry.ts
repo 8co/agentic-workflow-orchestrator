@@ -35,7 +35,7 @@ export interface ProjectsConfig {
 // --- Registry ---
 
 export class ProjectRegistry {
-  private projects: Map<string, ProjectConfig> = new Map();
+  private projects: Map<string, ProjectConfig> = new Map<string, ProjectConfig>();
   private configPath: string;
   private orchestratorRoot: string;
 
@@ -49,8 +49,8 @@ export class ProjectRegistry {
    */
   async load(): Promise<void> {
     try {
-      const raw = await readFile(this.configPath, 'utf-8');
-      const config = parseYaml(raw) as ProjectsConfig;
+      const raw: string = await readFile(this.configPath, 'utf-8');
+      const config: ProjectsConfig = parseYaml(raw) as ProjectsConfig;
 
       if (!config.projects || !Array.isArray(config.projects)) {
         throw new Error('Invalid projects.yaml: missing "projects" array');
@@ -79,7 +79,7 @@ export class ProjectRegistry {
       }
 
       console.log(`✅ Loaded ${this.projects.size} project(s) from ${this.configPath}`);
-    } catch (err) {
+    } catch (err: unknown) {
       if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
         // No projects.yaml — default to orchestrator working on itself
         const defaultProject: ProjectConfig = {
@@ -156,4 +156,3 @@ export function createProjectRegistry(
 ): ProjectRegistry {
   return new ProjectRegistry(orchestratorRoot, configPath);
 }
-

@@ -354,19 +354,21 @@ function printUsage() {
 🤖 Agentic Workflow Orchestrator
 
 Usage:
+  npx tsx src/cli.ts projects                          List available projects
   npx tsx src/cli.ts run <workflow.yaml> [options]     Run a prompt workflow (output to files)
   npx tsx src/cli.ts auto <workflow.yaml> [options]    Run autonomous workflow (writes → verifies → commits)
-  npx tsx src/cli.ts next [--agent]                    Run next pending task from queue
-  npx tsx src/cli.ts schedule [loop|watch] [--agent]   Run all pending tasks or poll continuously
-  npx tsx src/cli.ts propose [preview|queue] [--agent] LLM analyzes codebase and proposes new tasks
-  npx tsx src/cli.ts autopilot [--agent]               Full loop: propose tasks → execute them
-  npx tsx src/cli.ts queue                             Show task queue status
+  npx tsx src/cli.ts next [--agent] [--project]        Run next pending task from queue
+  npx tsx src/cli.ts schedule [loop|watch] [options]   Run all pending tasks or poll continuously
+  npx tsx src/cli.ts propose [preview|queue] [options] LLM analyzes codebase and proposes new tasks
+  npx tsx src/cli.ts autopilot [options]               Full loop: propose tasks → execute them
+  npx tsx src/cli.ts queue [--project]                 Show task queue status
   npx tsx src/cli.ts list                              List workflow executions
   npx tsx src/cli.ts resume <executionId>              Resume failed workflow
 
 Options:
   --var key=value       Override workflow variable
   --agent <name>        Override agent (anthropic|openai|codex|cursor)
+  --project <id>        Target project (default: orchestrator)
 
 Autonomous:
   propose preview       LLM proposes tasks — show them without adding to queue
@@ -380,12 +382,12 @@ Scheduler:
   queue                 Print current queue status
 
 Examples:
+  npx tsx src/cli.ts projects
   npx tsx src/cli.ts auto workflows/auto-sample.yaml --agent openai
-  npx tsx src/cli.ts propose preview --agent openai
-  npx tsx src/cli.ts propose queue --agent openai
-  npx tsx src/cli.ts autopilot --agent openai
-  npx tsx src/cli.ts schedule loop --agent openai
-  npx tsx src/cli.ts queue
+  npx tsx src/cli.ts propose preview --agent openai --project api
+  npx tsx src/cli.ts autopilot --agent openai --project ui
+  npx tsx src/cli.ts schedule loop --agent openai --project api
+  npx tsx src/cli.ts queue --project orchestrator
 `);
 }
 
