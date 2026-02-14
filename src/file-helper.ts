@@ -75,21 +75,40 @@ function validateStringInputs(inputs: Record<string, unknown>, keys: string[]): 
  * @param suppressError - Determines if the error should be logged rather than thrown.
  */
 function handleError(error: unknown, message: string, suppressError: boolean = false): void {
-  let errorMessage: string = 'Unknown error';
-  
-  if (error instanceof Error) {
-    errorMessage = error.message;
-  } else if (typeof error === 'string') {
-    errorMessage = error;
-  } else if (typeof error === 'object' && error !== null && 'message' in error) {
-    errorMessage = String((error as { message: unknown }).message);
-  }
+  const errorMessage: string = extractErrorMessage(error);
 
   const fullMessage = `${message}: ${errorMessage}`;
   
+  logError(fullMessage, suppressError);
+}
+
+/**
+ * Extracts the error message from the error object.
+ *
+ * @param error - The error object caught.
+ * @returns The extracted error message.
+ */
+function extractErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  } else if (typeof error === 'string') {
+    return error;
+  } else if (typeof error === 'object' && error !== null && 'message' in error) {
+    return String((error as { message: unknown }).message);
+  }
+  return 'Unknown error';
+}
+
+/**
+ * Logs the error message and throws an error if it is not suppressed.
+ *
+ * @param message - The complete error message to log or throw.
+ * @param suppressError - Determines if the error should be logged rather than thrown.
+ */
+function logError(message: string, suppressError: boolean): void {
   if (suppressError) {
-    console.error(fullMessage);
+    console.error(message);
   } else {
-    throw new Error(fullMessage);
+    throw new Error(message);
   }
 }
