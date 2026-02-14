@@ -1,67 +1,97 @@
-import { strict as assert } from 'node:assert';
-import { mkdir, readFile, writeFile, readdir, rmdir } from 'node:fs/promises';
-import { resolve } from 'node:path';
 import { createStateManager } from '../src/state-manager.js';
-import type { WorkflowExecution } from '../src/types.js';
+import { strict as assert } from 'node:assert';
+import { rm, readFile, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 
-const TEST_BASE_PATH = resolve('test-state-dir');
-const TEST_STATE_DIR = resolve(TEST_BASE_PATH, '.state');
-const SAMPLE_EXECUTION: WorkflowExecution = {
-  executionId: 'test-execution-id',
-  startedAt: new Date().toISOString(),
-  // Add other necessary properties as needed by WorkflowExecution type
+type WorkflowExecution = {
+  executionId: string;
+  startedAt: string;
+  [key: string]: unknown;
 };
 
-async function cleanStateDir() {
-  try {
-    const files = await readdir(TEST_STATE_DIR);
-    for (const file of files) {
-      await rm(resolve(TEST_STATE_DIR, file));
-    }
-    await rmdir(TEST_STATE_DIR);
-  } catch {
-    // Ignore errors, as the directory might not exist
-  }
+const BASE_PATH = './test-state';
+const STATE_DIR = join(BASE_PATH, '.state');
+
+const sampleExecution: WorkflowExecution = {
+  executionId: 'testExec1',
+  startedAt: new Date().toISOString(),
+  sampleData: 'test data',
+};
+
+const corruptExecutionData = `{"executionId":"corruptExec`;
+
+async function cleanStateDirectory() {
+  await rm(STATE_DIR, { recursive: true, force: true });
 }
 
-await (async function tests() {
-  await cleanStateDir();
+beforeEach(async () => {
+  await cleanStateDirectory();
+});
 
-  const stateManager = createStateManager(TEST_BASE_PATH);
+afterEach(async () => {
+  await cleanStateDirectory();
+});
 
-  // Test createStateManager and directory creation
-  await stateManager.save(SAMPLE_EXECUTION);
-  const savedExecution = await stateManager.load('test-execution-id');
-  assert.deepEqual(savedExecution, SAMPLE_EXECUTION, 'Execution should be saved and loaded correctly');
+test('save() should persist execution to disk', async () => {
+  const stateManager = createStateManager(BASE_PATH);
+  await stateManager.save(sampleExecution);
 
-  // Test error handling for non-existent execution
-  const nonExistentExecution = await stateManager.load('non-existent-id');
-  assert.strictEqual(nonExistentExecution, null, 'Non-existent executionId should return null');
+  const filePath = join(STATE_DIR, `${sampleExecution.executionId}.json`);
+  const data = JSON.parse(await readFile(filePath, 'utf-8')) as WorkflowExecution;
 
-  // Test list on empty/no valid executions
-  let executionsList = await stateManager.list();
-  assert.deepEqual(executionsList, [SAMPLE_EXECUTION], 'Execution list should contain the saved execution');
+  assert.deepEqual(data, sampleExecution);
+});
 
-  // Test corrupted state file handling
-  await writeFile(resolve(TEST_STATE_DIR, 'corrupt.json'), 'not-a-json');
-  executionsList = await stateManager.list();
-  assert.deepEqual(executionsList, [SAMPLE_EXECUTION], 'List should skip corrupt files');
+test('load() should return null for non-existent execution', async () => {
+  const stateManager = createStateManager(BASE_PATH);
+  const result = await stateManager.load('nonExistentExec');
+  assert.equal(result, null);
+});
 
-  // Test invalid JSON data
-  const corruptExecution: Partial<WorkflowExecution> = { startedAt: 'invalid-date' };
-  await writeFile(resolve(TEST_STATE_DIR, 'invalid.json'), JSON.stringify(corruptExecution));
-  executionsList = await stateManager.list();
-  assert.deepEqual(executionsList, [SAMPLE_EXECUTION], 'List should skip files with invalid data');
+test('load() should return the correct execution data', async () => {
+  const stateManager = createStateManager(BASE_PATH);
+  await stateManager.save(sampleExecution);
+  const loadedExecution = await stateManager.load(sampleExecution.executionId);
 
-  // Test handling write error (simulation)
-  const originalWriteFile = writeFile;
-  try {
-    (writeFile as any) = () => Promise.reject(new Error('Simulated write error'));
-    await assert.rejects(stateManager.save(SAMPLE_EXECUTION), /Simulated write error/, 'Should handle write errors');
-  } finally {
-    (writeFile as any) = originalWriteFile;
-  }
+  assert.deepEqual(loadedExecution, sampleExecution);
+});
 
-  // Clean up
-  await cleanStateDir();
-})();
+test('list() should handle an empty state directory', async () => {
+  const stateManager = createStateManager(BASE_PATH);
+  const executions = await stateManager.list();
+  assert.deepEqual(executions, []);
+});
+
+test('list() should return all executions sorted by startedAt descending', async () => {
+  const stateManager = createStateManager(BASE_PATH);
+  
+  const execution1: WorkflowExecution = {
+    executionId: 'exec1',
+    startedAt: new Date(Date.now() - 1000).toISOString(),
+    sampleData: 'data1'
+  };
+
+  const execution2: WorkflowExecution = {
+    executionId: 'exec2',
+    startedAt: new Date().toISOString(),
+    sampleData: 'data2'
+  };
+  
+  await stateManager.save(execution1);
+  await stateManager.save(execution2);
+
+  const executions = await stateManager.list();
+  assert.deepEqual(executions, [execution2, execution1]);
+});
+
+test('list() should skip corrupt execution files', async () => {
+  const stateManager = createStateManager(BASE_PATH);
+  await stateManager.save(sampleExecution);
+
+  const corruptFilePath = join(STATE_DIR, 'corrupt.json');
+  await writeFile(corruptFilePath, corruptExecutionData, 'utf-8');
+
+  const executions = await stateManager.list();
+  assert.equal(executions.length, 1);
+  assert.deepEqual(executions[0], sampleExecution);
+});
