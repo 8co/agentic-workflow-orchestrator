@@ -3411,7 +3411,7 @@ tasks:
     completed_at: 2026-02-14T01:42:21.485Z
     branch: auto/write-tests-ai-agents-error-cases
   - id: add-tests-adapters-openai-integration
-    status: running
+    status: completed
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -3422,8 +3422,10 @@ tasks:
         Verify the integration of the OpenAI adapter by simulating API  responses and testing proper handling of success
         and error scenarios.
     started_at: 2026-02-14T01:42:21.532Z
+    completed_at: 2026-02-14T01:42:29.432Z
+    branch: auto/add-tests-adapters-openai-integration
   - id: enhance-type-safety-file-helper
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-modify-file.md
     context_files:
@@ -3432,6 +3434,7 @@ tasks:
       modification_description: >
         Improve type safety in file-helper.ts by specifying more precise types  for function parameters and return
         values where applicable.
+    started_at: 2026-02-14T01:42:29.472Z
   - id: refactor-health-logging-function
     status: pending
     workflow: auto
