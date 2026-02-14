@@ -15,13 +15,13 @@ export interface NetworkError {
 }
 
 export function isNetworkError(err: unknown): err is NetworkError {
-  if (!isObject(err)) {
+  if (!isRecord(err)) {
     return false;
   }
 
-  const errorObj = err as NetworkError;
+  const errorObj = err as Partial<NetworkError>;
 
-  const networkErrorCodes: readonly NetworkErrorCode[] = [
+  const networkErrorCodes: ReadonlySet<NetworkErrorCode> = new Set([
     'ENOTFOUND',       // DNS resolution error
     'ECONNREFUSED',    // Connection refused
     'ECONNRESET',      // Connection reset by peer
@@ -31,14 +31,14 @@ export function isNetworkError(err: unknown): err is NetworkError {
     'ENETUNREACH',     // Network is unreachable
     'ESOCKETTIMEDOUT', // Socket timed out
     'ECONNABORTED',    // Connection aborted
-  ];
+  ]);
 
   return (
-    (typeof errorObj.code === 'string' && networkErrorCodes.includes(errorObj.code)) ||
+    (typeof errorObj.code === 'string' && networkErrorCodes.has(errorObj.code)) ||
     errorObj.timeout === true
   );
 }
 
-function isObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
