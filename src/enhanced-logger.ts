@@ -29,8 +29,8 @@ class EnhancedLogger {
     // Log to console
     this.logToConsole(formattedMessage, level);
 
-    // Log to file
-    fs.appendFileSync(this.logFilePath, formattedMessage);
+    // Log to file with error handling
+    this.logToFile(formattedMessage);
   }
 
   private logToConsole(message: string, level: LogLevel): void {
@@ -47,6 +47,14 @@ class EnhancedLogger {
       case 'debug':
         console.debug(message);
         break;
+    }
+  }
+
+  private logToFile(message: string): void {
+    try {
+      fs.appendFileSync(this.logFilePath, message);
+    } catch (error) {
+      console.error(`[ERROR] Failed to write to log file: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
