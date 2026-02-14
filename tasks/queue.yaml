@@ -4220,3 +4220,25 @@ tasks:
     started_at: 2026-02-14T01:58:23.790Z
     completed_at: 2026-02-14T01:58:40.468Z
     branch: auto/create-observability-cli-commands
+  - id: write-tests-ai-agents-error-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/aiAgents.ts
+    variables:
+      test_target: src/aiAgents.ts
+      test_description: >
+        Implement comprehensive tests to cover error handling paths in the connectToAIAgents function, ensuring all
+        possible error situations are covered.
+  - id: write-tests-autonomous-runner-retry
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/autonomous-runner.ts
+    variables:
+      test_target: src/autonomous-runner.ts
+      test_description: >
+        Test retry logic in the executeStep function, ensuring the function retries the specified number of times on
+        failure and ultimately fails with the correct error if all retries are exhausted.
