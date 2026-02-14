@@ -1,100 +1,123 @@
-import { test, beforeEach } from 'node:test';
+import { test } from 'node:test';
 import assert from 'node:assert';
-import { createScheduler, SchedulerConfig } from '../src/scheduler.js';
-import { AgentAdapter, AgentType } from '../src/types.js';
+import { createScheduler, SchedulerConfig, TaskRunResult } from '../src/scheduler.js';
+import { QueueTask } from '../src/queue-manager.js';
+import { SinonStub, stub } from 'sinon';
 
-type MockQueueTask = {
-  id: string;
-  prompt: string;
-  context_files: string[];
-  variables: Record<string, any>;
+// Mocking necessary components
+let mockQueueManager: {
+  next: SinonStub;
+  summary: SinonStub;
+  markRunning: SinonStub;
+  markCompleted: SinonStub;
+  markFailed: SinonStub;
+  print: SinonStub;
 };
 
-// Mock implementations
-const mockQueueManager = {
-  next: async () => null as MockQueueTask | null,
-  markRunning: async (id: string) => {},
-  markCompleted: async (id: string, branch: string) => {},
-  markFailed: async (id: string, error: string) => {},
-  summary: async () => ({ pending: 0 }),
-  print: async () => {},
+let mockRunner: {
+  run: SinonStub;
 };
 
-const mockAutonomousRunner = {
-  run: async (workflowPath: string, basePath: string) => ({
-    status: 'completed',
-    branch: 'auto/mock-branch',
-    steps: [],
-  }),
-};
+function setupMocks() {
+  mockQueueManager = {
+    next: stub(),
+    summary: stub(),
+    markRunning: stub(),
+    markCompleted: stub(),
+    markFailed: stub(),
+    print: stub(),
+  };
+  
+  mockRunner = {
+    run: stub(),
+  };
+  
+  // Stub external imports
+  stub(import('../src/queue-manager.js'), 'createQueueManager').returns(mockQueueManager);
+  stub(import('../src/autonomous-runner.js'), 'createAutonomousRunner').returns(mockRunner);
+  stub(import('../src/git-ops.js'), 'commitChanges');
+  stub(import('node:fs/promises'), 'writeFile');
+  stub(import('node:fs/promises'), 'unlink');
+}
 
-let mockQueue: typeof mockQueueManager;
-let mockRunner: typeof mockAutonomousRunner;
-
-const mockCreateQueueManager = () => ({
-  ...mockQueueManager,
-});
-
-const mockCreateAutonomousRunner = () => ({
-  ...mockAutonomousRunner,
-});
-
-beforeEach(() => {
-  mockQueue = { ...mockQueueManager };
-  mockRunner = { ...mockAutonomousRunner };
-});
-
-// Replace module dependencies with mocks
-jest.mock('../src/queue-manager.js', () => ({
-  createQueueManager: mockCreateQueueManager,
-}));
-
-jest.mock('../src/autonomous-runner.js', () => ({
-  createAutonomousRunner: mockCreateAutonomousRunner,
-}));
-
-jest.mock('../src/git-ops.js', () => ({
-  commitChanges: async (basePath: string, message: string) => {},
-}));
-
-jest.mock('../src/verify-runner.js', () => ({
-  runVerification: async (cmds: string[], basePath: string) => ({
-    allPassed: true,
-  }),
-  defaultVerifyCommands: () => [],
-}));
-
+// Test Configuration
 const config: SchedulerConfig = {
-  basePath: '/mock/path',
-  adapters: {} as Record<string, AgentAdapter>,
-  defaultAgent: {} as AgentType,
+  basePath: '/base/path',
+  adapters: {},
+  defaultAgent: 'agentType',
+  queuePath: '/queue/path',
 };
 
-test('createScheduler.next() should return null if no task is available', async () => {
+// Test Tasks
+const task1: QueueTask = {
+  id: 'task-1',
+  prompt: 'Task 1 prompt',
+  context_files: [],
+  variables: {},
+};
+
+const task2: QueueTask = {
+  id: 'task-2',
+  prompt: 'Task 2 prompt',
+  context_files: [],
+  variables: {},
+};
+
+// Tests
+setupMocks();
+
+test('Scheduler: Processes single task', async () => {
   const scheduler = createScheduler(config);
+  
+  mockQueueManager.next.onCall(0).resolves(task1);
+  mockQueueManager.next.onCall(1).resolves(null);
+  mockRunner.run.resolves({ status: 'completed', branch: 'auto/task-1', steps: [] });
+
   const result = await scheduler.next();
+  
+  assert.ok(result);
+  assert.strictEqual(result.taskId, 'task-1');
+  assert.strictEqual(result.success, true);
+  assert.strictEqual(result.branch, 'auto/task-1');
+});
+
+test('Scheduler: No pending tasks', async () => {
+  const scheduler = createScheduler(config);
+  
+  mockQueueManager.next.resolves(null);
+
+  const result = await scheduler.next();
+
   assert.strictEqual(result, null);
 });
 
-test('createScheduler.loop() should return empty array if no tasks are pending', async () => {
+test('Scheduler: Handle failed tasks', async () => {
   const scheduler = createScheduler(config);
-  const result = await scheduler.loop();
-  assert.deepStrictEqual(result, []);
+
+  mockQueueManager.next.onCall(0).resolves(task1);
+  mockQueueManager.next.onCall(1).resolves(null);
+  mockRunner.run.resolves({ status: 'error', steps: [{ status: 'failed', error: 'Failure reason' }] });
+
+  const result = await scheduler.next();
+  
+  assert.ok(result);
+  assert.strictEqual(result.taskId, 'task-1');
+  assert.strictEqual(result.success, false);
+  assert.strictEqual(result.error, 'Failure reason');
 });
 
-test('createScheduler.watch() should run without throwing errors', async () => {
+test('Scheduler: Process tasks in correct order', async () => {
   const scheduler = createScheduler(config);
 
-  // Run watch and immediately stop it
-  const watchPromise = scheduler.watch();
-  setTimeout(() => {
-    process.emit('SIGINT', 'SIGINT');
-  }, 1000);
+  mockQueueManager.next.onCall(0).resolves(task1);
+  mockQueueManager.next.onCall(1).resolves(task2);
+  mockQueueManager.next.onCall(2).resolves(null);
+  mockRunner.run.onFirstCall().resolves({ status: 'completed', branch: 'auto/task-1', steps: [] });
+  mockRunner.run.onSecondCall().resolves({ status: 'completed', branch: 'auto/task-2', steps: [] });
 
-  await assert.doesNotReject(watchPromise);
-});
+  const results = await scheduler.loop();
 
-test('createScheduler.status() should print queue status without error', async () => {
-  const scheduler = createScheduler(config);
-  await assert.doesNotThrow(() => scheduler.status());
+  assert.strictEqual(results.length, 2);
+  assert.strictEqual(results[0].taskId, 'task-1');
+  assert.strictEqual(results[1].taskId, 'task-2');
 });
