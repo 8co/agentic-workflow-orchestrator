@@ -12,6 +12,7 @@ export type NetworkErrorCode =
 export interface NetworkError {
   code?: NetworkErrorCode;
   timeout?: boolean;
+  message?: string;
 }
 
 export function isNetworkError(err: unknown): err is NetworkError {
@@ -33,10 +34,15 @@ export function isNetworkError(err: unknown): err is NetworkError {
     'ECONNABORTED',    // Connection aborted
   ]);
 
+  // Ensuring the code is one of the known error codes
+  const hasValidCode = typeof errorObj.code === 'string' && networkErrorCodes.has(errorObj.code);
+
+  // Ensuring the timeout property is properly defined
+  const hasValidTimeout = errorObj.timeout === true || errorObj.timeout === false || errorObj.timeout === undefined;
+
   return (
-    (typeof errorObj.code === 'string' && networkErrorCodes.has(errorObj.code)) ||
-    errorObj.timeout === true
-  );
+    hasValidCode || errorObj.timeout === true
+  ) && hasValidTimeout && (typeof errorObj.message === 'string' || errorObj.message === undefined);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
