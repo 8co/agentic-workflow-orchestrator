@@ -4,18 +4,18 @@ import path from 'path';
 type LogLevel = 'info' | 'warn' | 'error' | 'debug';
 
 class EnhancedLogger {
-  private static instance: EnhancedLogger;
+  private static instance: EnhancedLogger | null = null;
   private logFilePath: string;
 
   private constructor(logFileName: string) {
-    const logDirectory = path.resolve(process.cwd(), 'logs');
+    const logDirectory: string = path.resolve(process.cwd(), 'logs');
     if (!fs.existsSync(logDirectory)) {
       fs.mkdirSync(logDirectory, { recursive: true });
     }
     this.logFilePath = path.join(logDirectory, logFileName);
   }
 
-  static getInstance(logFileName = 'application.log'): EnhancedLogger {
+  static getInstance(logFileName: string = 'application.log'): EnhancedLogger {
     if (!EnhancedLogger.instance) {
       EnhancedLogger.instance = new EnhancedLogger(logFileName);
     }
@@ -23,8 +23,8 @@ class EnhancedLogger {
   }
 
   private log(message: string, level: LogLevel): void {
-    const timestamp = new Date().toISOString();
-    const formattedMessage = `[${timestamp}] [${level.toUpperCase()}] ${message}\n`;
+    const timestamp: string = new Date().toISOString();
+    const formattedMessage: string = `[${timestamp}] [${level.toUpperCase()}] ${message}\n`;
 
     // Log to console
     this.logToConsole(formattedMessage, level);
