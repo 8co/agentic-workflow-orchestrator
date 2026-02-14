@@ -1,110 +1,134 @@
-import { strict as assert } from 'node:assert';
-import test from 'node:test';
+import { test } from 'node:test';
+import assert from 'node:assert';
 import { createOpenAIAdapter } from '../../src/adapters/openai-adapter.js';
-import type { AgentAdapter, AgentRequest } from '../../src/types.js';
+import type { AgentRequest } from '../../src/types.js';
 
-// Mocking OpenAI client
-class MockOpenAIClient {
+class MockOpenAI {
   chat = {
     completions: {
-      create: async ({ messages }: { messages: { role: string, content: string }[] }) => {
-        const userMessage = messages.find(msg => msg.role === 'user');
-        if (!userMessage) throw new Error('No user message provided.');
-
-        switch (userMessage.content) {
-          case 'network error':
-            throw new Error('Network Error');
-          case 'timeout':
-            throw new Error('timeout');
-          case 'unauthorized':
-            throw new Error('401 Unauthorized');
-          case 'internal server error':
-            throw new Error('500 Internal Server Error');
-          default:
-            return {
-              choices: [{ message: { content: 'Mock response' } }],
-              usage: { prompt_tokens: 5, completion_tokens: 5 }
-            };
+      create: async (params: any) => {
+        if (params.messages[1].content.includes('Network Error')) {
+          throw new Error('Network Error');
         }
+        if (params.messages[1].content.includes('timeout')) {
+          throw new Error('timeout');
+        }
+        if (params.messages[1].content.includes('401')) {
+          throw new Error('401 Unauthorized');
+        }
+        if (params.messages[1].content.includes('500')) {
+          throw new Error('500 Internal Server Error');
+        }
+        if (params.messages[1].content.includes('429')) {
+          throw new Error('429 Too Many Requests');
+        }
+        if (params.messages[1].content.includes('503')) {
+          throw new Error('503 Service Unavailable');
+        }
+        if (params.messages[1].content.includes('Malformed response')) {
+          return { choices: [] };
+        }
+        return {
+          choices: [
+            {
+              message: { content: 'Valid response' },
+              finish_reason: 'stop'
+            }
+          ],
+          usage: { prompt_tokens: 20, completion_tokens: 10 }
+        };
       }
     }
-  }
+  };
 }
 
-// Replace OpenAI client with mock
-const originalOpenAI = MockOpenAIClient;
-let openAIAdapter: AgentAdapter;
-const config = {
-  apiKey: 'valid-api-key',
-  model: 'text-davinci-003'
-};
+test('OpenAI Adapter - Network Error', async () => {
+  const adapter = createOpenAIAdapter({ apiKey: 'valid_key', model: 'model' });
+  const errMsg = 'Network error occurred. Please check your connection and try again.';
 
-test('setup', () => {
-  Object.assign(global, { OpenAI: originalOpenAI });
-  openAIAdapter = createOpenAIAdapter(config);
+  (OpenAI as unknown as MockOpenAI).chat = new MockOpenAI().chat;
+
+  const request: AgentRequest = { prompt: 'Network Error', context: '' };
+  const response = await adapter.execute(request);
+
+  assert.strictEqual(response.success, false);
+  assert.strictEqual(response.error, errMsg);
 });
 
-// Test normal execution
-test('executes request successfully', async () => {
-  const request: AgentRequest = {
-    prompt: 'Hello world',
-    context: '',
-  };
+test('OpenAI Adapter - Timeout', async () => {
+  const adapter = createOpenAIAdapter({ apiKey: 'valid_key', model: 'model' });
+  const errMsg = 'Request timed out. Please try again later.';
 
-  const response = await openAIAdapter.execute(request);
-  assert.equal(response.success, true);
-  assert.equal(response.output, 'Mock response');
+  (OpenAI as unknown as MockOpenAI).chat = new MockOpenAI().chat;
+
+  const request: AgentRequest = { prompt: 'timeout', context: '' };
+  const response = await adapter.execute(request);
+
+  assert.strictEqual(response.success, false);
+  assert.strictEqual(response.error, errMsg);
 });
 
-// Test network error handling
-test('handles network error', async () => {
-  const request: AgentRequest = {
-    prompt: 'network error',
-    context: '',
-  };
+test('OpenAI Adapter - Unauthorized', async () => {
+  const adapter = createOpenAIAdapter({ apiKey: 'valid_key', model: 'model' });
+  const errMsg = 'Unauthorized: Invalid API key or permissions issue.';
 
-  const response = await openAIAdapter.execute(request);
-  assert.equal(response.success, false);
-  assert.equal(response.error, 'Network error occurred. Please check your connection and try again.');
+  (OpenAI as unknown as MockOpenAI).chat = new MockOpenAI().chat;
+
+  const request: AgentRequest = { prompt: '401', context: '' };
+  const response = await adapter.execute(request);
+
+  assert.strictEqual(response.success, false);
+  assert.strictEqual(response.error, errMsg);
 });
 
-// Test timeout error handling
-test('handles timeout error', async () => {
-  const request: AgentRequest = {
-    prompt: 'timeout',
-    context: '',
-  };
+test('OpenAI Adapter - Internal Server Error', async () => {
+  const adapter = createOpenAIAdapter({ apiKey: 'valid_key', model: 'model' });
+  const errMsg = 'Internal server error. Try again after some time.';
 
-  const response = await openAIAdapter.execute(request);
-  assert.equal(response.success, false);
-  assert.equal(response.error, 'Request timed out. Please try again later.');
+  (OpenAI as unknown as MockOpenAI).chat = new MockOpenAI().chat;
+
+  const request: AgentRequest = { prompt: '500', context: '' };
+  const response = await adapter.execute(request);
+
+  assert.strictEqual(response.success, false);
+  assert.strictEqual(response.error, errMsg);
 });
 
-// Test unauthorized error handling
-test('handles unauthorized error', async () => {
-  const request: AgentRequest = {
-    prompt: 'unauthorized',
-    context: '',
-  };
+test('OpenAI Adapter - Too Many Requests', async () => {
+  const adapter = createOpenAIAdapter({ apiKey: 'valid_key', model: 'model' });
+  const errMsg = 'Too many requests: You have hit the rate limit. Try again later.';
 
-  const response = await openAIAdapter.execute(request);
-  assert.equal(response.success, false);
-  assert.equal(response.error, 'Unauthorized: Invalid API key or permissions issue.');
+  (OpenAI as unknown as MockOpenAI).chat = new MockOpenAI().chat;
+
+  const request: AgentRequest = { prompt: '429', context: '' };
+  const response = await adapter.execute(request);
+
+  assert.strictEqual(response.success, false);
+  assert.strictEqual(response.error, errMsg);
 });
 
-// Test internal server error handling
-test('handles internal server error', async () => {
-  const request: AgentRequest = {
-    prompt: 'internal server error',
-    context: '',
-  };
+test('OpenAI Adapter - Service Unavailable', async () => {
+  const adapter = createOpenAIAdapter({ apiKey: 'valid_key', model: 'model' });
+  const errMsg = 'Service unavailable: OpenAI temporarily unavailable. Try again after some time.';
 
-  const response = await openAIAdapter.execute(request);
-  assert.equal(response.success, false);
-  assert.equal(response.error, 'Internal server error. Try again after some time.');
+  (OpenAI as unknown as MockOpenAI).chat = new MockOpenAI().chat;
+
+  const request: AgentRequest = { prompt: '503', context: '' };
+  const response = await adapter.execute(request);
+
+  assert.strictEqual(response.success, false);
+  assert.strictEqual(response.error, errMsg);
 });
 
-// Cleanup
-test('cleanup', () => {
-  delete global.OpenAI;
+test('OpenAI Adapter - Malformed Response', async () => {
+  const adapter = createOpenAIAdapter({ apiKey: 'valid_key', model: 'model' });
+  const errMsg = 'Received a malformed response from OpenAI. Please try again later.';
+
+  (OpenAI as unknown as MockOpenAI).chat = new MockOpenAI().chat;
+
+  const request: AgentRequest = { prompt: 'Malformed response', context: '' };
+  const response = await adapter.execute(request);
+
+  assert.strictEqual(response.success, false);
+  assert.strictEqual(response.error, errMsg);
 });
