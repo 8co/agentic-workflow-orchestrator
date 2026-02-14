@@ -53,6 +53,7 @@ export interface AutoWorkflow {
   variables?: Record<string, string>;
   steps: AutoStep[];
   verify?: VerifyCommand[]; // Default verification for all steps
+  projectId?: string;       // Project ID — controls protected files, security scanning
 }
 
 export interface AutoStepResult {
@@ -214,7 +215,11 @@ export function createAutonomousRunner(deps: AutoRunnerDeps) {
       console.log(`  📦 Found ${changes.length} file(s) to write`);
 
       // Write files to the target project
-      const writeResult = await writeFiles(changes, targetDir);
+      // Only enforce protected file list for the orchestrator project
+      const isOrchestrator = !workflow.projectId || workflow.projectId === 'orchestrator';
+      const writeResult = await writeFiles(changes, targetDir, {
+        enforceProtected: isOrchestrator,
+      });
       filesWritten = writeResult.filesWritten.map((f) => f.filePath);
 
       if (writeResult.errors.length > 0) {

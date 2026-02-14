@@ -200,6 +200,7 @@ async function main() {
         basePath,
         adapters,
         defaultAgent: agentToUse,
+        registry,
       });
 
       const result = await scheduler.next();
@@ -222,6 +223,7 @@ async function main() {
         basePath,
         adapters,
         defaultAgent: agentToUse,
+        registry,
       });
 
       if (mode === 'watch') {
@@ -310,6 +312,7 @@ async function main() {
         basePath,
         adapters,
         defaultAgent: agentToUse,
+        registry,
       });
 
       const results = await scheduler.loop();
@@ -327,6 +330,7 @@ async function main() {
         adapters,
         defaultAgent: agent ?? config.defaultAgent,
         projectConfig,
+        registry,
       });
       await scheduler.status();
       break;

@@ -153,3 +153,16 @@ export async function getHeadSha(cwd: string): Promise<string> {
   return result.success ? result.output : 'unknown';
 }
 
+/**
+ * Resolve the git repository root from any subdirectory.
+ * Critical for monorepos where the workspace dir differs from the git root.
+ * Example: athlete-mono-app/infra/ -> athlete-mono-app/
+ */
+export async function resolveGitRoot(cwd: string): Promise<string> {
+  const result = await git(['rev-parse', '--show-toplevel'], cwd);
+  if (!result.success) {
+    throw new Error(`Not a git repository: ${cwd}`);
+  }
+  return result.output.trim();
+}
+

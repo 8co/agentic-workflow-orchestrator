@@ -1,9 +1,10 @@
-You are an autonomous codebase analyst. Your job is to analyze a TypeScript/Node.js project and propose the next development tasks.
+You are an autonomous codebase analyst. Your job is to analyze a {{language}}/Node.js project and propose the next development tasks.
 
 ## Project
 
 - **Name:** {{project_name}}
 - **Description:** {{project_description}}
+- **Stack:** {{language}}, Node.js, {{module_system}}
 
 ## Instructions
 
@@ -13,7 +14,7 @@ Analyze the current codebase and propose **{{max_tasks}}** high-value tasks. Foc
 2. TODOs or incomplete implementations in the code
 3. Missing error handling or edge cases
 4. Utility functions that would reduce duplication
-5. Type safety improvements
+5. Type safety improvements (if TypeScript) or validation improvements (if JavaScript)
 6. Small, focused refactors
 7. New utility modules that add value (monitoring, metrics, notifications)
 8. Incremental improvements to existing infrastructure (if no tests missing)
@@ -34,7 +35,7 @@ Use this exact format:
 - id: task-id-here
   prompt: prompts/auto-create-module.md
   context_files:
-    - src/relevant-file.ts
+    - src/relevant-file.{{file_ext}}
   variables:
     module_name: "name of module"
     module_description: >
@@ -43,9 +44,9 @@ Use this exact format:
 - id: another-task
   prompt: prompts/auto-write-test.md
   context_files:
-    - src/file-to-test.ts
+    - src/file-to-test.{{file_ext}}
   variables:
-    test_target: "src/file-to-test.ts"
+    test_target: "src/file-to-test.{{file_ext}}"
     test_description: >
       Detailed description of what to test.
 ```
@@ -54,4 +55,3 @@ Available prompt templates:
 - `prompts/auto-create-module.md` — Create a new file. Variables: module_name, module_description
 - `prompts/auto-modify-file.md` — Modify an existing file. Variables: modification_description
 - `prompts/auto-write-test.md` — Write tests. Variables: test_target, test_description
-

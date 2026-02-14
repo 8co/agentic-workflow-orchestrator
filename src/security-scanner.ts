@@ -145,9 +145,15 @@ export const SECURITY_CRITICAL_FILES: string[] = [
 ];
 
 /**
- * Check if a file requires security scanning
+ * Check if a file requires security scanning.
+ * Critical file list is orchestrator-specific — only applies when
+ * projectId is 'orchestrator' or undefined (backward-compatible default).
+ * General security patterns (eval, exec, rm -rf) still apply to all projects
+ * via scanCode().
  */
-export function requiresSecurityScan(filePath: string): boolean {
+export function requiresSecurityScan(filePath: string, projectId?: string): boolean {
+  // Only enforce orchestrator-specific critical file list for the orchestrator
+  if (projectId && projectId !== 'orchestrator') return false;
   return SECURITY_CRITICAL_FILES.some((critical: string) => filePath.endsWith(critical));
 }
 

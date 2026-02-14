@@ -3,7 +3,7 @@ You are a senior code reviewer auditing a batch of proposed development tasks be
 ## Project
 
 - **Name:** {{project_name}}
-- **Stack:** TypeScript, Node.js
+- **Stack:** {{language}}, Node.js
 
 ## Proposed Tasks
 
@@ -51,10 +51,9 @@ If keeping tasks, return them in their original format:
 - id: task-id
   prompt: prompts/auto-write-test.md
   context_files:
-    - src/some-file.ts
+    - src/some-file.{{file_ext}}
   variables:
-    test_target: "src/some-file.ts"
+    test_target: "src/some-file.{{file_ext}}"
     test_description: >
       Description here.
 ```
-

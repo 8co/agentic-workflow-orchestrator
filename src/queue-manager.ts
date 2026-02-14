@@ -17,6 +17,7 @@ export interface QueueTask {
   status: TaskStatus;
   workflow: string;
   prompt: string;
+  project?: string;            // Project ID from registry (undefined = orchestrator)
   context_files?: string[];
   variables?: Record<string, string>;
   error?: string;

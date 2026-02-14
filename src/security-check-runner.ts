@@ -53,8 +53,8 @@ async function main() {
       process.exit(0);
     }
 
-    // Filter to security-critical files
-    const filesToScan = changedFiles.filter(requiresSecurityScan);
+    // Filter to security-critical files (orchestrator context — no projectId)
+    const filesToScan = changedFiles.filter((f) => requiresSecurityScan(f));
 
     if (filesToScan.length === 0) {
       console.log(`   Scanned ${changedFiles.length} file(s) - none are security-critical`);

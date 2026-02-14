@@ -28,6 +28,4 @@ example command
 ## Project Context
 
 - **Name:** {{project_name}}
-- **Stack:** TypeScript, Node.js, ES modules
-- **CLI entry:** `npx tsx src/cli.ts`
-
+- **Stack:** {{language}}, Node.js, {{module_system}}

@@ -150,6 +150,27 @@ export function defaultVerifyCommands(): VerifyCommand[] {
 }
 
 /**
+ * Resolve verification commands for a project.
+ * Uses the project's configured verify commands if available,
+ * otherwise falls back to default TypeScript verification.
+ *
+ * ProjectConfig.verify uses a compatible shape: { command, args, optional? }
+ */
+export function verifyCommandsForProject(
+  projectVerify?: Array<{ command: string; args: string[]; optional?: boolean }>
+): VerifyCommand[] {
+  if (!projectVerify || projectVerify.length === 0) {
+    return defaultVerifyCommands();
+  }
+  return projectVerify.map((v) => ({
+    label: `${v.command} ${v.args.join(' ')}`,
+    command: v.command,
+    args: v.args,
+    optional: v.optional,
+  }));
+}
+
+/**
  * Full verification including tests (when tests exist).
  */
 export function fullVerifyCommands(): VerifyCommand[] {

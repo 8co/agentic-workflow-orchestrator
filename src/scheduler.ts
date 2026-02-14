@@ -6,15 +6,21 @@
  *   - next: Run just the next pending task, then stop.
  *   - loop: Run all pending tasks sequentially, then stop.
  *   - watch: Run all pending tasks, then poll for new ones on an interval.
+ *
+ * Multi-project support:
+ *   - Tasks with a `project` field target an external project.
+ *   - Git operations run at the target project's path.
+ *   - External project branches are NOT auto-merged — left for review.
+ *   - Queue state is always committed to the orchestrator repo.
  */
 
 import { resolve } from 'node:path';
 import { spawn } from 'node:child_process';
 import { createQueueManager, type QueueTask } from './queue-manager.js';
 import { createAutonomousRunner, type AutoStep, type AutoWorkflow } from './autonomous-runner.js';
-import { runVerification, defaultVerifyCommands } from './verify-runner.js';
+import { runVerification, defaultVerifyCommands, verifyCommandsForProject } from './verify-runner.js';
 import type { AgentAdapter, AgentType } from './types.js';
-import type { ProjectConfig } from './project-registry.js';
+import type { ProjectConfig, ProjectRegistry } from './project-registry.js';
 
 /**
  * Run a git command and return stdout.
@@ -39,15 +45,51 @@ export interface SchedulerConfig {
   defaultAgent: AgentType;
   queuePath?: string;
   pollIntervalMs?: number; // For watch mode (default: 5 minutes)
-  projectConfig?: ProjectConfig; // Multi-project support
+  projectConfig?: ProjectConfig; // Single project (backward compat)
+  registry?: ProjectRegistry;    // Full registry for multi-project task resolution
 }
 
 interface TaskRunResult {
   taskId: string;
+  projectId: string;       // Which project was targeted
   success: boolean;
   error?: string;
   durationMs: number;
   branch?: string;
+}
+
+// --- Language variable defaults ---
+
+/**
+ * Derive language-related template variables from project config.
+ * These get injected into prompt templates as {{language}}, {{code_lang}}, etc.
+ *
+ * TODO: Replace with project-profiles module in Phase 3.
+ */
+function getLanguageVars(projectConfig?: ProjectConfig): Record<string, string> {
+  const projectType = projectConfig?.type ?? 'typescript-node';
+
+  // JavaScript project types
+  const jsTypes = new Set(['serverless-js', 'javascript-node', 'nextjs-js']);
+
+  if (jsTypes.has(projectType)) {
+    return {
+      language: 'JavaScript',
+      code_lang: 'javascript',
+      file_ext: 'js',
+      module_system: 'CommonJS (require/module.exports)',
+      language_instructions: 'Plain JavaScript (ES2022+). No TypeScript syntax. Use JSDoc for type hints where helpful.',
+    };
+  }
+
+  // Default: TypeScript
+  return {
+    language: 'TypeScript',
+    code_lang: 'typescript',
+    file_ext: 'ts',
+    module_system: 'ES modules (import/export, .js extensions in imports)',
+    language_instructions: 'TypeScript strict mode — no `any`, no implicit types.',
+  };
 }
 
 // --- Scheduler ---
@@ -59,16 +101,41 @@ export function createScheduler(config: SchedulerConfig) {
     defaultAgent,
     queuePath,
     pollIntervalMs = 5 * 60 * 1000,
+    registry,
   } = config;
 
   const queue = createQueueManager(basePath, queuePath);
   const runner = createAutonomousRunner({ adapters, defaultAgent });
 
   /**
-   * Convert a queue task into an AutoWorkflow the runner can execute.
+   * Resolve the project config for a task.
+   * Falls back to orchestrator defaults when no project is specified.
    */
-  function taskToWorkflow(task: QueueTask): { workflow: AutoWorkflow; path: string } {
+  function resolveProject(task: QueueTask): { projectConfig: ProjectConfig | undefined; projectId: string } {
+    if (task.project && registry) {
+      const projectConfig = registry.get(task.project);
+      if (projectConfig) {
+        return { projectConfig, projectId: task.project };
+      }
+      console.log(`  ⚠️  Unknown project "${task.project}", falling back to orchestrator`);
+    }
+    return { projectConfig: config.projectConfig, projectId: 'orchestrator' };
+  }
+
+  /**
+   * Convert a queue task into an AutoWorkflow the runner can execute.
+   * For external projects, sets target_dir to the project's absolute path
+   * and injects language-specific template variables.
+   */
+  function taskToWorkflow(task: QueueTask, projectConfig: ProjectConfig | undefined, projectId: string): { workflow: AutoWorkflow; path: string } {
     const branchName = `auto/${task.id}`;
+
+    // Inject language variables into the task's variables
+    const langVars = getLanguageVars(projectConfig);
+    const mergedVars: Record<string, string> = {
+      ...langVars,
+      ...task.variables,  // Task-specific vars override defaults
+    };
 
     const step: AutoStep = {
       id: task.id,
@@ -76,15 +143,25 @@ export function createScheduler(config: SchedulerConfig) {
       context_files: task.context_files,
       max_attempts: 3,
       commit_message: `Auto: ${task.id}`,
-      variables: task.variables,
+      variables: mergedVars,
+      verify: projectConfig?.verify
+        ? verifyCommandsForProject(projectConfig.verify)
+        : undefined,
     };
+
+    // For external projects, use their absolute path as target_dir
+    // resolve() returns the absolute path unchanged if it's already absolute
+    const targetDir = (projectConfig && projectId !== 'orchestrator')
+      ? projectConfig.path
+      : '.';
 
     const workflow: AutoWorkflow = {
       name: task.id,
       description: `Queued task: ${task.id}`,
-      target_dir: '.',
+      target_dir: targetDir,
       branch: branchName,
       steps: [step],
+      projectId,
     };
 
     return { workflow, path: '' };
@@ -95,26 +172,38 @@ export function createScheduler(config: SchedulerConfig) {
    */
   async function runTask(task: QueueTask): Promise<TaskRunResult> {
     const start = Date.now();
+    const { projectConfig, projectId } = resolveProject(task);
+
+    const isExternal = projectId !== 'orchestrator';
+    const targetPath = (isExternal && projectConfig)
+      ? projectConfig.path
+      : basePath;
 
     console.log('\n' + '━'.repeat(50));
     console.log(`📌 Task: ${task.id}`);
+    if (isExternal) {
+      console.log(`📁 Project: ${projectConfig?.name ?? projectId} (${targetPath})`);
+    }
     console.log('━'.repeat(50));
 
     await queue.markRunning(task.id);
 
-    // Commit queue state so reverts during task execution don't lose it
+    // Commit queue state in the ORCHESTRATOR repo
+    // (so reverts in the target project don't lose queue state)
     const { commitChanges: gitCommit } = await import('./git-ops.js');
     await gitCommit(basePath, `Queue: start ${task.id}`);
 
     try {
-      const { workflow } = taskToWorkflow(task);
+      const { workflow } = taskToWorkflow(task, projectConfig, projectId);
 
-      // Write a temporary workflow file for the runner
+      // Write a temporary workflow file (always in orchestrator)
       const tempWorkflowPath = resolve(basePath, `.tmp-workflow-${task.id}.yaml`);
       const { writeFile: writeFs } = await import('node:fs/promises');
       const { stringify: stringifyYaml } = await import('yaml');
       await writeFs(tempWorkflowPath, stringifyYaml(workflow), 'utf-8');
 
+      // Run the workflow
+      // basePath is still the orchestrator root (for prompt template resolution)
       const result = await runner.run(tempWorkflowPath, basePath);
 
       // Clean up temp file
@@ -125,6 +214,7 @@ export function createScheduler(config: SchedulerConfig) {
         await queue.markCompleted(task.id, result.branch);
         return {
           taskId: task.id,
+          projectId,
           success: true,
           durationMs: Date.now() - start,
           branch: result.branch,
@@ -134,6 +224,7 @@ export function createScheduler(config: SchedulerConfig) {
         await queue.markFailed(task.id, error);
         return {
           taskId: task.id,
+          projectId,
           success: false,
           error,
           durationMs: Date.now() - start,
@@ -144,6 +235,7 @@ export function createScheduler(config: SchedulerConfig) {
       await queue.markFailed(task.id, error);
       return {
         taskId: task.id,
+        projectId,
         success: false,
         error,
         durationMs: Date.now() - start,
@@ -189,7 +281,7 @@ export function createScheduler(config: SchedulerConfig) {
         task = await queue.next();
       }
 
-      // Post-batch health check
+      // Post-batch health check (orchestrator only)
       console.log('\n' + '─'.repeat(50));
       console.log('🏥 POST-BATCH HEALTH CHECK');
       console.log('─'.repeat(50));
@@ -217,14 +309,18 @@ export function createScheduler(config: SchedulerConfig) {
       console.log(`   Health:    ${healthCheck.allPassed ? '✅ clean' : '⚠️  issues detected'}`);
       console.log('═'.repeat(50));
 
-      // Merge successful branches into main and push
-      const successBranches = results
-        .filter((r) => r.success && r.branch)
+      // Separate orchestrator branches from external project branches
+      const orchestratorBranches = results
+        .filter((r) => r.success && r.branch && r.projectId === 'orchestrator')
         .map((r) => r.branch as string);
 
-      if (successBranches.length > 0 && healthCheck.allPassed) {
+      const externalBranches = results
+        .filter((r) => r.success && r.branch && r.projectId !== 'orchestrator');
+
+      // Merge orchestrator branches into main and push (existing behavior)
+      if (orchestratorBranches.length > 0 && healthCheck.allPassed) {
         console.log('\n' + '─'.repeat(50));
-        console.log('🔀 MERGE & PUSH');
+        console.log('🔀 MERGE & PUSH (orchestrator)');
         console.log('─'.repeat(50));
 
         // Stash any uncommitted changes (queue.yaml updates)
@@ -234,9 +330,9 @@ export function createScheduler(config: SchedulerConfig) {
         const checkoutResult = await gitCmd(['checkout', 'main'], basePath);
         if (checkoutResult.success) {
           // Merge all successful branches at once
-          const mergeResult = await gitCmd(['merge', ...successBranches], basePath);
+          const mergeResult = await gitCmd(['merge', ...orchestratorBranches], basePath);
           if (mergeResult.success) {
-            console.log(`   ✅ Merged ${successBranches.length} branch(es) into main`);
+            console.log(`   ✅ Merged ${orchestratorBranches.length} branch(es) into main`);
 
             // Restore stashed queue changes
             await gitCmd(['stash', 'pop'], basePath);
@@ -262,8 +358,22 @@ export function createScheduler(config: SchedulerConfig) {
           console.log(`   ⚠️  Could not switch to main: ${checkoutResult.output.slice(0, 100)}`);
           await gitCmd(['stash', 'pop'], basePath);
         }
-      } else if (successBranches.length > 0) {
-        console.log('\n   ⚠️  Skipping merge — health check failed. Branches remain local.');
+      } else if (orchestratorBranches.length > 0) {
+        console.log('\n   ⚠️  Skipping orchestrator merge — health check failed. Branches remain local.');
+      }
+
+      // Report external project branches (no auto-merge)
+      if (externalBranches.length > 0) {
+        console.log('\n' + '─'.repeat(50));
+        console.log('📋 EXTERNAL PROJECT BRANCHES (ready for review)');
+        console.log('─'.repeat(50));
+
+        for (const result of externalBranches) {
+          const projectName = registry?.get(result.projectId)?.name ?? result.projectId;
+          console.log(`   🌿 ${result.branch} → ${projectName}`);
+        }
+
+        console.log('\n   These branches are NOT auto-merged. Review and merge manually.');
       }
 
       await queue.print();
@@ -323,4 +433,3 @@ export function createScheduler(config: SchedulerConfig) {
     },
   };
 }
-
