@@ -1163,3 +1163,25 @@ tasks:
     started_at: 2026-02-14T00:35:45.923Z
     completed_at: 2026-02-14T00:35:51.488Z
     branch: auto/add-tests-verify-runner
+  - id: write-tests-anthropic-adapter-edge-cases
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/adapters/anthropic-adapter.ts
+    variables:
+      test_target: src/adapters/anthropic-adapter.ts
+      test_description: >
+        Write unit tests for edge cases in the Anthropic Adapter module, including scenarios where API errors occur,
+        invalid response structures are returned, and network errors are simulated.
+  - id: write-tests-errorUtility-edge-cases
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/errorUtility.ts
+    variables:
+      test_target: src/errorUtility.ts
+      test_description: >
+        Develop comprehensive tests for edge cases in the errorUtility module, particularly cases involving nested error
+        objects and unusual input types that could lead to unexpected results.
