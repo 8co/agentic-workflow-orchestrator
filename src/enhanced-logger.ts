@@ -7,6 +7,7 @@ class EnhancedLogger {
   private static instance: EnhancedLogger | null = null;
   private logFilePath: string;
   private maxRetries: number = 3;
+  private retryDelay: number = 1000; // Delay in milliseconds between retries
 
   private constructor(logFileName: string) {
     const logDirectory: string = path.resolve(process.cwd(), 'logs');
@@ -51,7 +52,7 @@ class EnhancedLogger {
     }
   }
 
-  private logToFile(message: string): void {
+  private async logToFile(message: string): Promise<void> {
     let attempt = 0;
     while (attempt < this.maxRetries) {
       try {
@@ -62,6 +63,8 @@ class EnhancedLogger {
         this.logRetryErrorDetail(attempt, error);
 
         if (attempt < this.maxRetries) {
+          // Attempt to delay before retrying
+          await this.delay(this.retryDelay);
           // Attempt to recreate the log directory if necessary
           this.recoverLogDirectory();
         } else {
@@ -77,9 +80,9 @@ class EnhancedLogger {
     console.error(`[ERROR] Attempt ${attempt} to write to log file failed: ${errorDescription}`);
 
     if (this.isTimeoutError(error)) {
-      console.error(`[ERROR] The operation timed out. Retrying attempt ${attempt + 1}...`);
+      console.warn(`[ERROR] The operation timed out. Retrying in ${this.retryDelay / 1000} seconds, attempt ${attempt + 1}...`);
     } else {
-      console.error(`[ERROR] Unknown write error encountered. Retrying attempt ${attempt + 1}...`);
+      console.warn(`[ERROR] Unknown write error encountered. Retrying in ${this.retryDelay / 1000} seconds, attempt ${attempt + 1}...`);
     }
   }
 
@@ -118,6 +121,10 @@ class EnhancedLogger {
 
   private isTimeoutError(error: unknown): boolean {
     return this.isError(error) && error.message.includes('ETIMEDOUT');
+  }
+
+  private async delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   logInfo(message: string): void {
