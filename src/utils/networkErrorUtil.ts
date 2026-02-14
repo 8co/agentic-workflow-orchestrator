@@ -15,6 +15,18 @@ export interface NetworkError {
   message?: string;
 }
 
+const networkErrorCodes: ReadonlySet<NetworkErrorCode> = new Set([
+  'ENOTFOUND',       // DNS resolution error
+  'ECONNREFUSED',    // Connection refused
+  'ECONNRESET',      // Connection reset by peer
+  'ETIMEDOUT',       // Connection timed out
+  'EHOSTUNREACH',    // No route to host
+  'EPIPE',           // Broken pipe
+  'ENETUNREACH',     // Network is unreachable
+  'ESOCKETTIMEDOUT', // Socket timed out
+  'ECONNABORTED',    // Connection aborted
+]);
+
 export function isNetworkError(err: unknown): err is NetworkError {
   if (!isRecord(err)) {
     return false;
@@ -22,29 +34,23 @@ export function isNetworkError(err: unknown): err is NetworkError {
 
   const errorObj = err as Partial<NetworkError>;
 
-  const networkErrorCodes: ReadonlySet<NetworkErrorCode> = new Set([
-    'ENOTFOUND',       // DNS resolution error
-    'ECONNREFUSED',    // Connection refused
-    'ECONNRESET',      // Connection reset by peer
-    'ETIMEDOUT',       // Connection timed out
-    'EHOSTUNREACH',    // No route to host
-    'EPIPE',           // Broken pipe
-    'ENETUNREACH',     // Network is unreachable
-    'ESOCKETTIMEDOUT', // Socket timed out
-    'ECONNABORTED',    // Connection aborted
-  ]);
-
-  // Ensuring the code is one of the known error codes
-  const hasValidCode = typeof errorObj.code === 'string' && networkErrorCodes.has(errorObj.code);
-
-  // Ensuring the timeout property is properly defined
-  const hasValidTimeout = errorObj.timeout === true || errorObj.timeout === false || errorObj.timeout === undefined;
-
   return (
-    hasValidCode || errorObj.timeout === true
-  ) && hasValidTimeout && (typeof errorObj.message === 'string' || errorObj.message === undefined);
+    isValidNetworkErrorCode(errorObj.code) || errorObj.timeout === true
+  ) && isValidTimeout(errorObj.timeout) && isValidMessage(errorObj.message);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isValidNetworkErrorCode(code: unknown): code is NetworkErrorCode {
+  return typeof code === 'string' && networkErrorCodes.has(code as NetworkErrorCode);
+}
+
+function isValidTimeout(timeout: unknown): timeout is boolean | undefined {
+  return timeout === true || timeout === false || timeout === undefined;
+}
+
+function isValidMessage(message: unknown): message is string | undefined {
+  return typeof message === 'string' || message === undefined;
 }
