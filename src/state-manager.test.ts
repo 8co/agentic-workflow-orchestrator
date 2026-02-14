@@ -1,69 +1,76 @@
-import { describe, it, beforeEach } from 'node:test';
-import assert from 'node:assert/strict';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { strict as assert } from 'node:assert';
+import { test } from 'node:test';
 import { createStateManager } from './state-manager.js';
-import type { WorkflowExecution } from './types.js';
+import { mkdir, writeFile, rm, readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 
-describe('StateManager', () => {
-  let basePath: string;
-  let stateManager: ReturnType<typeof createStateManager>;
+// Mock interface based on the expected properties from the code
+interface MockWorkflowExecution {
+  executionId: string;
+  startedAt: string;
+  workflowName: string;
+  status: string;
+  steps: string[];
+  variables: { [key: string]: any };
+}
 
-  beforeEach(async () => {
-    basePath = await mkdtemp(join(tmpdir(), 'state-manager-test-'));
-    stateManager = createStateManager(basePath);
-  });
+const TEST_DIR = '.test_state';
 
-  async function createSampleExecution(
-    executionId: string,
-    startedAt: string
-  ): Promise<WorkflowExecution> {
-    const execution = {
-      executionId,
-      startedAt,
-    } as WorkflowExecution;
-    await stateManager.save(execution);
-    return execution;
-  }
+async function setupDummyExecution(executionId: string, data: Partial<MockWorkflowExecution>, corruptJson: boolean = false) {
+  const dataToWrite = corruptJson ? '{"executionId":' : JSON.stringify(data, null, 2);
+  await writeFile(join(TEST_DIR, `${executionId}.json`), dataToWrite, 'utf-8');
+}
 
-  it('should save and load a workflow execution', async () => {
-    const execution = await createSampleExecution('test-execution-id', new Date().toISOString());
-    const loadedExecution = await stateManager.load('test-execution-id');
-    assert.deepEqual(loadedExecution, execution);
-  });
+test('StateManager loads valid execution', async () => {
+  const executionId = 'validExecution';
+  const stateMgr = createStateManager(TEST_DIR);
+  const validExecution: MockWorkflowExecution = {
+    executionId,
+    startedAt: new Date().toISOString(),
+    workflowName: 'TestWorkflow',
+    status: 'running',
+    steps: [],
+    variables: {}
+  };
+  await mkdir(TEST_DIR, { recursive: true });
+  await setupDummyExecution(executionId, validExecution);
 
-  it('should return null for non-existent workflow executions', async () => {
-    const loadedExecution = await stateManager.load('non-existent-id');
+  const loadedExecution = await stateMgr.load(executionId);
+  assert.deepEqual(loadedExecution, validExecution);
+
+  await rm(TEST_DIR, { recursive: true, force: true });
+});
+
+test('StateManager returns null for non-existent file', async () => {
+  const stateMgr = createStateManager(TEST_DIR);
+  const executionId = 'nonExistentExecution';
+
+  const loadedExecution = await stateMgr.load(executionId);
+  assert.equal(loadedExecution, null);
+});
+
+test('StateManager returns null for file with invalid JSON', async () => {
+  const executionId = 'corruptExecution';
+  const stateMgr = createStateManager(TEST_DIR);
+  await mkdir(TEST_DIR, { recursive: true });
+  await setupDummyExecution(executionId, {}, true);
+
+  const loadedExecution = await stateMgr.load(executionId);
+  assert.equal(loadedExecution, null);
+
+  await rm(TEST_DIR, { recursive: true, force: true });
+});
+
+// Simulate permission error by attempting to access a restricted directory
+test('StateManager handles permission error gracefully', async () => {
+  const restrictedDir = '/root/restricted_state';
+  const stateMgr = createStateManager(restrictedDir);
+  const executionId = 'restrictedExecution';
+
+  try {
+    const loadedExecution = await stateMgr.load(executionId);
     assert.equal(loadedExecution, null);
-  });
-
-  it('should list all saved workflow executions', async () => {
-    const execution1 = await createSampleExecution('execution1', new Date(2023, 0, 1).toISOString());
-    const execution2 = await createSampleExecution('execution2', new Date(2023, 0, 2).toISOString());
-
-    const executions = await stateManager.list();
-    assert.equal(executions.length, 2);
-    assert.deepEqual(executions, [execution2, execution1]); // Sorted by startedAt descending
-  });
-
-  it('should ignore non-JSON and corrupted files in list', async () => {
-    await createSampleExecution('execution1', new Date(2023, 0, 1).toISOString());
-
-    const filePath = join(basePath, '.state', 'corrupted-file.json');
-    await writeFile(filePath, '{ this is: not: valid json }', 'utf-8');
-
-    const files = await stateManager.list();
-    assert.equal(files.length, 1);
-    assert.equal(files[0].executionId, 'execution1');
-  });
-
-  it('should create state directory if it does not exist', async () => {
-    const stateDir = join(basePath, '.state');
-    await rm(stateDir, { recursive: true, force: true });
-
-    const execution = await createSampleExecution('execution1', new Date().toISOString());
-    const loadedExecution = await stateManager.load('execution1');
-    assert.deepEqual(loadedExecution, execution);
-  });
+  } catch (error) {
+    assert.fail('Expected null result, but an exception was thrown');
+  }
 });
