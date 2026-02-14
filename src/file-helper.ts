@@ -6,11 +6,16 @@ import { dirname, resolve } from 'node:path';
  *
  * @param fullPath - The full file path where the content should be written.
  * @param content - The content to write to the specified file.
+ * @throws Will throw an error if the file cannot be written.
  */
 export async function ensureDirectoryAndWriteFile(
   fullPath: string,
   content: string
 ): Promise<void> {
+  if (!fullPath || !content) {
+    throw new Error('Invalid arguments: fullPath and content are required.');
+  }
+
   try {
     await mkdir(dirname(fullPath), { recursive: true });
     await writeFile(fullPath, content, 'utf-8');
@@ -27,6 +32,10 @@ export async function ensureDirectoryAndWriteFile(
  * @returns The content of the file as a string, or null if the file cannot be read.
  */
 export async function readFromFile(filePath: string): Promise<string | null> {
+  if (!filePath) {
+    throw new Error('Invalid argument: filePath is required.');
+  }
+
   try {
     return await readFile(filePath, 'utf-8');
   } catch {
@@ -42,5 +51,9 @@ export async function readFromFile(filePath: string): Promise<string | null> {
  * @returns The resolved absolute file path.
  */
 export function resolveFilePath(baseDir: string, relativePath: string): string {
+  if (!baseDir || !relativePath) {
+    throw new Error('Invalid arguments: baseDir and relativePath are required.');
+  }
+
   return resolve(baseDir, relativePath);
 }
