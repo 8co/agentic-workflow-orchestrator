@@ -5059,3 +5059,56 @@ tasks:
     started_at: 2026-02-14T02:30:17.897Z
     completed_at: 2026-02-14T02:30:27.383Z
     branch: auto/add-monitoring-metrics-utility
+  - id: add-cli-observability-commands-tests
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/cli-observability-commands.ts
+    variables:
+      test_target: src/cli-observability-commands.ts
+      test_description: >
+        Add tests for CLI observability commands to ensure all functions such as listRunningJobs and getJobLogs are
+        covered and handle edge cases properly.
+  - id: enhance-anthropic-adapter-type-safety
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/adapters/anthropic-adapter.ts
+    variables:
+      modification_description: >
+        Improve the type safety of the Anthropic adapter by ensuring all types and interfaces are fully specified and
+        used consistently.
+  - id: add-retry-to-health-logging
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-create-module.md
+    context_files:
+      - src/enhanced-logger.ts
+    variables:
+      module_name: healthLogger
+      module_description: >
+        Create a retry mechanism for logging in the health module to handle intermittent file write failures, enhancing
+        robustness.
+  - id: add-network-error-handling-scheduler
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/scheduler.ts
+    variables:
+      modification_description: >
+        Implement comprehensive network error handling in the scheduler module to manage connectivity issues gracefully,
+        ensuring robustness during task scheduling.
+  - id: create-network-util-tests
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/utils/networkErrorUtil.ts
+    variables:
+      test_target: src/utils/networkErrorUtil.ts
+      test_description: >
+        Develop unit tests for the network error utility functions to validate all network error codes and handling,
+        including edge cases.
