@@ -1,101 +1,77 @@
-import { test } from 'node:test';
-import assert from 'node:assert/strict';
-import { createAnthropicAdapter } from '../src/adapters/anthropic-adapter.js';
-import type { AgentRequest, AgentResponse } from '../src/types.js';
+import test from 'node:test';
+import assert from 'node:assert';
+import { createAnthropicAdapter } from '../../src/adapters/anthropic-adapter';
+import type { AgentRequest } from '../../src/types';
 
-// Mock the Anthropic SDK and relevant functions
-class MockAnthropicClient {
-  messages = {
-    create: async ({ model, max_tokens, system, messages }: any) => {
-      if (model === 'network-error') {
-        const error: any = new Error('Network error');
-        error.code = 'ENOTFOUND';
+const mockClient = {
+  messages: {
+    create: async (options: any) => {
+      if (options.system.includes('network_error')) {
+        const error = new Error('Network error: Unable to reach the API');
+        (error as any).code = 'ENOTFOUND';
         throw error;
       }
-      if (model === 'api-limit-error') {
-        const error: any = new Error('API limit reached');
-        error.response = { status: 429 };
+      if (options.system.includes('api_limit')) {
+        const error = new Error('API limit reached');
+        (error as any).response = { status: 429 };
         throw error;
       }
-      if (model === 'invalid-response') {
-        return {};
+      if (options.system.includes('invalid_response')) {
+        return { invalid: true };
       }
       return {
-        content: [{ type: 'text', text: 'Response text' }],
-        usage: { input_tokens: 50, output_tokens: 10 },
-        stop_reason: 'stop'
+        content: [
+          { type: 'text', text: 'Response from model' }
+        ],
+        usage: {
+          input_tokens: 10,
+          output_tokens: 5
+        },
+        stop_reason: 'end'
       };
     }
-  };
-}
+  }
+};
 
-test('AnthropicAdapter execute - normal execution', async () => {
-  const adapter = createAnthropicAdapter({
-    apiKey: 'dummy-key',
-    model: 'test-model'
-  });
+test('Anthropic Adapter: executes a successful request', async () => {
+  const adapter = createAnthropicAdapter({ apiKey: 'dummy', model: 'claude' });
+  const request: AgentRequest = { prompt: 'Generate code', context: '' };
 
-  const request: AgentRequest = {
-    prompt: 'Test prompt',
-    context: '',
-    outputPath: undefined,
-  };
+  const response = await adapter.execute(request);
 
-  const response: AgentResponse = await adapter.execute(request);
   assert.strictEqual(response.success, true);
-  assert.match(response.output, /Response text/);
+  assert.strictEqual(response.output, 'Response from model');
 });
 
-test('AnthropicAdapter execute - network error', async () => {
-  const adapter = createAnthropicAdapter({
-    apiKey: 'dummy-key',
-    model: 'network-error'
-  });
+test('Anthropic Adapter: handles network error', async () => {
+  const adapter = createAnthropicAdapter({ apiKey: 'dummy', model: 'claude' });
+  (adapter as any).client = mockClient;
+  const request: AgentRequest = { prompt: 'network_error', context: '' };
 
-  const request: AgentRequest = {
-    prompt: 'Test prompt',
-    context: '',
-    outputPath: undefined,
-  };
+  const response = await adapter.execute(request);
 
-  const response: AgentResponse = await adapter.execute(request);
   assert.strictEqual(response.success, false);
-  assert.match(response.error, /Network error: Unable to reach the API./);
+  assert.strictEqual(response.error, 'Network error: Unable to reach the API.');
 });
 
-test('AnthropicAdapter execute - API limit error', async () => {
-  const adapter = createAnthropicAdapter({
-    apiKey: 'dummy-key',
-    model: 'api-limit-error'
-  });
+test('Anthropic Adapter: handles API limit error', async () => {
+  const adapter = createAnthropicAdapter({ apiKey: 'dummy', model: 'claude' });
+  (adapter as any).client = mockClient;
+  const request: AgentRequest = { prompt: 'api_limit', context: '' };
 
-  const request: AgentRequest = {
-    prompt: 'Test prompt',
-    context: '',
-    outputPath: undefined,
-  };
+  const response = await adapter.execute(request);
 
-  const response: AgentResponse = await adapter.execute(request);
   assert.strictEqual(response.success, false);
-  assert.match(response.error, /API limit reached: Too many requests. Please try again later./);
+  assert.strictEqual(response.error, 'API limit reached: Too many requests. Please try again later.');
 });
 
-test('AnthropicAdapter execute - invalid response', async () => {
-  const adapter = createAnthropicAdapter({
-    apiKey: 'dummy-key',
-    model: 'invalid-response'
-  });
+test('Anthropic Adapter: handles invalid response', async () => {
+  const adapter = createAnthropicAdapter({ apiKey: 'dummy', model: 'claude' });
+  (adapter as any).client = mockClient;
+  const request: AgentRequest = { prompt: 'invalid_response', context: '' };
 
-  const request: AgentRequest = {
-    prompt: 'Test prompt',
-    context: '',
-    outputPath: undefined,
-  };
+  const response = await adapter.execute(request);
 
-  const response: AgentResponse = await adapter.execute(request);
   assert.strictEqual(response.success, false);
-  assert.match(response.error, /Received an invalid response structure from the API./);
+  assert.strictEqual(response.error, 'API returned unexpected data structure.');
 });
-
-// Mock replacement
-(global as any).Anthropic = MockAnthropicClient;
