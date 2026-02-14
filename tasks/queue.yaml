@@ -1479,7 +1479,7 @@ tasks:
     completed_at: 2026-02-14T00:43:19.428Z
     branch: auto/refactor-ai-agents-error-handling
   - id: write-more-tests-state-manager
-    status: running
+    status: failed
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -1490,3 +1490,27 @@ tasks:
         Create additional tests for state-manager.ts to handle edge cases and ensure accurate state persistence and
         retrieval.
     started_at: 2026-02-14T00:43:19.445Z
+    completed_at: 2026-02-14T00:43:46.464Z
+    error: >-
+      # Verification Errors
+
+
+      The following commands failed. Fix ALL errors.
+
+
+      ## TypeScript Build (exit 2)
+
+      ```
+
+      src/state-manager.test.ts(3,10): error TS2724: '"node:test"' has no exported member named 'Test'. Did you mean
+      'test'?
+
+      src/state-manager.test.ts(19,5): error TS2353: Object literal may only specify known properties, and 'workflowId'
+      does not exist in type 'TestWorkflowExecution'.
+
+      src/state-manager.test.ts(26,5): error TS2353: Object literal may only specify known properties, and 'workflowId'
+      does not exist in type 'TestWorkflowExecution'.
+
+      src/state-manager.test.ts(64,11): error TS2304: Cannot find name 'writeFile'.
+
+      ```
