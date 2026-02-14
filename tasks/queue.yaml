@@ -1782,3 +1782,44 @@ tasks:
     started_at: 2026-02-14T00:48:51.152Z
     completed_at: 2026-02-14T00:48:55.053Z
     branch: auto/refactor-health-logging-for-improved-readability
+  - id: improve-type-safety-adapters-anthropic
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/adapters/anthropic-adapter.ts
+    variables:
+      modification_description: >
+        Enhance the type safety in the Anthropic Adapter module by properly typing all functions and variables,
+        especially those interacting with external APIs.
+  - id: add-error-handling-utils-file-helper
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/file-helper.ts
+    variables:
+      modification_description: >
+        Implement comprehensive error handling in the file helper utility functions to ensure that all file operations
+        are robust against typical I/O errors such as permission issues and filesystem unavailability.
+  - id: improve-type-safety-file-writer
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/file-writer.ts
+    variables:
+      modification_description: >
+        Refine type definitions and annotations in the file-writer module to ensure strong type checking throughout file
+        parsing and writing operations, focusing on safeguarding against undefined behaviors.
+  - id: write-tests-file-writer-edge-cases
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/file-writer.ts
+    variables:
+      test_target: src/file-writer.ts
+      test_description: >
+        Create comprehensive tests for edge cases in the file-writer module, including scenarios with invalid file
+        paths, permission errors, and handling of protected files.
