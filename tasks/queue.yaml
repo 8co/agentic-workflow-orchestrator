@@ -2820,3 +2820,45 @@ tasks:
     started_at: 2026-02-14T01:16:22.375Z
     completed_at: 2026-02-14T01:16:29.610Z
     branch: auto/refactor-enhanced-logger-type-safety
+  - id: add-missing-tests-aiAgents
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/aiAgents.ts
+    variables:
+      test_target: src/aiAgents.ts
+      test_description: >
+        Create comprehensive tests for all functions in aiAgents.ts, ensuring edge cases and error handling scenarios
+        are covered, focusing on connectToAIAgents and related functions.
+  - id: add-missing-error-handling-health-function
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/health.ts
+    variables:
+      modification_description: >
+        Add error handling to the getHealthStatus function to cover scenarios where extracting package version or memory
+        usage fails, ensuring the function returns a degraded status if any component fails during execution.
+  - id: refactor-file-helper-error-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/file-helper.ts
+    variables:
+      modification_description: >
+        Refactor error handling in ensureDirectoryAndWriteFile and readFromFile functions to improve clarity and provide
+        detailed error messages for easier debugging and monitoring.
+  - id: write-tests-retryUtility-edge-cases
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/retryUtility.ts
+    variables:
+      test_target: src/retryUtility.ts
+      test_description: >
+        Implement tests for retryAsync function covering edge cases such as handling of maximum retry attempts, delays,
+        and invalid operation scenarios.

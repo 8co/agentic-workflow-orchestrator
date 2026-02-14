@@ -14,6 +14,7 @@ import { createQueueManager, type QueueTask } from './queue-manager.js';
 import { createAutonomousRunner, type AutoStep, type AutoWorkflow } from './autonomous-runner.js';
 import { runVerification, defaultVerifyCommands } from './verify-runner.js';
 import type { AgentAdapter, AgentType } from './types.js';
+import type { ProjectConfig } from './project-registry.js';
 
 /**
  * Run a git command and return stdout.
@@ -38,6 +39,7 @@ export interface SchedulerConfig {
   defaultAgent: AgentType;
   queuePath?: string;
   pollIntervalMs?: number; // For watch mode (default: 5 minutes)
+  projectConfig?: ProjectConfig; // Multi-project support
 }
 
 interface TaskRunResult {

@@ -35,17 +35,18 @@ interface ProposedTask {
 
 // --- Helpers ---
 
-const SCAN_DIRS = ['src'];
-const SKIP_EXTENSIONS = new Set(['.test.ts', '.spec.ts']);
+const DEFAULT_SCAN_DIRS = ['src'];
+const SKIP_EXTENSIONS = new Set(['.test.ts', '.spec.ts', '.test.js', '.spec.js', '.test.tsx']);
 const MAX_FILE_SIZE = 50_000; // 50KB
 
 /**
- * Recursively scan a directory for TypeScript source files.
+ * Recursively scan a directory for source files.
  */
 async function scanSourceFiles(
   dir: string,
   basePath: string,
-  maxSize: number
+  maxSize: number,
+  skipPatterns: string[] = []
 ): Promise<{ path: string; content: string }[]> {
   const files: { path: string; content: string }[] = [];
 
@@ -62,13 +63,25 @@ async function scanSourceFiles(
 
       if (entry.isDirectory()) {
         // Skip node_modules, dist, .state, etc.
-        if (['node_modules', 'dist', '.state', '.git', 'output'].includes(entry.name)) {
+        if (['node_modules', 'dist', '.state', '.git', 'output', '.serverless', 'build'].includes(entry.name)) {
           continue;
         }
         await walk(fullPath);
-      } else if (entry.isFile() && entry.name.endsWith('.ts')) {
+      } else if (entry.isFile()) {
+        // Check file extensions
+        const ext = extname(entry.name);
+        if (!['.ts', '.tsx', '.js', '.jsx', '.yaml', '.yml', '.json'].includes(ext)) {
+          continue;
+        }
+
         // Skip test files
-        if (SKIP_EXTENSIONS.has(extname(entry.name)) || entry.name.includes('.test.')) {
+        if (SKIP_EXTENSIONS.has(ext) || entry.name.includes('.test.')) {
+          continue;
+        }
+
+        // Check skip patterns
+        const relPath = relative(basePath, fullPath);
+        if (skipPatterns.some(pattern => relPath.includes(pattern))) {
           continue;
         }
 
@@ -77,7 +90,6 @@ async function scanSourceFiles(
           if (stats.size > maxSize) continue;
 
           const content = await readFile(fullPath, 'utf-8');
-          const relPath = relative(basePath, fullPath);
           files.push({ path: relPath, content });
         } catch {
           // Skip unreadable files
@@ -93,13 +105,18 @@ async function scanSourceFiles(
 /**
  * Build a codebase summary for the LLM.
  */
-async function buildCodebaseSummary(basePath: string, maxSize: number): Promise<string> {
+async function buildCodebaseSummary(
+  basePath: string,
+  maxSize: number,
+  scanDirs: string[] = DEFAULT_SCAN_DIRS,
+  skipPatterns: string[] = []
+): Promise<string> {
   const sections: string[] = [];
 
   // Scan source directories
-  for (const dir of SCAN_DIRS) {
+  for (const dir of scanDirs) {
     const dirPath = resolve(basePath, dir);
-    const files = await scanSourceFiles(dirPath, basePath, maxSize);
+    const files = await scanSourceFiles(dirPath, basePath, maxSize, skipPatterns);
 
     for (const file of files) {
       sections.push(`--- ${file.path} ---\n${file.content}`);
@@ -154,7 +171,18 @@ export function createTaskProposer(config: ProposerConfig) {
     maxTasks = 5,
     maxFileSize = MAX_FILE_SIZE,
     skipReview = false,
+    projectConfig,
+    orchestratorRoot,
   } = config;
+
+  // Use project config if provided
+  const scanDirs = projectConfig?.scan_dirs ?? DEFAULT_SCAN_DIRS;
+  const skipPatterns = projectConfig?.skip_patterns ?? [];
+  const projectName = projectConfig?.name ?? 'agentic-workflow-orchestrator';
+  const projectDescription = projectConfig?.description ?? 'Autonomous AI agent system';
+
+  // Prompts always come from orchestrator root
+  const promptBasePath = orchestratorRoot ?? basePath;
 
   const queue = createQueueManager(basePath);
 
@@ -168,7 +196,7 @@ export function createTaskProposer(config: ProposerConfig) {
     console.log('\n🧠 Self-review: LLM auditing its own proposals...\n');
 
     // Load review prompt
-    const templatePath = resolve(basePath, reviewPromptPath);
+    const templatePath = resolve(promptBasePath, reviewPromptPath);
     let template: string;
     try {
       template = await readFile(templatePath, 'utf-8');
@@ -182,7 +210,7 @@ export function createTaskProposer(config: ProposerConfig) {
     const tasksYaml = stringifyYaml(tasks, { lineWidth: 120 });
 
     const prompt = template
-      .replace(/\{\{\s*project_name\s*\}\}/g, 'agentic-workflow-orchestrator')
+      .replace(/\{\{\s*project_name\s*\}\}/g, projectName)
       .replace(/\{\{\s*proposed_tasks\s*\}\}/g, tasksYaml);
 
     const request: AgentRequest = { prompt };
@@ -220,12 +248,12 @@ export function createTaskProposer(config: ProposerConfig) {
      */
     async propose(): Promise<ProposedTask[]> {
       console.log('\n🔍 Scanning codebase...');
-      const codebaseSummary = await buildCodebaseSummary(basePath, maxFileSize);
+      const codebaseSummary = await buildCodebaseSummary(basePath, maxFileSize, scanDirs, skipPatterns);
       const lineCount = codebaseSummary.split('\n').length;
       console.log(`   Found ${lineCount} lines of source code`);
 
       // Load prompt template
-      const templatePath = resolve(basePath, promptPath);
+      const templatePath = resolve(promptBasePath, promptPath);
       let template: string;
       try {
         template = await readFile(templatePath, 'utf-8');
@@ -239,8 +267,8 @@ export function createTaskProposer(config: ProposerConfig) {
 
       // Inject variables
       const prompt = template
-        .replace(/\{\{\s*project_name\s*\}\}/g, 'agentic-workflow-orchestrator')
-        .replace(/\{\{\s*project_description\s*\}\}/g, 'Autonomous AI agent system for continuous development')
+        .replace(/\{\{\s*project_name\s*\}\}/g, projectName)
+        .replace(/\{\{\s*project_description\s*\}\}/g, projectDescription)
         .replace(/\{\{\s*max_tasks\s*\}\}/g, String(maxTasks));
 
       // Build the full prompt with codebase context

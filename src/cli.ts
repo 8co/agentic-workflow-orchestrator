@@ -250,9 +250,11 @@ async function main() {
       }
 
       const proposer = createTaskProposer({
-        basePath,
+        basePath: workingPath,
         adapter: proposerAdapter,
         maxTasks: 5,
+        projectConfig,
+        orchestratorRoot: basePath,
       });
 
       if (mode === 'queue') {
@@ -285,9 +287,11 @@ async function main() {
 
       // Step 1: Propose and queue
       const proposer = createTaskProposer({
-        basePath,
+        basePath: workingPath,
         adapter: proposerAdapter,
         maxTasks: 5,
+        projectConfig,
+        orchestratorRoot: basePath,
       });
 
       const newTasks = await proposer.proposeAndQueue();
