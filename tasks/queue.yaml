@@ -4584,3 +4584,46 @@ tasks:
     started_at: 2026-02-14T02:05:02.062Z
     completed_at: 2026-02-14T02:05:06.463Z
     branch: auto/implement-observability-utility
+  - id: write-tests-security-scanner-edge-cases
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/security-scanner.ts
+    variables:
+      test_target: src/security-scanner.ts
+      test_description: >
+        Add edge case tests for the security scanner to validate its detection of critical, high, and medium severity
+        patterns in various coding styles.
+  - id: write-tests-scheduler-error-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/scheduler.ts
+    variables:
+      test_target: src/scheduler.ts
+      test_description: >
+        Create tests for error handling in the scheduler module, ensuring proper logging and state updates on task
+        failure.
+  - id: refactor-log-util-error-handling-improvements
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/log-util.ts
+    variables:
+      modification_description: >
+        Improve error handling within the log utility by adding more granular logging for unexpected situations and
+        better exception management.
+  - id: write-tests-state-manager-error-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/state-manager.ts
+    variables:
+      test_target: src/state-manager.ts
+      test_description: >
+        Add comprehensive tests for state manager error scenarios, including handling of read/write errors and invalid
+        state data.
