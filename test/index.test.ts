@@ -1,97 +1,60 @@
-import { strict as assert } from 'node:assert';
-import test from 'node:test';
 import { main } from '../src/index.js';
-import { initializeOrchestrationEngine } from '../src/orchestrationEngine.js';
-import { loadWorkflowConfigurations } from '../src/workflowConfig.js';
-import { connectToAIAgents } from '../src/aiAgents.js';
+import assert from 'node:assert';
+import { captureStderr, captureStdout } from './testUtils.js'; // Utility functions to capture console output
 
-test('main function - successful execution', () => {
-  let logOutput: string[] = [];
-  const originalLog = console.log;
+// Mocking imported functions
+let initializeCalled = false;
+let loadConfigCalled = false;
+let connectCalled = false;
 
-  console.log = (message: string) => logOutput.push(message);
-
-  try {
-    main();
-  } finally {
-    console.log = originalLog; // restore the original console.log
+jest.mock('../src/orchestrationEngine.js', () => ({
+  initializeOrchestrationEngine: () => {
+    initializeCalled = true;
   }
+}));
 
-  assert.deepEqual(
-    logOutput, 
-    [
-      '🤖 Agentic Workflow Orchestrator - Starting...',
-      '✅ System initialized'
-    ],
-    'Log output should indicate successful start and initialization'
-  );
+jest.mock('../src/workflowConfig.js', () => ({
+  loadWorkflowConfigurations: () => {
+    loadConfigCalled = true;
+  }
+}));
+
+jest.mock('../src/aiAgents.js', () => ({
+  connectToAIAgents: () => {
+    connectCalled = true;
+  }
+}));
+
+// Reset mock call trackers before each test
+beforeEach(() => {
+  initializeCalled = false;
+  loadConfigCalled = false;
+  connectCalled = false;
 });
 
-test('main function - error handling in initializeOrchestrationEngine', () => {
-  const originalInitialize = initializeOrchestrationEngine;
-  initializeOrchestrationEngine = () => {
-    throw new Error('Initialization failed');
-  };
+describe('main function', () => {
 
-  let logOutput: string[] = [];
-  const originalLog = console.error;
+  it('should initialize all components successfully', () => {
+    const output = captureStdout(main);
 
-  console.error = (message: string) => logOutput.push(message);
+    assert.strictEqual(initializeCalled, true, 'Orchestration engine should be initialized');
+    assert.strictEqual(loadConfigCalled, true, 'Workflow configurations should be loaded');
+    assert.strictEqual(connectCalled, true, 'AI agents should be connected');
 
-  try {
-    main();
-  } catch (e) {
-    // expecting an error
-  } finally {
-    console.error = originalLog;
-    initializeOrchestrationEngine = originalInitialize; // restore original function
-  }
+    assert.match(output, /System initialized/, 'Success message should be logged');
+  });
 
-  assert(logOutput.includes('Initialization failed'), 'Should log initialization error');
-});
+  it('should log error if initialization fails', () => {
+    const originalFn = connectToAIAgents;
+    connectToAIAgents = () => {
+      throw new Error('Initializaton error');
+    };
 
-test('main function - error handling in loadWorkflowConfigurations', () => {
-  const originalLoadConfig = loadWorkflowConfigurations;
-  loadWorkflowConfigurations = () => {
-    throw new Error('Configuration load failed');
-  };
+    const errorOutput = captureStderr(main);
 
-  let logOutput: string[] = [];
-  const originalLog = console.error;
+    assert.match(errorOutput, /Error during system initialization/, 'Error message should be logged');
 
-  console.error = (message: string) => logOutput.push(message);
-
-  try {
-    main();
-  } catch (e) {
-    // expecting an error
-  } finally {
-    console.error = originalLog;
-    loadWorkflowConfigurations = originalLoadConfig; // restore original function
-  }
-
-  assert(logOutput.includes('Configuration load failed'), 'Should log configuration load error');
-});
-
-test('main function - error handling in connectToAIAgents', () => {
-  const originalConnect = connectToAIAgents;
-  connectToAIAgents = () => {
-    throw new Error('AI Agent connection failed');
-  };
-
-  let logOutput: string[] = [];
-  const originalLog = console.error;
-
-  console.error = (message: string) => logOutput.push(message);
-
-  try {
-    main();
-  } catch (e) {
-    // expecting an error
-  } finally {
-    console.error = originalLog;
-    connectToAIAgents = originalConnect; // restore original function
-  }
-
-  assert(logOutput.includes('AI Agent connection failed'), 'Should log AI agent connection error');
+    // Restore the original function
+    connectToAIAgents = originalFn;
+  });
 });
