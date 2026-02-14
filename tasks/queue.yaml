@@ -6233,3 +6233,14 @@ tasks:
     started_at: 2026-02-14T02:53:45.292Z
     completed_at: 2026-02-14T02:53:55.273Z
     branch: auto/write-type-safety-tests-openai-adapter
+  - id: add-tests-to-cursor-adapter-edge-cases
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/adapters/cursor-adapter.ts
+    variables:
+      test_target: src/adapters/cursor-adapter.ts
+      test_description: >
+        Implement additional tests for the cursor-adapter.ts to cover edge cases like unexpected input formats and
+        validate resilience against incomplete data structures.
