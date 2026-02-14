@@ -70,9 +70,15 @@ class EnhancedLogger {
   }
 
   private logErrorDetail(context: string, error: unknown): void {
-    const errorMessage: string = error instanceof Error ? error.message : String(error);
-    const errorStack: string = error instanceof Error && error.stack ? ` Stack: ${error.stack}` : '';
-    console.error(`[ERROR] ${context}: ${errorMessage}.${errorStack}`);
+    if (this.isError(error)) {
+      console.error(`[ERROR] ${context}: ${error.message}. Stack: ${error.stack ?? 'No stack trace available.'}`);
+    } else {
+      console.error(`[ERROR] ${context}: ${String(error)}`);
+    }
+  }
+
+  private isError(obj: unknown): obj is Error {
+    return obj instanceof Error;
   }
 
   logInfo(message: string): void {
