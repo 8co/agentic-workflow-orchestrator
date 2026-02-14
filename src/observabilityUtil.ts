@@ -23,34 +23,67 @@ interface PerformanceMetrics {
   cpu: CpuUsage[];
 }
 
+function logError(message: string, error: unknown): void {
+  console.error(`${message}:`, error instanceof Error ? error.message : error);
+}
+
 export function getMemoryUsage(): MemoryUsage {
-  const totalMemory = os.totalmem();
-  const freeMemory = os.freemem();
-  const usedMemory = totalMemory - freeMemory;
-  return {
-    totalMemory,
-    freeMemory,
-    usedMemory,
-  };
+  try {
+    const totalMemory = os.totalmem();
+    const freeMemory = os.freemem();
+    const usedMemory = totalMemory - freeMemory;
+    return {
+      totalMemory,
+      freeMemory,
+      usedMemory,
+    };
+  } catch (error: unknown) {
+    logError('Failed to retrieve memory usage', error);
+    // Provide default values in case of error
+    return {
+      totalMemory: 0,
+      freeMemory: 0,
+      usedMemory: 0,
+    };
+  }
 }
 
 export function getCpuUsage(): CpuUsage[] {
-  return os.cpus().map(cpu => ({
-    model: cpu.model,
-    speed: cpu.speed,
-    times: {
-      user: cpu.times.user,
-      nice: cpu.times.nice,
-      sys: cpu.times.sys,
-      idle: cpu.times.idle,
-      irq: cpu.times.irq,
-    },
-  }));
+  try {
+    return os.cpus().map(cpu => ({
+      model: cpu.model,
+      speed: cpu.speed,
+      times: {
+        user: cpu.times.user,
+        nice: cpu.times.nice,
+        sys: cpu.times.sys,
+        idle: cpu.times.idle,
+        irq: cpu.times.irq,
+      },
+    }));
+  } catch (error: unknown) {
+    logError('Failed to retrieve CPU usage', error);
+    // Provide default values in case of error
+    return [];
+  }
 }
 
 export function generatePerformanceMetrics(): PerformanceMetrics {
-  return {
-    memory: getMemoryUsage(),
-    cpu: getCpuUsage(),
-  };
+  try {
+    return {
+      memory: getMemoryUsage(),
+      cpu: getCpuUsage(),
+    };
+  } catch (error: unknown) {
+    logError('Failed to generate performance metrics', error);
+    // Provide default values in case of error
+    return {
+      memory: {
+        totalMemory: 0,
+        freeMemory: 0,
+        usedMemory: 0,
+      },
+      cpu: [],
+    };
+  }
 }
