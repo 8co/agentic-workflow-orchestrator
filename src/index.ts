@@ -8,12 +8,14 @@ import { loadWorkflowConfigurations } from './workflowConfig.js';
 import { connectToAIAgents } from './aiAgents.js';
 
 function logError(context: string, error: unknown): void {
-  if (error instanceof Error) {
-    console.error(`❌ Error during ${context}:`, error.message);
-    console.error('Stack trace:', error.stack);
-  } else {
-    console.error(`❌ Error during ${context}:`, String(error));
-  }
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  const errorStack = error instanceof Error ? error.stack : 'No stack trace available';
+
+  console.error(`
+  ⛔️ Error Context: ${context}
+  🔍 Message: ${errorMessage}
+  🖼️ Stack Trace: ${errorStack}
+  `);
 }
 
 export function main(): void {
