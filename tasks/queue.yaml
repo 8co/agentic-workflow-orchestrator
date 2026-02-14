@@ -3826,3 +3826,44 @@ tasks:
       src/state-manager.test.ts(106,3): error TS2304: Cannot find name 'after'.
 
       ```
+  - id: improve-command-error-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/verify-runner.ts
+    variables:
+      modification_description: >
+        Add more detailed error handling in the runCommand function to better capture and log error details, potentially
+        including specific exit codes and stdout/stderr logging.
+  - id: refactor-state-manager-error-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/state-manager.ts
+    variables:
+      modification_description: >
+        Improve error handling in the save function to provide more detailed error messages when file writing operations
+        fail, ensuring a meaningful feedback loop for failures.
+  - id: enhance-ai-agents-error-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/aiAgents.ts
+    variables:
+      modification_description: >
+        Enhance error handling in the connectToAIAgents function to provide more informative logging and robust feedback
+        during connection failures, including network and permission-based errors.
+  - id: add-missing-tests-enhanced-logger-error-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/enhanced-logger.ts
+    variables:
+      test_target: src/enhanced-logger.ts
+      test_description: >
+        Write tests for enhanced logger’s error handling to ensure file writing errors are logged correctly with
+        detailed information and verify the recovery mechanisms in place.
