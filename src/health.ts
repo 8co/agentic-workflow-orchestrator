@@ -2,24 +2,28 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createLogger } from './logger.js';
 
+type PackageJson = {
+  version?: string;
+};
+
 type HealthStatus = {
   status: 'ok' | 'degraded' | 'down';
   uptime: number;
   memoryUsage: number; // in megabytes
   timestamp: string; // ISO format
-  version: string;
+  version?: string;
 };
 
 const logger = createLogger('health');
 
 export function getHealthStatus(): HealthStatus {
   const packageJsonPath = join(process.cwd(), 'package.json');
-  let version: string = 'unknown';
+  let version: string | undefined = 'unknown';
 
   try {
     const packageJsonContent = readFileSync(packageJsonPath, 'utf-8');
     try {
-      const packageJson: { version?: string } = JSON.parse(packageJsonContent);
+      const packageJson: PackageJson = JSON.parse(packageJsonContent);
       version = packageJson.version ?? 'unknown';
       logger.debug(`Health: Package version extracted: ${version}`);
     } catch (jsonError) {
@@ -34,7 +38,7 @@ export function getHealthStatus(): HealthStatus {
     uptime: Number(process.uptime().toFixed(2)),
     memoryUsage: Number((process.memoryUsage().heapUsed / (1024 * 1024)).toFixed(2)), // converting bytes to MB
     timestamp: new Date().toISOString(), // ISO 8601 formatted string
-    version,
+    version: version !== 'unknown' ? version : undefined,
   };
 
   logger.info(`Health: Status fetched: ${JSON.stringify(status)}`);
