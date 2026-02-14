@@ -3,12 +3,16 @@
  * Entry point for the orchestration system
  */
 
-export function main() {
+import { initializeOrchestrationEngine } from './orchestrationEngine.js';
+import { loadWorkflowConfigurations } from './workflowConfig.js';
+import { connectToAIAgents } from './aiAgents.js';
+
+export function main(): void {
   console.log('🤖 Agentic Workflow Orchestrator - Starting...');
   
-  // TODO: Initialize orchestration engine
-  // TODO: Load workflow configurations
-  // TODO: Connect to AI agent APIs
+  initializeOrchestrationEngine();
+  loadWorkflowConfigurations();
+  connectToAIAgents();
   
   console.log('✅ System initialized');
 }
@@ -17,4 +21,3 @@ export function main() {
 if (import.meta.url === `file://${process.argv[1]}`) {
   main();
 }
-
