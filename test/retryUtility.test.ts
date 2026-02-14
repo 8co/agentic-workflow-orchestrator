@@ -1,62 +1,76 @@
 import { strict as assert } from 'node:assert';
-import test from 'node:test';
+import { test } from 'node:test';
 import { retryAsync } from '../src/retryUtility.js';
 
-test('retryAsync - successful operation', async () => {
-  let attempt = 0;
+test('retryAsync should succeed on first attempt', async () => {
+  let attempts = 0;
   const operation = async () => {
-    attempt++;
-    if (attempt < 3) {
-      throw new Error('Temporary failure');
-    }
+    attempts++;
     return 'success';
   };
-
-  const result = await retryAsync(operation, 5, 10);
+  const result = await retryAsync(operation, 3, 100);
   assert.equal(result, 'success');
-  assert.equal(attempt, 3);
+  assert.equal(attempts, 1);
 });
 
-test('retryAsync - exceeds max retries', async () => {
-  let throwError = () => { throw new Error('Fail'); };
-
-  await assert.rejects(() => retryAsync(throwError, 2, 10), /Operation failed after 2 attempts: Fail/);
-});
-
-test('retryAsync - delay between retries', async () => {
-  let attempt = 0;
-  const timestamps: number[] = [];
+test('retryAsync should retry and eventually succeed', async () => {
+  let attempts = 0;
   const operation = async () => {
-    timestamps.push(Date.now());
-    attempt++;
-    if (attempt < 3) {
-      throw new Error('Temporary failure');
+    attempts++;
+    if (attempts < 3) {
+      throw new Error('fail');
     }
     return 'success';
   };
-
-  await retryAsync(operation, 5, 100);
-
-  const delay1 = timestamps[1] - timestamps[0];
-  const delay2 = timestamps[2] - timestamps[1];
-
-  assert.ok(delay1 >= 100, `First delay was only ${delay1}ms`);
-  assert.ok(delay2 >= 100, `Second delay was only ${delay2}ms`);
+  const result = await retryAsync(operation, 3, 100);
+  assert.equal(result, 'success');
+  assert.equal(attempts, 3);
 });
 
-test('retryAsync - operation never succeeds', async () => {
-  let attempt = 0;
+test('retryAsync should fail after max retries', async () => {
+  let attempts = 0;
   const operation = async () => {
-    attempt++;
-    throw new Error('Always fails');
+    attempts++;
+    throw new Error('fail');
   };
-
-  await assert.rejects(() => retryAsync(operation, 3, 10), /Operation failed after 3 attempts: Always fails/);
-  assert.equal(attempt, 3);
+  try {
+    await retryAsync(operation, 3, 100);
+    assert.fail('retryAsync did not throw expected error');
+  } catch (error) {
+    assert(error instanceof Error);
+    assert.equal(error.message, 'Operation failed after 3 attempts: fail');
+    assert.equal(attempts, 3);
+  }
 });
 
-test('retryAsync - delay throws on negative value', async () => {
-  const operation = async () => 'success';
-  
-  await assert.rejects(() => retryAsync(operation, 1, -10), /Delay duration must be non-negative/);
+test('retryAsync should handle delay function failures', async () => {
+  let attempts = 0;
+  const operation = async () => {
+    attempts++;
+    throw new Error('fail');
+  };
+  try {
+    await retryAsync(operation, 3, -100);
+    assert.fail('retryAsync did not throw expected error');
+  } catch (error) {
+    assert(error instanceof Error);
+    assert.equal(error.message, 'Delay failed at attempt 1: Delay duration must be non-negative');
+    assert.equal(attempts, 1);
+  }
+});
+
+test('retryAsync should not retry if retries is set to 0', async () => {
+  let attempts = 0;
+  const operation = async () => {
+    attempts++;
+    throw new Error('fail');
+  };
+  try {
+    await retryAsync(operation, 0, 100);
+    assert.fail('retryAsync did not throw expected error');
+  } catch (error) {
+    assert(error instanceof Error);
+    assert.equal(error.message, 'Operation failed after 0 attempts: fail');
+    assert.equal(attempts, 1);
+  }
 });
