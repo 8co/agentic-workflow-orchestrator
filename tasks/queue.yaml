@@ -199,7 +199,7 @@ tasks:
         Type 'undefined' is not assignable to type 'string'.
       ```
   - id: add-tests-openai-adapter
-    status: running
+    status: completed
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -210,8 +210,9 @@ tasks:
         Create unit tests for the createOpenAIAdapter function, covering the valid execution paths, timeout scenarios,
         and responses to unauthorized access.
     started_at: 2026-02-14T18:55:08.892Z
+    completed_at: 2026-02-14T18:55:19.574Z
   - id: improve-type-coverage
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-modify-file.md
     context_files:
@@ -221,3 +222,4 @@ tasks:
         Enhance type safety by adding TypeScript type guards for network and timeout errors, ensuring that all functions
         that handle these errors can properly discriminate between different error types, reducing the risk of runtime
         exceptions.
+    started_at: 2026-02-14T18:55:19.581Z
