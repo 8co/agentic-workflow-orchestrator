@@ -14,13 +14,18 @@ const logger = createLogger('health');
 
 export function getHealthStatus(): HealthStatus {
   const packageJsonPath = join(process.cwd(), 'package.json');
-  let version: string;
+  let version: string = 'unknown';
 
   try {
-    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
-    version = packageJson.version || 'unknown';
-  } catch {
-    version = 'unknown';
+    const packageJsonContent = readFileSync(packageJsonPath, 'utf-8');
+    try {
+      const packageJson = JSON.parse(packageJsonContent);
+      version = packageJson.version || 'unknown';
+    } catch (jsonError) {
+      logger.error(`Failed to parse package.json: ${(jsonError as Error).message}`);
+    }
+  } catch (fsError) {
+    logger.error(`Failed to read package.json: ${(fsError as Error).message}`);
   }
 
   const status: HealthStatus = {
