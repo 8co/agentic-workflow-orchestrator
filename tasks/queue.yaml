@@ -3533,7 +3533,7 @@ tasks:
     completed_at: 2026-02-14T01:46:55.410Z
     branch: auto/write-tests-file-writer-error-handling
   - id: refactor-queue-manager-load-error-handling
-    status: running
+    status: completed
     workflow: auto
     prompt: prompts/auto-modify-file.md
     context_files:
@@ -3543,3 +3543,5 @@ tasks:
         Refactor the queue manager's task loading logic to include detailed error handling, improving resilience against
         file read failures and malformed queue configurations.
     started_at: 2026-02-14T01:46:55.477Z
+    completed_at: 2026-02-14T01:47:07.255Z
+    branch: auto/refactor-queue-manager-load-error-handling
