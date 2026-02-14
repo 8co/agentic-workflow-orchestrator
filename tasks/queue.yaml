@@ -1372,7 +1372,7 @@ tasks:
     completed_at: 2026-02-14T00:41:41.095Z
     branch: auto/write-tests-main-function-edge-cases
   - id: write-tests-adapters-anthropic-edge-cases
-    status: running
+    status: completed
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -1383,8 +1383,10 @@ tasks:
         Write unit tests for edge cases in the Anthropic Adapter, including handling invalid API responses and network
         errors.
     started_at: 2026-02-14T00:42:01.435Z
+    completed_at: 2026-02-14T00:42:07.400Z
+    branch: auto/write-tests-adapters-anthropic-edge-cases
   - id: write-tests-openai-adapter-error-cases
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -1394,6 +1396,7 @@ tasks:
       test_description: >
         Write tests for error handling in the OpenAI Adapter. Focus on network errors, API key issues, and response
         validation.
+    started_at: 2026-02-14T00:42:07.422Z
   - id: add-error-handling-to-enhanced-logger
     status: pending
     workflow: auto
