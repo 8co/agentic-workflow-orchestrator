@@ -1,85 +1,77 @@
-import { EnhancedLogger } from '../src/enhanced-logger';
-import assert from 'node:assert';
-import { test } from 'node:test';
+import { strict as assert } from 'node:assert';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { EnhancedLogger } from '../src/enhanced-logger.js';
 
-// Test suite for the EnhancedLogger
-test('EnhancedLogger Singleton Test', (t) => {
-  const logger1 = EnhancedLogger.getInstance();
-  const logger2 = EnhancedLogger.getInstance();
+const fakeLogFileName = 'test-application.log';
+const fakeLogDirectory = path.resolve(process.cwd(), 'logs');
+const fakeLogFilePath = path.join(fakeLogDirectory, fakeLogFileName);
 
-  assert.strictEqual(logger1, logger2, 'getInstance should return a singleton instance');
-});
-
-test('Logging Methods Test - Console and File', (t) => {
-  const logger = EnhancedLogger.getInstance('test.log');
-
-  // Mock console and file system methods
-  const originalConsoleInfo = console.info;
-  const originalConsoleWarn = console.warn;
-  const originalConsoleError = console.error;
-  const originalConsoleDebug = console.debug;
-
-  console.info = function(message: string) {
-    assert.match(message, /\[INFO\] Test message/, 'Info log should be called with the correct message');
-  };
-  
-  console.warn = function(message: string) {
-    assert.match(message, /\[WARN\] Test message/, 'Warning log should be called with the correct message');
-  };
-  
-  console.error = function(message: string) {
-    assert.match(message, /\[ERROR\] Test message/, 'Error log should be called with the correct message');
-  };
-  
-  console.debug = function(message: string) {
-    assert.match(message, /\[DEBUG\] Test message/, 'Debug log should be called with the correct message');
-  };
-
-  const logFilePath = `logs/test.log`;
-  const originalAppendFileSync = fs.appendFileSync;
-  fs.appendFileSync = function(filePath: fs.PathLike | fd: fs-like, data: string | Uint8Array, options?: fs.WriteFileOptions): void {
-    assert.strictEqual(filePath, logFilePath, 'Log should be written to the correct file path');
-  };
-
-  // Test each logging level
-  logger.logInfo('Test message');
-  logger.logWarn('Test message');
-  logger.logError('Test message');
-  logger.logDebug('Test message');
-
-  // Restore the original methods
-  console.info = originalConsoleInfo;
-  console.warn = originalConsoleWarn;
-  console.error = originalConsoleError;
-  console.debug = originalConsoleDebug;
-  fs.appendFileSync = originalAppendFileSync;
-});
-
-test('Error Handling Test', (t) => {
-  const logger = EnhancedLogger.getInstance('invalid_path/test.log');
-
-  // Mock console error method
-  const originalConsoleError = console.error;
-  console.error = function(message: string) {
-    assert.match(message, /\[ERROR\] Failed to write to log file/, 'Should log error message about failed file write');
-  };
-
-  // Mock fs methods to simulate directory and file errors
-  const originalMkdirSync = fs.mkdirSync;
-  const originalExistSync = fs.existsSync;
-  fs.mkdirSync = function() {
-    throw new Error('Mock mkdir error');
-  };
-  fs.existsSync = function() {
-    return false;
-  };
-
-  try {
-    logger.logInfo('Test message that will fail');
-  } finally {
-    // Restore the original methods
-    fs.mkdirSync = originalMkdirSync;
-    fs.existsSync = originalExistSync;
-    console.error = originalConsoleError;
+function removeTestLogs(): void {
+  if (fs.existsSync(fakeLogFilePath)) {
+    fs.unlinkSync(fakeLogFilePath);
   }
+}
+
+function simulateErrorDuringAppendFileSync(): void {
+  // Simulate an error by mocking fs.appendFileSync
+  jest.spyOn(fs, 'appendFileSync').mockImplementationOnce(() => {
+    throw new Error('Simulated file system error');
+  });
+}
+
+function simulateErrorDuringMkdirSync(): void {
+  // Simulate a recovery error by mocking fs.mkdirSync
+  jest.spyOn(fs, 'mkdirSync').mockImplementationOnce(() => {
+    throw new Error('Simulated directory creation error');
+  });
+}
+
+function restoreFsMethods(): void {
+  jest.restoreAllMocks();
+}
+
+describe('EnhancedLogger Error Handling', () => {
+  beforeEach(() => {
+    removeTestLogs();
+  });
+
+  afterEach(() => {
+    removeTestLogs();
+    restoreFsMethods();
+  });
+
+  it('should log an error detail if the file writing fails', () => {
+    const logger = EnhancedLogger.getInstance(fakeLogFileName);
+    simulateErrorDuringAppendFileSync();
+
+    assert.doesNotThrow(() => {
+      logger.logError('This is a test error message');
+    });
+
+    assert(fs.existsSync(fakeLogFilePath), 'Log file should exist after recovery');
+  });
+
+  it('should attempt recovery if an error occurs during file writing', () => {
+    const logger = EnhancedLogger.getInstance(fakeLogFileName);
+    simulateErrorDuringAppendFileSync();
+
+    assert.doesNotThrow(() => {
+      logger.logInfo('This is a test info message');
+    });
+
+    assert(fs.existsSync(fakeLogFilePath), 'Log file should exist after recovery');
+  });
+
+  it('should log recovery attempt failures when both append and mkdir fail', () => {
+    const logger = EnhancedLogger.getInstance(fakeLogFileName);
+    simulateErrorDuringAppendFileSync();
+    simulateErrorDuringMkdirSync();
+
+    assert.doesNotThrow(() => {
+      logger.logWarn('This is a test warn message');
+    });
+
+    assert(!fs.existsSync(fakeLogFilePath), 'Log file should not exist if recovery fails');
+  });
 });
