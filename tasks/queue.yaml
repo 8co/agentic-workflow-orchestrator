@@ -1439,3 +1439,44 @@ tasks:
     started_at: 2026-02-14T00:42:26.642Z
     completed_at: 2026-02-14T00:42:34.206Z
     branch: auto/write-tests-deploy-script-edge-cases
+  - id: write-tests-adapters-openai-exception-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/adapters/openai-adapter.ts
+    variables:
+      test_target: src/adapters/openai-adapter.ts
+      test_description: >
+        Write tests for OpenAI adapter to cover exception handling, including network errors, timeouts, and internal
+        server errors.
+  - id: add-tests-ai-agents-error-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/aiAgents.ts
+    variables:
+      test_target: src/aiAgents.ts
+      test_description: |
+        Add tests to aiAgents.ts for improved error handling coverage, especially the handleConnectionError function.
+  - id: refactor-ai-agents-error-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/aiAgents.ts
+    variables:
+      modification_description: |
+        Refactor aiAgents.ts to improve error handling, ensuring consistent error formatting and logging practices.
+  - id: write-more-tests-state-manager
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/state-manager.ts
+    variables:
+      test_target: src/state-manager.ts
+      test_description: >
+        Create additional tests for state-manager.ts to handle edge cases and ensure accurate state persistence and
+        retrieval.
