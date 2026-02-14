@@ -2125,7 +2125,7 @@ tasks:
     completed_at: 2026-02-14T00:54:35.432Z
     branch: auto/add-error-handling-to-file-writer
   - id: write-tests-format-duration-function
-    status: running
+    status: completed
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -2136,3 +2136,5 @@ tasks:
         Implement unit tests for the `formatDuration` function, covering a range of edge cases including very small and
         very large inputs, negative numbers, and boundary conditions around time units.
     started_at: 2026-02-14T00:54:35.457Z
+    completed_at: 2026-02-14T00:54:45.315Z
+    branch: auto/write-tests-format-duration-function
