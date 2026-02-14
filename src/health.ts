@@ -23,13 +23,13 @@ export function getHealthStatus(): HealthStatus {
   try {
     version = extractPackageVersion();
   } catch (error) {
-    logger.error(`Version extraction error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    logger.error(`Version extraction error: Failed to parse package.json for version. ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
   
   try {
     memoryUsageMB = getSafeMemoryUsageMB();
   } catch (error) {
-    logger.error(`Memory usage retrieval error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    logger.error(`Memory usage retrieval error: Unable to calculate memory usage. ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 
   const uptime = Number(process.uptime().toFixed(2));
@@ -46,7 +46,7 @@ export function getHealthStatus(): HealthStatus {
     logHealthStatus(uptime, memoryUsageMB, version);
     logMemoryUsageWarnings(memoryUsageMB);
   } catch (error) {
-    logger.error(`Logging error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    logger.error(`Logging error: Could not log health status and warnings. ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 
   return status;
