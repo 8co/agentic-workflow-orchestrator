@@ -5900,3 +5900,55 @@ tasks:
     started_at: 2026-02-14T02:46:05.063Z
     completed_at: 2026-02-14T02:46:19.546Z
     branch: auto/write-tests-security-check-runner-edge-cases
+  - id: write-tests-enhanced-logger-error-handling-edge-cases
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/enhanced-logger.ts
+    variables:
+      test_target: src/enhanced-logger.ts
+      test_description: >
+        Add edge case tests for error handling, especially focus on scenarios involving retry failures and recovery
+        attempts when writing logs fails.
+  - id: improve-type-safety-anthropic-adapter-compatibility
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/adapters/anthropic-adapter.ts
+    variables:
+      modification_description: >
+        Improve type safety by defining stricter types and ensuring they are correctly used within functions to handle
+        API responses and errors effectively.
+  - id: refactor-enhanced-logger-error-improvements
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/enhanced-logger.ts
+    variables:
+      modification_description: >
+        Refactor the logger to enhance its error logging mechanisms. Ensure errors provide more detail and are more
+        informative, especially in contexts of high load or frequent retries.
+  - id: add-error-handling-scheduler-specific
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/scheduler.ts
+    variables:
+      modification_description: >
+        Enhance error handling in the scheduler module, with a focus on capturing and logging errors that occur during
+        task execution and task queue management operations.
+  - id: write-tests-anthropic-adapter-error-handling-enhancements
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/adapters/anthropic-adapter.ts
+    variables:
+      test_target: src/adapters/anthropic-adapter.ts
+      test_description: >
+        Create tests to specifically target the improved error handling aspects in the Anthropic adapter. Focus on
+        scenarios where the API response is malformed or times out.
