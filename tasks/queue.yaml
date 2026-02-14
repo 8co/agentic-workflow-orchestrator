@@ -192,7 +192,7 @@ tasks:
     completed_at: 2026-02-14T00:05:31.841Z
     branch: auto/refactor-error-handling-cursor-adapter
   - id: add-tests-health
-    status: running
+    status: failed
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -203,8 +203,48 @@ tasks:
         Implement unit tests for the getHealthStatus function, covering various edge cases such as failed package.json
         reads and high memory usage warnings.
     started_at: 2026-02-14T00:05:31.847Z
+    completed_at: 2026-02-14T00:06:06.700Z
+    error: >-
+      # Verification Errors
+
+
+      The following commands failed. Fix ALL errors.
+
+
+      ## TypeScript Build (exit 2)
+
+      ```
+
+      src/health.test.ts(17,3): error TS2741: Property 'rss' is missing in type '() => NodeJS.MemoryUsage' but required
+      in type 'MemoryUsageFn'.
+
+      src/health.test.ts(36,5): error TS7053: Element implicitly has an 'any' type because expression of type
+      '"mockImplementation"' can't be used to index type '{ (path: PathOrFileDescriptor, options?: { encoding?: null |
+      undefined; flag?: string | undefined; } | null | undefined): NonSharedBuffer; (path: PathOrFileDescriptor,
+      options: BufferEncoding | { ...; }): string; (path: PathOrFileDescriptor, options?: BufferEncoding | ... 2 more
+      ... | undefined): string | NonSharedB...'.
+        Property 'mockImplementation' does not exist on type '{ (path: PathOrFileDescriptor, options?: { encoding?: null | undefined; flag?: string | undefined; } | null | undefined): NonSharedBuffer; (path: PathOrFileDescriptor, options: BufferEncoding | { ...; }): string; (path: PathOrFileDescriptor, options?: BufferEncoding | ... 2 more ... | undefined): string | NonSharedB...'.
+      src/health.test.ts(44,5): error TS7053: Element implicitly has an 'any' type because expression of type
+      '"mockImplementation"' can't be used to index type '{ (path: PathOrFileDescriptor, options?: { encoding?: null |
+      undefined; flag?: string | undefined; } | null | undefined): NonSharedBuffer; (path: PathOrFileDescriptor,
+      options: BufferEncoding | { ...; }): string; (path: PathOrFileDescriptor, options?: BufferEncoding | ... 2 more
+      ... | undefined): string | NonSharedB...'.
+        Property 'mockImplementation' does not exist on type '{ (path: PathOrFileDescriptor, options?: { encoding?: null | undefined; flag?: string | undefined; } | null | undefined): NonSharedBuffer; (path: PathOrFileDescriptor, options: BufferEncoding | { ...; }): string; (path: PathOrFileDescriptor, options?: BufferEncoding | ... 2 more ... | undefined): string | NonSharedB...'.
+      src/health.test.ts(64,5): error TS7053: Element implicitly has an 'any' type because expression of type
+      '"mockImplementation"' can't be used to index type '{ (path: PathOrFileDescriptor, options?: { encoding?: null |
+      undefined; flag?: string | undefined; } | null | undefined): NonSharedBuffer; (path: PathOrFileDescriptor,
+      options: BufferEncoding | { ...; }): string; (path: PathOrFileDescriptor, options?: BufferEncoding | ... 2 more
+      ... | undefined): string | NonSharedB...'.
+        Property 'mockImplementation' does not exist on type '{ (path: PathOrFileDescriptor, options?: { encoding?: null | undefined; flag?: string | undefined; } | null | undefined): NonSharedBuffer; (path: PathOrFileDescriptor, options: BufferEncoding | { ...; }): string; (path: PathOrFileDescriptor, options?: BufferEncoding | ... 2 more ... | undefined): string | NonSharedB...'.
+      src/health.test.ts(72,5): error TS7053: Element implicitly has an 'any' type because expression of type
+      '"mockImplementation"' can't be used to index type '{ (path: PathOrFileDescriptor, options?: { encoding?: null |
+      undefined; flag?: string | undefined; } | null | undefined): NonShared
+
+      ... (truncated)
+
+      ```
   - id: create-file-util-module
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-create-module.md
     context_files:
@@ -214,3 +254,4 @@ tasks:
       module_description: >
         Create a utility module for common file operations like reading and writing files with error handling, to
         replace repeated logic in existing code.
+    started_at: 2026-02-14T00:06:06.706Z
