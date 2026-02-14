@@ -6,11 +6,15 @@ type DeploymentResult = {
   message: string;
 };
 
+type Config = {
+  deployScript: string;
+};
+
 const executeCommand = (cmd: string): Promise<string> => {
   return new Promise((resolve, reject) => {
     exec(cmd, (error, stdout, stderr) => {
       if (error) {
-        reject(`Command failed: ${stderr || error.message}`);
+        reject(new Error(`Command failed: ${stderr || error.message}`));
       } else {
         resolve(stdout);
       }
@@ -18,17 +22,28 @@ const executeCommand = (cmd: string): Promise<string> => {
   });
 };
 
+const parseConfig = (configFileContent: Buffer): Config => {
+  try {
+    const config: unknown = JSON.parse(configFileContent.toString());
+    if (
+      typeof config === 'object' &&
+      config !== null &&
+      'deployScript' in config &&
+      typeof (config as Config).deployScript === 'string'
+    ) {
+      return config as Config;
+    } else {
+      throw new Error('Invalid configuration structure');
+    }
+  } catch (error) {
+    throw new Error('Error parsing configuration file');
+  }
+};
+
 export const deploy = async (configPath: string): Promise<DeploymentResult> => {
   try {
     const configFile: Buffer = await fs.readFile(configPath);
-    const config = JSON.parse(configFile.toString());
-
-    if (!config || !config.deployScript) {
-      return {
-        success: false,
-        message: 'Invalid configuration file',
-      };
-    }
+    const config: Config = parseConfig(configFile);
 
     console.log('Starting deployment...');
     const result = await executeCommand(config.deployScript);
