@@ -2676,7 +2676,7 @@ tasks:
     completed_at: 2026-02-14T01:13:19.689Z
     branch: auto/write-tests-aiagents-error-handling-improvement
   - id: write-tests-main-function-initialization
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -2686,6 +2686,7 @@ tasks:
       test_description: >
         Develop test cases for the main function initialization sequence to ensure all components are started correctly
         and any initialization errors are identified and handled.
+    started_at: 2026-02-14T01:13:41.009Z
   - id: write-tests-openai-adapter-exception-handling
     status: pending
     workflow: auto
