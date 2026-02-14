@@ -1315,3 +1315,32 @@ tasks:
     started_at: 2026-02-14T00:40:30.875Z
     completed_at: 2026-02-14T00:40:36.421Z
     branch: auto/refactor-health-function-memory-usage
+  - id: write-tests-adapters-openai-edge-cases
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/adapters/openai-adapter.ts
+    variables:
+      test_target: src/adapters/openai-adapter.ts
+      test_description: |
+        Write tests for edge cases in the OpenAI adapter, such as API failures or unexpected response structures.
+  - id: refactor-file-writer-utility-functions
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/file-writer.ts
+    variables:
+      modification_description: |
+        Refactor utility functions in the file-writer module to reduce code duplication and improve clarity.
+  - id: write-tests-main-function-edge-cases
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/index.ts
+    variables:
+      test_target: src/index.ts
+      test_description: |
+        Develop tests for edge cases in the main function, focusing on error scenarios and unexpected inputs.
