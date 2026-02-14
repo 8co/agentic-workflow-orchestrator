@@ -868,3 +868,55 @@ tasks:
     started_at: 2026-02-14T00:30:31.671Z
     completed_at: 2026-02-14T00:30:35.343Z
     branch: auto/improve-type-safety-health-status
+  - id: write-tests-enhanced-logger
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/enhanced-logger.ts
+    variables:
+      test_target: src/enhanced-logger.ts
+      test_description: >
+        Write unit tests for the EnhancedLogger class to cover all methods including logInfo, logWarn, logError, and
+        logDebug, ensuring that it logs correctly to both console and file.
+  - id: add-type-safety-to-health-status
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/health.ts
+    variables:
+      modification_description: >
+        Enhance type safety for the HealthStatus type by making the version property optional and adding any necessary
+        TypeScript interfaces or types to improve type definitions in getHealthStatus().
+  - id: refactor-error-handling-git-ops
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/git-ops.ts
+    variables:
+      modification_description: >
+        Refactor error handling in git command execution to ensure that all git operations provide consistent error
+        messages and improve resilience to errors that occur during git processes.
+  - id: add-error-handling-testing-util
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/testing-util.ts
+    variables:
+      modification_description: >
+        Incorporate robust error handling in mock file read/write operations in testing utility functions to ensure
+        reliability during tests, including logging if file read/write operations fail.
+  - id: write-tests-state-manager
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/state-manager.ts
+    variables:
+      test_target: src/state-manager.ts
+      test_description: >
+        Develop tests for the StateManager to ensure that save, load, and list methods function correctly and handle
+        both valid states and edge cases like missing files or corrupted JSON gracefully.
