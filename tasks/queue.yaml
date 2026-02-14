@@ -1,6 +1,6 @@
 tasks:
   - id: example-create-module
-    status: pending
+    status: running
     workflow: auto-implement
     prompt: prompts/auto-create-module.md
     context_files:
@@ -9,6 +9,7 @@ tasks:
       module_name: example module
       module_description: |
         Create a new utility module. This is a sample task demonstrating the queue format.
+    started_at: 2026-02-14T13:56:40.206Z
   - id: example-write-tests
     status: pending
     workflow: auto-implement
