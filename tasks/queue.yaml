@@ -530,7 +530,7 @@ tasks:
     completed_at: 2026-02-14T00:22:38.804Z
     branch: auto/add-tests-prompt-resolver
   - id: write-tests-autonomous-runner-edge-cases
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -540,6 +540,7 @@ tasks:
       test_description: >
         Add missing tests for edge cases in the Autonomous Runner, such as handling empty workflows or workflows with
         invalid steps.
+    started_at: 2026-02-14T00:22:59.713Z
   - id: improve-type-safety-autonomous-runner
     status: pending
     workflow: auto
