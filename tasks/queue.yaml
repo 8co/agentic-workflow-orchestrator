@@ -1249,7 +1249,7 @@ tasks:
     completed_at: 2026-02-14T00:39:48.810Z
     branch: auto/refactor-autonomous-runner-error-handling
   - id: write-tests-state-manager-edge-cases
-    status: running
+    status: completed
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -1260,3 +1260,5 @@ tasks:
         Add edge case tests for the `StateManager` interface, focusing on scenarios like corrupted state files, disk
         write failures, and non-existent execution IDs.
     started_at: 2026-02-14T00:39:48.838Z
+    completed_at: 2026-02-14T00:39:58.440Z
+    branch: auto/write-tests-state-manager-edge-cases
