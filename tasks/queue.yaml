@@ -1957,3 +1957,46 @@ tasks:
     started_at: 2026-02-14T00:51:28.516Z
     completed_at: 2026-02-14T00:51:42.508Z
     branch: auto/add-error-handling-to-test-helper
+  - id: add-tests-adapters-openai-error-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/adapters/openai-adapter.ts
+    variables:
+      test_target: src/adapters/openai-adapter.ts
+      test_description: >
+        Add unit tests to cover error handling scenarios in the OpenAI Adapter module, including network errors, API
+        limit errors, and any other exceptions.
+  - id: write-tests-aiAgents-edge-cases
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/aiAgents.ts
+    variables:
+      test_target: src/aiAgents.ts
+      test_description: >
+        Write unit tests to ensure all edge cases in the AI Agents connection logic are handled appropriately. This
+        includes scenarios such as invalid network configurations and unexpected error types.
+  - id: improve-type-safety-openai-adapter
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/adapters/openai-adapter.ts
+    variables:
+      modification_description: >
+        Enhance type safety in the OpenAI Adapter module by refining type definitions and adding strict type annotations
+        to all functions, variables, and parameters.
+  - id: add-tests-scheduler-edge-cases
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/scheduler.ts
+    variables:
+      test_target: src/scheduler.ts
+      test_description: >
+        Develop tests for edge cases in the Scheduler, including testing with empty task queues, handling of failed
+        tasks, and verification of correct task execution order.
