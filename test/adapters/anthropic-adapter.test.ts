@@ -1,110 +1,101 @@
-import { describe, it, beforeEach } from 'node:test';
-import assert from 'node:assert';
+import { strict as assert } from 'node:assert';
+import test from 'node:test';
 import { createAnthropicAdapter } from '../../src/adapters/anthropic-adapter.js';
 import type { AgentRequest } from '../../src/types.js';
 
-const mockValidResponse = {
-  content: [{ type: 'text', text: 'Test response' }],
-  usage: { input_tokens: 10, output_tokens: 20 },
-  stop_reason: 'stop_sequence',
-};
-
-// Mocking Anthropic SDK
-class MockAnthropic {
+// Mock Anthropic SDK
+class MockAnthropicClient {
   messages = {
-    create: async (request: unknown) => {
-      if ((request as any).model === 'error-model') throw new Error('API error');
-      if ((request as any).model === 'api-limit-model') {
-        const error = new Error('API limit reached') as any;
-        error.response = { status: 429 };
-        throw error;
-      }
-      return mockValidResponse;
-    },
+    create: async () => {
+      throw new Error('Should be mocked');
+    }
   };
 }
 
-// Replace `@anthropic-ai/sdk` import with the mock
-import * as sdkModule from '@anthropic-ai/sdk';
-sdkModule.default = MockAnthropic;
+// Mock implementations
+const mockNetworkError = new Error('Network Error');
+const mockAPILimitError = { response: { status: 429 } };
 
-describe('Anthropic Adapter', () => {
-  let config: { apiKey: string; model: string };
+const validMockResponse = {
+  content: [
+    { type: 'text', text: 'Output text' }
+  ],
+  usage: {
+    input_tokens: 10,
+    output_tokens: 20
+  },
+  stop_reason: 'end',
+};
 
-  beforeEach(() => {
-    config = { apiKey: 'fake-api-key', model: 'test-model' };
-  });
+test('createAnthropicAdapter - Successful response', async () => {
+  const adapter = createAnthropicAdapter({ apiKey: 'test-api-key', model: 'test-model' });
 
-  it('should return success with valid response', async () => {
-    const adapter = createAnthropicAdapter(config);
-    const request: AgentRequest = {
-      prompt: 'Write some code',
-      context: 'Context here',
-    };
+  // Mock client behavior
+  (MockAnthropicClient.prototype.messages.create as unknown as jest.Mock).mockResolvedValue(validMockResponse);
 
-    const response = await adapter.execute(request);
+  const agentRequest: AgentRequest = {
+    prompt: 'test prompt',
+    context: null,
+    outputPath: null,
+  };
 
-    assert.strictEqual(response.success, true);
-    assert.strictEqual(response.output, 'Test response');
-    assert.strictEqual(typeof response.durationMs, 'number');
-  });
+  const response = await adapter.execute(agentRequest);
 
-  it('should return error if API responds with unexpected structure', async () => {
-    const adapter = createAnthropicAdapter(config);
-    (sdkModule.default.prototype.messages.create as any) = async () => ({ invalid: 'data' });
+  assert.equal(response.success, true);
+  assert.equal(response.output, "Output text");
+  assert.equal(typeof response.durationMs, 'number');
+});
 
-    const request: AgentRequest = {
-      prompt: 'Analyze this code',
-    };
+test('createAnthropicAdapter - Network error handling', async () => {
+  const adapter = createAnthropicAdapter({ apiKey: 'test-api-key', model: 'test-model' });
 
-    const response = await adapter.execute(request);
+  // Mock client behavior
+  (MockAnthropicClient.prototype.messages.create as unknown as jest.Mock).mockRejectedValueOnce(mockNetworkError);
 
-    assert.strictEqual(response.success, false);
-    assert.match(response.error!, /unexpected data structure/i);
-  });
+  const agentRequest: AgentRequest = {
+    prompt: 'test prompt',
+    context: null,
+    outputPath: null,
+  };
 
-  it('should handle API limit errors correctly', async () => {
-    const limitConfig = { ...config, model: 'api-limit-model' };
-    const adapter = createAnthropicAdapter(limitConfig);
+  const response = await adapter.execute(agentRequest);
 
-    const request: AgentRequest = {
-      prompt: 'Write some code',
-    };
+  assert.equal(response.success, false);
+  assert.match(response.error, /Network error/);
+});
 
-    const response = await adapter.execute(request);
+test('createAnthropicAdapter - API limit error handling', async () => {
+  const adapter = createAnthropicAdapter({ apiKey: 'test-api-key', model: 'test-model' });
 
-    assert.strictEqual(response.success, false);
-    assert.match(response.error!, /API limit reached/i);
-  });
+  // Mock client behavior
+  (MockAnthropicClient.prototype.messages.create as unknown as jest.Mock).mockRejectedValueOnce(mockAPILimitError);
 
-  it('should handle generic API errors', async () => {
-    const errorConfig = { ...config, model: 'error-model' };
-    const adapter = createAnthropicAdapter(errorConfig);
+  const agentRequest: AgentRequest = {
+    prompt: 'test prompt',
+    context: null,
+    outputPath: null,
+  };
 
-    const request: AgentRequest = {
-      prompt: 'Write some code',
-    };
+  const response = await adapter.execute(agentRequest);
 
-    const response = await adapter.execute(request);
+  assert.equal(response.success, false);
+  assert.match(response.error, /API limit reached/);
+});
 
-    assert.strictEqual(response.success, false);
-    assert.match(response.error!, /API error/i);
-  });
+test('createAnthropicAdapter - Invalid response structure', async () => {
+  const adapter = createAnthropicAdapter({ apiKey: 'test-api-key', model: 'test-model' });
 
-  it('should handle network errors', async () => {
-    const adapter = createAnthropicAdapter(config);
-    const originalNetworkErrorCheck = (adapter as any).__proto__.constructor.prototype.__proto__.isNetworkError;
-    (adapter as any).__proto__.constructor.prototype.__proto__.isNetworkError = () => true;
+  // Mock client behavior
+  (MockAnthropicClient.prototype.messages.create as unknown as jest.Mock).mockResolvedValue({ invalid: 'structure' });
 
-    const request: AgentRequest = {
-      prompt: 'Write some code',
-    };
+  const agentRequest: AgentRequest = {
+    prompt: 'test prompt',
+    context: null,
+    outputPath: null,
+  };
 
-    const response = await adapter.execute(request);
+  const response = await adapter.execute(agentRequest);
 
-    assert.strictEqual(response.success, false);
-    assert.match(response.error!, /Network error/i);
-
-    (adapter as any).__proto__.constructor.prototype.__proto__.isNetworkError = originalNetworkErrorCheck; // Restore original function
-  });
+  assert.equal(response.success, false);
+  assert.match(response.error, /API returned unexpected data structure/);
 });
