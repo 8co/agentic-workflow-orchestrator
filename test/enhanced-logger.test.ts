@@ -1,58 +1,53 @@
-import { test } from 'node:test';
-import assert from 'node:assert';
+import { strict as assert } from 'node:assert';
+import test from 'node:test';
 import fs from 'fs';
 import path from 'path';
 import { EnhancedLogger } from '../src/enhanced-logger.js';
 
-// Helper function to mock fs functions
-const mockFsMethods = (methods: Partial<typeof fs>) => {
-  for (const [methodName, implementation] of Object.entries(methods)) {
-    if (implementation) {
-      jest.spyOn(fs, methodName as keyof typeof fs).mockImplementation(implementation as any);
-    }
+test('EnhancedLogger retry mechanism works correctly', async (t) => {
+  // Setup
+  const logger = EnhancedLogger.getInstance('test.log');
+  const logFilePath = path.resolve(process.cwd(), 'logs', 'test.log');
+  let appendFileSyncOriginal = fs.appendFileSync;
+
+  // Cleanup
+  if (fs.existsSync(logFilePath)) {
+    fs.unlinkSync(logFilePath);
   }
-};
 
-test('EnhancedLogger: logInfo should handle file write errors gracefully', () => {
-  const logger = EnhancedLogger.getInstance('test.log');
+  // Test retry mechanism
+  await t.test('Should retry when appendFileSync throws an error', (t) => {
+    let attempt = 0;
 
-  // Mock the appendFileSync and mkdirSync to throw an error
-  mockFsMethods({
-    appendFileSync: () => { throw new Error('Mocked file write error'); },
+    fs.appendFileSync = () => {
+      attempt++;
+      throw new Error('Simulated write error');
+    };
+
+    logger.logInfo('Test message');
+
+    // Recover original appendFileSync
+    fs.appendFileSync = appendFileSyncOriginal;
+
+    assert.equal(attempt, logger.maxRetries, 'Logger should retry the correct number of times');
   });
 
-  // Capture logs from console
-  const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-
-  logger.logInfo('Test message');
-
-  // Assert that error details were logged to console
-  expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Failed to write to log file'));
-});
-
-test('EnhancedLogger: recovery attempt on log directory creation failure', () => {
-  const logger = EnhancedLogger.getInstance('test.log');
-
-  // Mock mkdirSync to throw an error first, then succeed
-  let mkdirCalled = false;
-  mockFsMethods({
-    appendFileSync: () => { throw new Error('Mocked append file error'); },
-    mkdirSync: (dir: fs.PathLike, options: fs.MakeDirectoryOptions) => {
-      if (mkdirCalled) {
-        return; // succeed on second attempt
+  // Test successfully writing a message after retries
+  await t.test('Should successfully write after retries', (t) => {
+    fs.appendFileSync = function appendFileSyncMock(filePath, data, options) {
+      if (attempt === 1) {
+        throw new Error('Simulated write error on first attempt');
       }
-      mkdirCalled = true;
-      throw new Error('Mocked mkdir error');
-    },
+
+      appendFileSyncOriginal(filePath, data, options);
+    };
+
+    logger.logInfo('Message after retry');
+
+    // Recover original appendFileSync
+    fs.appendFileSync = appendFileSyncOriginal;
+
+    const logFileContent = fs.readFileSync(logFilePath, 'utf8');
+    assert.match(logFileContent, /Message after retry/, 'The message should be written successfully after retry');
   });
-
-  // Capture logs from console
-  const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-
-  logger.logInfo('Test message');
-
-  // Check if error handling log is invoked twice: once for original error, once for recovery error
-  expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Recovery attempt failed'));
-
-  consoleSpy.mockRestore();
 });
