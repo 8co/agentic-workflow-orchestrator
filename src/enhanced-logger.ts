@@ -81,6 +81,8 @@ class EnhancedLogger {
 
     if (this.isTimeoutError(error)) {
       console.warn(`[ERROR] The operation timed out. Retrying in ${this.retryDelay / 1000} seconds, attempt ${attempt + 1}...`);
+    } else if (this.isTypeError(error)) {
+      console.warn(`[ERROR] Type-related error encountered. Please check for type mismatches. Retrying in ${this.retryDelay / 1000} seconds, attempt ${attempt + 1}...`);
     } else {
       console.warn(`[ERROR] Unknown write error encountered. Retrying in ${this.retryDelay / 1000} seconds, attempt ${attempt + 1}...`);
     }
@@ -121,6 +123,10 @@ class EnhancedLogger {
 
   private isTimeoutError(error: unknown): boolean {
     return this.isError(error) && error.message.includes('ETIMEDOUT');
+  }
+
+  private isTypeError(error: unknown): boolean {
+    return this.isError(error) && error.name === 'TypeError';
   }
 
   private async delay(ms: number): Promise<void> {
