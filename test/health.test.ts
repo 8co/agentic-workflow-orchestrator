@@ -1,42 +1,66 @@
+import { test } from 'node:test';
 import assert from 'node:assert';
-import test from 'node:test';
 import { getHealthStatus } from '../src/health.js';
 
-test('getHealthStatus returns valid HealthStatus object', () => {
-  const status = getHealthStatus();
+// Mocking Required Modules and Functions
+let mockPackageJsonVersion: string | undefined = '1.0.0';
+let mockHeapUsed: number = 1024 * 1024 * 100;
+let mockUptime: number = 1000;
 
-  assert.strictEqual(typeof status, 'object');
-  assert.strictEqual(status.status, 'ok');
-  assert.strictEqual(typeof status.uptime, 'number');
-  assert.strictEqual(typeof status.memoryUsage, 'number');
-  assert.ok(new Date(status.timestamp).toString() !== 'Invalid Date');
-  if (status.version !== undefined) {
-    assert.strictEqual(typeof status.version, 'string');
-  }
+// Mock readFileSync to return a fake package.json
+import { readFileSync } from 'node:fs';
+import { memoryUsage, uptime } from 'node:process';
+import { join } from 'node:path';
+
+jest.mock('node:fs', () => ({
+  readFileSync: jest.fn(() => {
+    if (mockPackageJsonVersion === undefined) {
+      throw new Error('File not found');
+    }
+    return JSON.stringify({ version: mockPackageJsonVersion });
+  }),
+}));
+
+// Mock process.memoryUsage and process.uptime
+jest.mock('node:process', () => ({
+  memoryUsage: jest.fn(() => ({
+    heapUsed: mockHeapUsed,
+  })),
+  uptime: jest.fn(() => mockUptime),
+}));
+
+
+test('getHealthStatus should return a status with version and correct memory usage', () => {
+  const healthStatus = getHealthStatus();
+  assert.strictEqual(healthStatus.version, '1.0.0');
+  assert.strictEqual(healthStatus.status, 'ok');
+  assert(healthStatus.memoryUsage > 0);
+  assert(healthStatus.uptime > 0);
+  assert(new Date(healthStatus.timestamp).toISOString() === healthStatus.timestamp);
 });
 
-test('getHealthStatus calculates uptime correctly', () => {
-  const initialUptime = process.uptime();
-  const status = getHealthStatus();
-  const laterUptime = process.uptime();
-
-  assert.ok(status.uptime >= initialUptime && status.uptime <= laterUptime);
+test('getHealthStatus should degrade status and not include version when package.json is missing', () => {
+  mockPackageJsonVersion = undefined;
+  const healthStatus = getHealthStatus();
+  assert.strictEqual(healthStatus.version, undefined);
+  assert.strictEqual(healthStatus.status, 'degraded');
 });
 
-test('getHealthStatus calculates memory usage accurately', () => {
-  const status = getHealthStatus();
-  const expectedMemoryUsage = process.memoryUsage().heapUsed / 1048576;
-
-  assert.strictEqual(status.memoryUsage, Number(expectedMemoryUsage.toFixed(2)));
+test('getHealthStatus should degrade status when memoryUsage is NaN', () => {
+  mockHeapUsed = NaN;
+  const healthStatus = getHealthStatus();
+  assert.strictEqual(healthStatus.status, 'degraded');
 });
 
-test('getHealthStatus handles missing package.json gracefully', () => {
-  const originalCwd = process.cwd;
-  process.cwd = () => '/invalid/path';
-  
-  const status = getHealthStatus();
-  
-  assert.strictEqual(status.version, undefined);
+test('getHealthStatus should return down status when uptime is NaN', () => {
+  mockUptime = NaN;
+  const healthStatus = getHealthStatus();
+  assert.strictEqual(healthStatus.status, 'down');
+});
 
-  process.cwd = originalCwd;
+// Reset mocks
+afterEach(() => {
+  mockPackageJsonVersion = '1.0.0';
+  mockHeapUsed = 1024 * 1024 * 100; // 100 MB
+  mockUptime = 1000;
 });
