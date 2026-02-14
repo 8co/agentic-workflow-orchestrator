@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import { execSync } from 'child_process';
 
 interface JobStatus {
   id: string;
@@ -36,11 +37,15 @@ export function systemStatus(): void {
   const freeMemory = bytesToHumanReadable(os.freemem());
   const totalMemory = bytesToHumanReadable(os.totalmem());
   const uptime = os.uptime();
+  const cpuUsage = getCpuUsage();
+  const loadAverage = os.loadavg().map(avg => avg.toFixed(2)).join(', ');
 
   console.log('System Status:');
   console.log(`- Free Memory: ${freeMemory}`);
   console.log(`- Total Memory: ${totalMemory}`);
   console.log(`- Uptime: ${formatUptime(uptime)}`);
+  console.log(`- CPU Usage: ${cpuUsage}`);
+  console.log(`- Load Average: ${loadAverage}`);
 }
 
 export function listJobIds(): void {
@@ -79,4 +84,15 @@ function formatUptime(seconds: number): string {
   const minutes = Math.floor((seconds % 3600) / 60);
   const secs = Math.floor(seconds % 60);
   return `${days}d ${hours}h ${minutes}m ${secs}s`;
+}
+
+function getCpuUsage(): string {
+  try {
+    const result = execSync('top -b -n1 | grep "Cpu(s)"').toString();
+    const usage = result.match(/(\d+\.\d+)\s+id/);
+    const usagePercentage = usage ? (100 - parseFloat(usage[1])).toFixed(2) : 'N/A';
+    return `${usagePercentage}% used`;
+  } catch (error) {
+    return 'Could not determine CPU usage';
+  }
 }
