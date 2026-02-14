@@ -1514,3 +1514,14 @@ tasks:
       src/state-manager.test.ts(64,11): error TS2304: Cannot find name 'writeFile'.
 
       ```
+  - id: write-tests-openai-adapter-edge-cases
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/adapters/openai-adapter.ts
+    variables:
+      test_target: src/adapters/openai-adapter.ts
+      test_description: >
+        Develop tests for rare or tricky edge cases in `createOpenAIAdapter`, particularly focusing on handling various
+        API response errors.
