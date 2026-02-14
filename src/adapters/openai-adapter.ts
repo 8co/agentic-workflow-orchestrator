@@ -52,6 +52,7 @@ export function createOpenAIAdapter(config: OpenAIConfig, adapterName: 'openai' 
 
     async execute(request: AgentRequest): Promise<AgentResponse> {
       const start: number = Date.now();
+      console.log(`\n🔍 Request Details: ${JSON.stringify(request, null, 2)}`);
 
       try {
         console.log('\n┌─────────────────────────────────────────');
@@ -78,6 +79,8 @@ export function createOpenAIAdapter(config: OpenAIConfig, adapterName: 'openai' 
 
         const output: string = completion.choices[0].message.content ?? '';
         const durationMs: number = Date.now() - start;
+
+        console.log(`\n💬 Response Details: ${JSON.stringify(completion, null, 2)}`);
 
         // Write to output file if specified
         if (request.outputPath) {
@@ -132,6 +135,7 @@ export function createOpenAIAdapter(config: OpenAIConfig, adapterName: 'openai' 
           errorMessage = 'An unknown error occurred.';
         }
 
+        console.log(`\n❌ Error Details: ${err instanceof Error ? err.stack : String(err)}`);
         console.log(`│ ❌ Error: ${errorMessage}`);
         console.log('└─────────────────────────────────────────\n');
 
