@@ -40,6 +40,18 @@ function isUnexpectedResponseError(response: unknown): boolean {
   return typeof response === 'object' && response !== null && 'status' in response && (response as { status: number }).status >= 400;
 }
 
+async function retry<T>(fn: () => Promise<T>, retries: number, delayMs: number): Promise<T> {
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      if (attempt === retries - 1) throw err;
+      await new Promise(res => setTimeout(res, delayMs));
+    }
+  }
+  throw new Error('Retry attempts exhausted');
+}
+
 export function createAnthropicAdapter(config: AnthropicConfig): AgentAdapter {
   const client = new Anthropic({ apiKey: config.apiKey });
 
@@ -48,6 +60,8 @@ export function createAnthropicAdapter(config: AnthropicConfig): AgentAdapter {
 
     async execute(request: AgentRequest): Promise<AgentResponse> {
       const start = Date.now();
+      const maxRetries = 3;
+      const retryDelayMs = 1000; // 1 second delay
 
       try {
         console.log('\n┌─────────────────────────────────────────');
@@ -58,17 +72,21 @@ export function createAnthropicAdapter(config: AnthropicConfig): AgentAdapter {
           ? `You are an expert software engineer. Follow all instructions precisely.\n\nContext:\n${request.context}`
           : 'You are an expert software engineer. Follow all instructions precisely. Return only the requested output — no preamble, no explanation unless asked.';
 
-        const message: unknown = await client.messages.create({
-          model: config.model,
-          max_tokens: 4096,
-          system: systemPrompt,
-          messages: [
-            {
-              role: 'user',
-              content: request.prompt,
-            },
-          ],
-        });
+        const message: unknown = await retry(
+          () => client.messages.create({
+            model: config.model,
+            max_tokens: 4096,
+            system: systemPrompt,
+            messages: [
+              {
+                role: 'user',
+                content: request.prompt,
+              },
+            ],
+          }),
+          maxRetries,
+          retryDelayMs
+        );
 
         if (isInvalidResponseError(message)) {
           console.error('Invalid response structure:', message);
@@ -121,7 +139,7 @@ export function createAnthropicAdapter(config: AnthropicConfig): AgentAdapter {
         const durationMs = Date.now() - start;
 
         if (isNetworkError(err)) {
-          error = 'Network error: Unable to reach the API.';
+          error = 'Network error: Unable to reach the API. Retrying...';
         } else if (isAPILimitError(err)) {
           error = 'API limit reached: Too many requests. Please try again later.';
         } else if (err instanceof Error) {
