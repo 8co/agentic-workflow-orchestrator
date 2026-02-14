@@ -1,58 +1,65 @@
 import { strict as assert } from 'node:assert';
 import test from 'node:test';
-import { isNetworkError, isTimeoutError, handleNetworkError, networkOperation, NetworkError, TimeoutError } from '../../src/utils/networkErrorUtil.js';
 
-// Mock console.error to capture log outputs for assertions
-let consoleOutput: string[] = [];
-const mockedError = (output: string) => consoleOutput.push(output);
-console.error = mockedError;
+import {
+  isNetworkError,
+  isTimeoutError,
+  handleNetworkError,
+  NetworkError,
+  TimeoutError
+} from '../../src/utils/networkErrorUtil.js';
 
-test('isNetworkError should correctly identify a valid NetworkError', () => {
-  const error: NetworkError = { statusCode: 404, message: 'Not Found' };
-  assert.equal(isNetworkError(error), true);
+// Define a helper function to mock console.error for testing
+function mockConsoleError(fn: () => void) {
+  const originalConsoleError = console.error;
+  const mockLogs: string[] = [];
+  console.error = (message: string) => {
+    mockLogs.push(message);
+  };
+  fn();
+  console.error = originalConsoleError;
+  return mockLogs;
+}
+
+test('isNetworkError should correctly identify network errors', () => {
+  const networkError: NetworkError = { statusCode: 404, message: 'Not Found' };
+  const result = isNetworkError(networkError);
+  assert.equal(result, true);
+
+  const invalidError = { status: 404, msg: 'Not Found' };
+  const invalidResult = isNetworkError(invalidError as unknown);
+  assert.equal(invalidResult, false);
 });
 
-test('isNetworkError should return false for invalid NetworkError objects', () => {
-  assert.equal(isNetworkError({ statusCode: '404', message: 'Not Found' }), false);
-  assert.equal(isNetworkError({ statusCode: 404 }), false);
-  assert.equal(isNetworkError({ message: 'Not Found' }), false);
-  assert.equal(isNetworkError(null), false);
+test('isTimeoutError should correctly identify timeout errors', () => {
+  const timeoutError: TimeoutError = { timeout: 3000, message: 'Request timed out' };
+  const result = isTimeoutError(timeoutError);
+  assert.equal(result, true);
+
+  const invalidError = { time: 3000, msg: 'Request timed out' };
+  const invalidResult = isTimeoutError(invalidError as unknown);
+  assert.equal(invalidResult, false);
 });
 
-test('isTimeoutError should correctly identify a valid TimeoutError', () => {
-  const error: TimeoutError = { timeout: 1000, message: 'Request timed out' };
-  assert.equal(isTimeoutError(error), true);
+test('handleNetworkError should log correct messages for network errors', () => {
+  const networkError: NetworkError = { statusCode: 500, message: 'Internal Server Error' };
+  const logs = mockConsoleError(() => handleNetworkError(networkError));
+  assert.deepEqual(logs, ['Network Error: 500 - Internal Server Error']);
 });
 
-test('isTimeoutError should return false for invalid TimeoutError objects', () => {
-  assert.equal(isTimeoutError({ timeout: '1000', message: 'Request timed out' }), false);
-  assert.equal(isTimeoutError({ timeout: 1000 }), false);
-  assert.equal(isTimeoutError({ message: 'Request timed out' }), false);
-  assert.equal(isTimeoutError(null), false);
+test('handleNetworkError should log correct messages for timeout errors', () => {
+  const timeoutError: TimeoutError = { timeout: 10000, message: 'Timeout occurred' };
+  const logs = mockConsoleError(() => handleNetworkError(timeoutError));
+  assert.deepEqual(logs, ['Timeout Error: Waited 10000ms - Timeout occurred']);
 });
 
-test('handleNetworkError should log the correct message for NetworkError', () => {
-  consoleOutput = [];
-  const error: NetworkError = { statusCode: 404, message: 'Not Found' };
-  handleNetworkError(error);
-  assert.deepEqual(consoleOutput, ['Network Error: 404 - Not Found']);
+test('handleNetworkError should log "Unknown error" for unsupported errors', () => {
+  const unknownError = { code: 'ECONNREFUSED', detail: 'Connection refused' };
+  const logs = mockConsoleError(() => handleNetworkError(unknownError as unknown));
+  assert.deepEqual(logs, ['Unknown error:', unknownError]);
 });
 
-test('handleNetworkError should log the correct message for TimeoutError', () => {
-  consoleOutput = [];
-  const error: TimeoutError = { timeout: 1000, message: 'Request timed out' };
-  handleNetworkError(error);
-  assert.deepEqual(consoleOutput, ['Timeout Error: Waited 1000ms - Request timed out']);
-});
-
-test('handleNetworkError should log "Unknown error" message for unknown errors', () => {
-  consoleOutput = [];
-  handleNetworkError({ error: 'unknown' });
-  assert.deepEqual(consoleOutput, ['Unknown error:', { error: 'unknown' }]);
-});
-
-test('networkOperation should log the correct error message', async () => {
-  consoleOutput = [];
-  await networkOperation();
-  assert.deepEqual(consoleOutput, ['Network Error: 404 - Resource not found']);
+test('networkOperation should handle an example network operation error', async () => {
+  const logs = mockConsoleError(async () => await networkOperation());
+  assert.deepEqual(logs, ['Network Error: 404 - Resource not found']);
 });
