@@ -21,7 +21,8 @@ export async function ensureDirectoryAndWriteFile(
     await mkdir(dirname(fullPath), { recursive: true });
     await writeFile(fullPath, content, { encoding: 'utf-8', flag: 'w' });
   } catch (error: unknown) {
-    handleError(error, `Failed to write file ${fullPath}`);
+    const detailedMessage = `Error in ensureDirectoryAndWriteFile for path ${fullPath}`;
+    handleError(error, detailedMessage);
   }
 }
 
@@ -39,7 +40,8 @@ export async function readFromFile(filePath: string): Promise<string | null> {
   try {
     return await readFile(filePath, 'utf-8');
   } catch (error: unknown) {
-    handleError(error, `Failed to read file ${filePath}`, true);
+    const detailedMessage = `Error in readFromFile for path ${filePath}`;
+    handleError(error, detailedMessage, true);
     return null;
   }
 }
@@ -77,9 +79,11 @@ function handleError(error: unknown, message: string, suppressError: boolean = f
     errorMessage = String((error as { message: unknown }).message);
   }
 
+  const fullMessage = `${message}: ${errorMessage}`;
+  
   if (suppressError) {
-    console.error(`${message}: ${errorMessage}`);
+    console.error(fullMessage);
   } else {
-    throw new Error(`${message}: ${errorMessage}`);
+    throw new Error(fullMessage);
   }
 }
