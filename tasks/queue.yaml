@@ -1440,7 +1440,7 @@ tasks:
     completed_at: 2026-02-14T00:42:34.206Z
     branch: auto/write-tests-deploy-script-edge-cases
   - id: write-tests-adapters-openai-exception-handling
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -1450,6 +1450,7 @@ tasks:
       test_description: >
         Write tests for OpenAI adapter to cover exception handling, including network errors, timeouts, and internal
         server errors.
+    started_at: 2026-02-14T00:42:59.493Z
   - id: add-tests-ai-agents-error-handling
     status: pending
     workflow: auto
