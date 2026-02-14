@@ -5180,3 +5180,45 @@ tasks:
     started_at: 2026-02-14T02:32:35.157Z
     completed_at: 2026-02-14T02:32:41.399Z
     branch: auto/improve-cli-observability-commands
+  - id: add-missing-tests-anthropic-adapter
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/adapters/anthropic-adapter.ts
+    variables:
+      test_target: src/adapters/anthropic-adapter.ts
+      test_description: >
+        Write tests for all the edge cases in the Anthropic Adapter module, including cases where the API returns
+        unexpected structures or errors.
+  - id: add-tests-state-manager
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/state-manager.ts
+    variables:
+      test_target: src/state-manager.ts
+      test_description: >
+        Implement comprehensive tests for the state manager to ensure correct handling of saving and loading state,
+        especially focusing on error scenarios.
+  - id: enhance-type-safety-anthropic-adapter
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/adapters/anthropic-adapter.ts
+    variables:
+      modification_description: >
+        Improve type safety in the Anthropic Adapter by enforcing strict typings on API responses and ensuring all
+        function signatures use specific types.
+  - id: add-error-handling-scheduler
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/scheduler.ts
+    variables:
+      modification_description: >
+        Implement comprehensive error handling in the scheduler to safely handle any unexpected conditions or failures
+        during task execution.
