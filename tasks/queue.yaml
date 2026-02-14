@@ -5730,7 +5730,7 @@ tasks:
     completed_at: 2026-02-14T02:43:09.327Z
     branch: auto/write-tests-openai-adapter-execution-edge-cases
   - id: implement-edge-case-tests-for-queue-manager
-    status: running
+    status: completed
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -5741,3 +5741,5 @@ tasks:
         Add tests to cover edge cases in queue management, especially focusing on error states during task transitions
         and faulty queue file handling.
     started_at: 2026-02-14T02:43:09.426Z
+    completed_at: 2026-02-14T02:43:20.290Z
+    branch: auto/implement-edge-case-tests-for-queue-manager
