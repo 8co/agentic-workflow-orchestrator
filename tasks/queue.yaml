@@ -2893,3 +2893,46 @@ tasks:
     started_at: 2026-02-14T01:18:00.247Z
     completed_at: 2026-02-14T01:18:06.201Z
     branch: auto/write-tests-retryUtility-edge-cases
+  - id: add-tests-for-config-validator-edge-cases
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/config-validator.ts
+    variables:
+      test_target: src/config-validator.ts
+      test_description: >
+        Write tests to cover edge cases for the configuration validation, including malformed environment variables and
+        cases with undefined default agents.
+  - id: refactor-error-handling-in-git-ops
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/git-ops.ts
+    variables:
+      modification_description: >
+        Refactor error handling in the git-ops module to provide more descriptive error messages, ensuring all catch
+        statements provide informative output.
+  - id: add-tests-for-environment-setup-in-main
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/index.ts
+    variables:
+      test_target: src/index.ts
+      test_description: >
+        Create tests to validate successful environment setup in the main function, including cases where required
+        configurations are missing or incomplete.
+  - id: write-tests-for-retryUtility
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/retryUtility.ts
+    variables:
+      test_target: src/retryUtility.ts
+      test_description: >
+        Write tests to cover different scenarios for the retry utility, ensuring proper handling of retry logic and
+        exception cases.
