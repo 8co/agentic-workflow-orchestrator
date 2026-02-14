@@ -14,17 +14,25 @@ export function connectToAIAgents(): void {
     });
 
     socket.on('error', (error: Error): void => {
-      const formattedError: Error = formatErrorWithDetails(error, aiAgentHost, aiAgentPort) || new Error('Unknown error');
+      const formattedError: Error = formatErrorWithDetails(error, aiAgentHost, aiAgentPort);
       handleConnectionError(formattedError);
     });
 
+    socket.on('timeout', (): void => {
+      const timeoutError: Error = new Error(`Connection timed out to Host: ${aiAgentHost}, Port: ${aiAgentPort}`);
+      handleConnectionError(timeoutError);
+      socket.end();
+    });
+
+    socket.on('close', (hadError: boolean): void => {
+      if (!hadError) {
+        console.log('🔌 Connection closed gracefully.');
+      }
+    });
+
   } catch (error: unknown) {
-    const formattedError: Error | null = formatError(error);
-    if (formattedError) {
-      handleConnectionError(formattedError);
-    } else {
-      console.error("❌ An unknown error occurred while connecting to AI agent APIs.");
-    }
+    const formattedError: Error = formatError(error) || new Error("An unknown error occurred while initiating connection.");
+    handleConnectionError(formattedError);
   }
 }
 
