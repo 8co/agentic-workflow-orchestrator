@@ -2065,3 +2065,47 @@ tasks:
     started_at: 2026-02-14T00:53:33.340Z
     completed_at: 2026-02-14T00:53:38.204Z
     branch: auto/refactor-health-status-logging
+  - id: add-type-safety-enhancements-anthropic-adapter
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/adapters/anthropic-adapter.ts
+    variables:
+      modification_description: >
+        Enhance type safety in the existing `anthropic-adapter` module by refining the types and interfaces used,
+        checking for any `any` usages and replacing them with specific types where possible, and ensuring the function
+        signatures are correctly typed.
+  - id: write-tests-state-manager-load-failure-cases
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/state-manager.ts
+    variables:
+      test_target: src/state-manager.ts
+      test_description: >
+        Add test cases for the `load` function of `StateManager` to handle various failure scenarios, ensuring robust
+        error handling when files are missing or corrupted, and verifying the correct null return value.
+  - id: add-error-handling-to-file-writer
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/file-writer.ts
+    variables:
+      modification_description: >
+        Implement comprehensive error handling in the `file-writer` module, including handling of potential file system
+        errors during read and write operations, and ensure all errors are logged or thrown appropriately to aid
+        debugging.
+  - id: write-tests-format-duration-function
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/format-duration.ts
+    variables:
+      test_target: src/format-duration.ts
+      test_description: >
+        Implement unit tests for the `formatDuration` function, covering a range of edge cases including very small and
+        very large inputs, negative numbers, and boundary conditions around time units.
