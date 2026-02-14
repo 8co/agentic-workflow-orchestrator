@@ -118,18 +118,22 @@ export function createAnthropicAdapter(config: AnthropicConfig): AgentAdapter {
         };
       } catch (err) {
         let error = 'An unknown error occurred.';
+        const durationMs = Date.now() - start;
 
         if (isNetworkError(err)) {
           error = 'Network error: Unable to reach the API.';
         } else if (isAPILimitError(err)) {
           error = 'API limit reached: Too many requests. Please try again later.';
         } else if (err instanceof Error) {
-          error = err.message;
+          error = `Error: ${err.message}`;
+        } else if (typeof err === 'object' && err !== null) {
+          error = `Unexpected error object: ${JSON.stringify(err)}`;
+        } else {
+          error = `Unexpected error type: ${String(err)}`;
         }
 
-        const durationMs = Date.now() - start;
-
-        console.log(`│ ❌ Error: ${error}`);
+        console.error(`│ ❌ Error: ${error}`);
+        console.error(`│ ⏱  Duration: ${durationMs}ms`);
         console.log('└─────────────────────────────────────────\n');
 
         return {
