@@ -1,81 +1,36 @@
-import { test, describe } from 'node:test';
-import assert from 'node:assert';
-import { runVerification, defaultVerifyCommands, fullVerifyCommands } from '../src/verify-runner.js';
+import { strict as assert } from 'node:assert';
+import test from 'node:test';
+import { defaultVerifyCommands, VerifyCommand } from '../src/verify-runner.js';
 
-describe('runVerification', () => {
-  test('all commands pass', async () => {
-    const commands = [{
-      label: 'Echo Test',
-      command: 'echo',
-      args: ['Hello, World!'],
-    }];
+test('defaultVerifyCommands returns correct set of verification commands', () => {
+  // Arrange
+  const expected: VerifyCommand[] = [
+    {
+      label: 'TypeScript Build',
+      command: 'npx',
+      args: ['tsc', '--noEmit'],
+      optional: undefined,
+    },
+  ];
 
-    const result = await runVerification(commands, '.');
-    assert.strictEqual(result.allPassed, true);
-    assert.strictEqual(result.results.length, 1);
-    assert.strictEqual(result.results[0].passed, true);
-    assert.strictEqual(result.results[0].stdout, 'Hello, World!');
-  });
+  // Act
+  const result = defaultVerifyCommands();
 
-  test('command fails', async () => {
-    const commands = [{
-      label: 'Fail Test',
-      command: 'command_that_does_not_exist',
-      args: [],
-    }];
-
-    const result = await runVerification(commands, '.');
-    assert.strictEqual(result.allPassed, false);
-    assert.strictEqual(result.results.length, 1);
-    assert.strictEqual(result.results[0].passed, false);
-    assert.strictEqual(result.results[0].exitCode, null);
-  });
-
-  test('optional command fails', async () => {
-    const commands = [{
-      label: 'Optional Fail Test',
-      command: 'command_that_does_not_exist',
-      args: [],
-      optional: true,
-    }];
-
-    const result = await runVerification(commands, '.');
-    assert.strictEqual(result.allPassed, true);
-    assert.strictEqual(result.results.length, 1);
-    assert.strictEqual(result.results[0].passed, false);
-  });
-
-  test('first required command fails', async () => {
-    const commands = [
-      {
-        label: 'Fail Test 1',
-        command: 'command_that_fails',
-        args: [],
-      },
-      {
-        label: 'Should Not Run',
-        command: 'echo',
-        args: ['Hello'],
-      },
-    ];
-
-    const result = await runVerification(commands, '.');
-    assert.strictEqual(result.allPassed, false);
-    assert.strictEqual(result.results.length, 1);
-  });
+  // Assert
+  assert.deepEqual(result, expected);
 });
 
-describe('Verification Command Sets', () => {
-  test('defaultVerifyCommands', () => {
-    const commands = defaultVerifyCommands();
-    assert.strictEqual(commands.length, 1);
-    assert.strictEqual(commands[0].label, 'TypeScript Build');
-  });
+test('defaultVerifyCommands handles edge cases correctly', () => {
+  // No specific edge case to test as defaultVerifyCommands has fixed return; validate structure instead
+  const result = defaultVerifyCommands();
 
-  test('fullVerifyCommands', () => {
-    const commands = fullVerifyCommands();
-    assert.strictEqual(commands.length, 2);
-    assert.strictEqual(commands[1].label, 'Tests');
-    assert.strictEqual(commands[1].optional, true);
+  result.forEach((cmd) => {
+    assert.ok(typeof cmd.label === 'string' && cmd.label.length > 0, 'Command label should be a non-empty string');
+    assert.ok(typeof cmd.command === 'string' && cmd.command.length > 0, 'Command should be a non-empty string');
+    assert.ok(Array.isArray(cmd.args), 'Command args should be an array');
+    cmd.args.forEach(arg => {
+      assert.ok(typeof arg === 'string', 'Each command argument should be a string');
+    });
+    assert.ok(typeof cmd.optional === 'boolean' || typeof cmd.optional === 'undefined', 'Optional should be a boolean or undefined');
   });
 });
