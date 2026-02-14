@@ -18,8 +18,13 @@ export interface SecurityScanResult {
   violations: SecurityViolation[];
 }
 
+interface SecurityPattern {
+  regex: RegExp;
+  message: string;
+}
+
 // Critical: Never allow these
-const CRITICAL_PATTERNS = [
+const CRITICAL_PATTERNS: SecurityPattern[] = [
   { regex: /\beval\s*\(/g, message: 'Use of eval() detected - code execution risk' },
   { regex: /\bFunction\s*\(/g, message: 'Use of Function() constructor - code execution risk' },
   { regex: /\bexec\s*\(/g, message: 'Use of exec() detected - shell execution risk' },
@@ -28,7 +33,7 @@ const CRITICAL_PATTERNS = [
 ];
 
 // High risk: Usually bad, rare legitimate uses
-const HIGH_RISK_PATTERNS = [
+const HIGH_RISK_PATTERNS: SecurityPattern[] = [
   { regex: /while\s*\(\s*true\s*\)/g, message: 'Infinite loop detected (while true)' },
   { regex: /for\s*\(\s*;\s*;\s*\)/g, message: 'Infinite loop detected (for ;;)' },
   { regex: /process\.exit\(0\).*catch/g, message: 'Exit with success in error handler' },
@@ -36,7 +41,7 @@ const HIGH_RISK_PATTERNS = [
 ];
 
 // Medium risk: Review needed
-const MEDIUM_RISK_PATTERNS = [
+const MEDIUM_RISK_PATTERNS: SecurityPattern[] = [
   { regex: /process\.env\.\w+\s*=\s*/g, message: 'Modifying process.env - unexpected behavior' },
   { regex: /\.\.\/\.\.\/\.\.\//g, message: 'Excessive path traversal detected' },
   { regex: /for\s*\([^)]*\)\s*\{[^}]*for\s*\([^)]*\)\s*\{[^}]*for/g, message: 'Triple nested loop - performance concern' },
@@ -47,52 +52,28 @@ const MEDIUM_RISK_PATTERNS = [
  */
 export function scanCode(code: string, filePath: string): SecurityScanResult {
   const violations: SecurityViolation[] = [];
-  const lines = code.split('\n');
+  const lines: string[] = code.split('\n');
 
-  // Check critical patterns
-  for (const { regex, message } of CRITICAL_PATTERNS) {
-    for (let i = 0; i < lines.length; i++) {
-      if (regex.test(lines[i])) {
-        violations.push({
-          pattern: regex.source,
-          line: i + 1,
-          severity: 'critical',
-          message: `${message} at line ${i + 1}`,
-        });
+  const scanPatterns = (patterns: SecurityPattern[], severity: SecurityViolation['severity']) => {
+    for (const { regex, message } of patterns) {
+      for (let i = 0; i < lines.length; i++) {
+        if (regex.test(lines[i])) {
+          violations.push({
+            pattern: regex.source,
+            line: i + 1,
+            severity,
+            message: `${message} at line ${i + 1}`,
+          });
+        }
+        regex.lastIndex = 0; // Reset regex state
       }
-      regex.lastIndex = 0; // Reset regex state
     }
-  }
+  };
 
-  // Check high risk patterns
-  for (const { regex, message } of HIGH_RISK_PATTERNS) {
-    for (let i = 0; i < lines.length; i++) {
-      if (regex.test(lines[i])) {
-        violations.push({
-          pattern: regex.source,
-          line: i + 1,
-          severity: 'high',
-          message: `${message} at line ${i + 1}`,
-        });
-      }
-      regex.lastIndex = 0;
-    }
-  }
-
-  // Check medium risk patterns  
-  for (const { regex, message } of MEDIUM_RISK_PATTERNS) {
-    for (let i = 0; i < lines.length; i++) {
-      if (regex.test(lines[i])) {
-        violations.push({
-          pattern: regex.source,
-          line: i + 1,
-          severity: 'medium',
-          message: `${message} at line ${i + 1}`,
-        });
-      }
-      regex.lastIndex = 0;
-    }
-  }
+  // Check critical, high risk, and medium risk patterns
+  scanPatterns(CRITICAL_PATTERNS, 'critical');
+  scanPatterns(HIGH_RISK_PATTERNS, 'high');
+  scanPatterns(MEDIUM_RISK_PATTERNS, 'medium');
 
   // Fail if any critical or high severity violations
   const hasCritical = violations.some(v => v.severity === 'critical');
@@ -155,7 +136,7 @@ export function formatViolations(result: SecurityScanResult, filePath: string): 
 /**
  * Files that should always be scanned for security issues
  */
-export const SECURITY_CRITICAL_FILES = [
+export const SECURITY_CRITICAL_FILES: string[] = [
   'src/cli.ts',
   'src/scheduler.ts',
   'src/autonomous-runner.ts',
@@ -167,7 +148,7 @@ export const SECURITY_CRITICAL_FILES = [
  * Check if a file requires security scanning
  */
 export function requiresSecurityScan(filePath: string): boolean {
-  return SECURITY_CRITICAL_FILES.some(critical => filePath.endsWith(critical));
+  return SECURITY_CRITICAL_FILES.some((critical: string) => filePath.endsWith(critical));
 }
 
 /**
@@ -175,9 +156,9 @@ export function requiresSecurityScan(filePath: string): boolean {
  */
 export function readFileAndScan(filePath: string): SecurityScanResult {
   try {
-    const code = fs.readFileSync(filePath, 'utf8');
+    const code: string = fs.readFileSync(filePath, 'utf8');
     return scanCode(code, filePath);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error(`Error reading file ${filePath}:`, (error as Error).message);
     return {
       safe: false,
