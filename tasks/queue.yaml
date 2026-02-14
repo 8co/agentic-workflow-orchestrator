@@ -1371,3 +1371,56 @@ tasks:
     started_at: 2026-02-14T00:41:35.751Z
     completed_at: 2026-02-14T00:41:41.095Z
     branch: auto/write-tests-main-function-edge-cases
+  - id: write-tests-adapters-anthropic-edge-cases
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/adapters/anthropic-adapter.ts
+    variables:
+      test_target: src/adapters/anthropic-adapter.ts
+      test_description: >
+        Write unit tests for edge cases in the Anthropic Adapter, including handling invalid API responses and network
+        errors.
+  - id: write-tests-openai-adapter-error-cases
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/adapters/openai-adapter.ts
+    variables:
+      test_target: src/adapters/openai-adapter.ts
+      test_description: >
+        Write tests for error handling in the OpenAI Adapter. Focus on network errors, API key issues, and response
+        validation.
+  - id: add-error-handling-to-enhanced-logger
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/enhanced-logger.ts
+    variables:
+      modification_description: >
+        Add comprehensive error handling for file write operations in the EnhancedLogger class to prevent crashes on
+        logging failures.
+  - id: improve-type-safety-queue-manager
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/queue-manager.ts
+    variables:
+      modification_description: >
+        Enhance type annotations in the QueueManager to ensure all functions and returned values explicitly declare
+        their types.
+  - id: write-tests-deploy-script-edge-cases
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/scripts/deploy.ts
+    variables:
+      test_target: src/scripts/deploy.ts
+      test_description: >
+        Write tests for handling edge cases in the deployment script, including malformed configurations and command
+        execution failures.
