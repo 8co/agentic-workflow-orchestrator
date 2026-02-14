@@ -420,7 +420,7 @@ tasks:
     completed_at: 2026-02-14T00:13:55.916Z
     branch: auto/write-tests-config
   - id: write-tests-adapters-anthropic
-    status: running
+    status: completed
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -431,8 +431,10 @@ tasks:
         Add tests for AnthropicAdapter to cover edge cases in `execute` ensuring that network and API limit errors are
         handled as expected.
     started_at: 2026-02-14T00:13:55.927Z
+    completed_at: 2026-02-14T00:14:07.384Z
+    branch: auto/write-tests-adapters-anthropic
   - id: write-tests-queue-manager
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -442,3 +444,4 @@ tasks:
       test_description: >
         Write tests for `Queue Manager` to ensure all CRUD operations on tasks are performed correctly and edge cases
         like reading from a corrupted queue file are handled.
+    started_at: 2026-02-14T00:14:07.393Z
