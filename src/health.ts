@@ -2,23 +2,23 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createLogger } from './logger.js';
 
-type PackageJson = {
+interface PackageJson {
   version?: string;
-};
+}
 
-type HealthStatus = {
+interface HealthStatus {
   status: 'ok' | 'degraded' | 'down';
   uptime: number;
   memoryUsage: number; // in megabytes
   timestamp: string; // ISO format
   version?: string;
-};
+}
 
 const logger = createLogger('health');
 
 export function getHealthStatus(): HealthStatus {
-  const version = extractPackageVersion();
-  const memoryUsageMB = getMemoryUsageMB();
+  const version: string | undefined = extractPackageVersion();
+  const memoryUsageMB: number = getMemoryUsageMB();
 
   const status: HealthStatus = {
     status: 'ok',
@@ -35,15 +35,15 @@ export function getHealthStatus(): HealthStatus {
 }
 
 function extractPackageVersion(): string | undefined {
-  const packageJsonPath = join(process.cwd(), 'package.json');
+  const packageJsonPath: string = join(process.cwd(), 'package.json');
   try {
-    const packageJsonContent = readFileSync(packageJsonPath, 'utf-8');
+    const packageJsonContent: string = readFileSync(packageJsonPath, 'utf-8');
     const packageJson: PackageJson = JSON.parse(packageJsonContent);
-    const version = packageJson.version ?? 'unknown';
+    const version: string = packageJson.version ?? 'unknown';
     logger.debug(`Package version extracted: ${version}`);
     return version !== 'unknown' ? version : undefined;
-  } catch (error) {
-    logger.error(`Failed to handle package.json: ${(error as Error).message}`);
+  } catch (error: unknown) {
+    logger.error(`Failed to handle package.json: ${error instanceof Error ? error.message : 'Unknown error'}`);
     return undefined;
   }
 }
