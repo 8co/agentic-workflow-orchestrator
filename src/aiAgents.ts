@@ -2,13 +2,16 @@
 import { networkInterfaces, NetworkInterfaceInfo } from 'os';
 import { createConnection, Socket, TcpSocketConnectOpts } from 'net';
 import { accessSync, constants } from 'fs';
+import { clearTimeout, setTimeout } from 'timers';
 
 export function connectToAIAgents(): void {
   logConnectionEvent('info', "Initiating connection to AI agent APIs...", {});
 
+  let connectionTimeout: NodeJS.Timeout;
   try {
     const aiAgentHost: string = 'ai-agent-api.example.com';
     const aiAgentPort: number = 443;
+    const connectionTimeoutDuration: number = 10000; // 10 seconds
 
     checkNetworkPermissions();
 
@@ -18,16 +21,25 @@ export function connectToAIAgents(): void {
     };
 
     const socket: Socket = createConnection(connectionOptions, (): void => {
+      clearTimeout(connectionTimeout);
       logConnectionEvent('success', 'Successfully connected to AI agent APIs.', { host: aiAgentHost, port: aiAgentPort });
       socket.end();
     });
 
+    connectionTimeout = setTimeout(() => {
+      const timeoutError: Error = new Error(`Connection timed out after ${connectionTimeoutDuration / 1000} seconds to Host: ${aiAgentHost}, Port: ${aiAgentPort}`);
+      handleConnectionError(timeoutError);
+      socket.destroy();
+    }, connectionTimeoutDuration);
+
     socket.on('error', (error: Error): void => {
+      clearTimeout(connectionTimeout);
       const formattedError: Error = formatErrorWithDetails(error, aiAgentHost, aiAgentPort);
       handleConnectionError(formattedError);
     });
 
     socket.on('timeout', (): void => {
+      clearTimeout(connectionTimeout);
       const timeoutError: Error = new Error(`Connection timed out to Host: ${aiAgentHost}, Port: ${aiAgentPort}`);
       handleConnectionError(timeoutError);
       socket.end();
