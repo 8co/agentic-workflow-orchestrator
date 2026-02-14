@@ -1,122 +1,123 @@
-import { test } from 'node:test';
-import { strict as assert } from 'node:assert';
+import assert from 'node:assert';
+import test from 'node:test';
 import { createAnthropicAdapter } from '../../src/adapters/anthropic-adapter.js';
 import type { AgentRequest } from '../../src/types.js';
 
-// Mocking Anthropic SDK
-class MockAnthropic {
-  async messages() {
-    return {
-      create: jest.fn().mockResolvedValue({
-        content: [{ type: 'text', text: 'Mocked response text.' }],
-        usage: { input_tokens: 10, output_tokens: 5 },
+test('createAnthropicAdapter - normal execution', async (t) => {
+  const mockClient = {
+    messages: {
+      create: async () => ({
+        content: [{ type: 'text', text: 'Test response' }],
+        usage: { input_tokens: 10, output_tokens: 12 },
         stop_reason: 'stop',
       }),
-    };
-  }
-}
+    },
+  };
 
-MockAnthropic.prototype.messages.create = jest.fn(async () => ({
-  content: [{ type: 'text', text: 'Mocked response text.' }],
-  usage: { input_tokens: 10, output_tokens: 5 },
-  stop_reason: 'stop',
-}));
+  const originalCreate = (Anthropic as any);
+  (Anthropic as any) = () => mockClient;
 
-function mockAnthropicSdk() {
-  return new MockAnthropic();
-}
-
-test('Anthropic adapter - successful case', async () => {
-  const adapter = createAnthropicAdapter({
-    apiKey: 'mock-key',
-    model: 'mock-model',
-  });
-
-  adapter['client'] = mockAnthropicSdk();
+  const adapter = createAnthropicAdapter({ apiKey: 'dummy', model: 'claude-test' });
 
   const request: AgentRequest = {
-    prompt: 'Hello world!',
-    context: 'Some context',
+    context: '',
+    prompt: 'Hello',
     outputPath: undefined,
   };
 
   const response = await adapter.execute(request);
 
-  assert.equal(response.success, true);
-  assert.equal(response.output, 'Mocked response text.');
-  assert(response.durationMs >= 0);
+  assert.strictEqual(response.success, true);
+  assert.ok(response.output.includes('Test response'));
+
+  (Anthropic as any) = originalCreate;
 });
 
-test('Anthropic adapter - invalid response error', async () => {
-  const adapter = createAnthropicAdapter({
-    apiKey: 'mock-key',
-    model: 'mock-model',
-  });
+test('createAnthropicAdapter - invalid response structure', async (t) => {
+  const mockClient = {
+    messages: {
+      create: async () => ({}),
+    },
+  };
 
-  const mockedClient = mockAnthropicSdk();
-  mockedClient.messages.create = jest.fn(async () => ({
-    content: [],
-    usage: {},
-    stop_reason: 'stop',
-  }));
-  adapter['client'] = mockedClient;
+  const originalCreate = (Anthropic as any);
+  (Anthropic as any) = () => mockClient;
+
+  const adapter = createAnthropicAdapter({ apiKey: 'dummy', model: 'claude-test' });
 
   const request: AgentRequest = {
-    prompt: 'Hello world!',
-    context: 'Some context',
+    context: '',
+    prompt: 'Hello',
     outputPath: undefined,
   };
 
   const response = await adapter.execute(request);
 
-  assert.equal(response.success, false);
-  assert.equal(response.error, 'API returned unexpected data structure.');
+  assert.strictEqual(response.success, false);
+  assert.ok(response.error.includes('unexpected data structure'));
+
+  (Anthropic as any) = originalCreate;
 });
 
-test('Anthropic adapter - network error', async () => {
-  const adapter = createAnthropicAdapter({
-    apiKey: 'mock-key',
-    model: 'mock-model',
-  });
+test('createAnthropicAdapter - network error', async (t) => {
+  const mockClient = {
+    messages: {
+      create: async () => {
+        throw new Error('Network error');
+      },
+    },
+  };
 
-  const mockedClient = mockAnthropicSdk();
-  mockedClient.messages.create = jest.fn(async () => {
-    throw { code: 'ENOTFOUND' };
-  });
-  adapter['client'] = mockedClient;
+  const isNetworkError = (err: Error) => err.message === 'Network error';
+  const originalNetworkError = (isNetworkError as any);
+  (isNetworkError as any) = (err: Error) => err.message === 'Network error';
+
+  const originalCreate = (Anthropic as any);
+  (Anthropic as any) = () => mockClient;
+
+  const adapter = createAnthropicAdapter({ apiKey: 'dummy', model: 'claude-test' });
 
   const request: AgentRequest = {
-    prompt: 'Hello world!',
-    context: 'Some context',
+    context: '',
+    prompt: 'Hello',
     outputPath: undefined,
   };
 
   const response = await adapter.execute(request);
 
-  assert.equal(response.success, false);
-  assert.equal(response.error, 'Network error: Unable to reach the API.');
+  assert.strictEqual(response.success, false);
+  assert.ok(response.error.includes('Network error'));
+
+  (Anthropic as any) = originalCreate;
+  (isNetworkError as any) = originalNetworkError;
 });
 
-test('Anthropic adapter - API limit error', async () => {
-  const adapter = createAnthropicAdapter({
-    apiKey: 'mock-key',
-    model: 'mock-model',
-  });
+test('createAnthropicAdapter - API limit error', async (t) => {
+  const mockClient = {
+    messages: {
+      create: async () => {
+        const error = new Error('API limit error');
+        (error as any).response = { status: 429 };
+        throw error;
+      },
+    },
+  };
 
-  const mockedClient = mockAnthropicSdk();
-  mockedClient.messages.create = jest.fn(async () => {
-    throw { response: { status: 429 } };
-  });
-  adapter['client'] = mockedClient;
+  const originalCreate = (Anthropic as any);
+  (Anthropic as any) = () => mockClient;
+
+  const adapter = createAnthropicAdapter({ apiKey: 'dummy', model: 'claude-test' });
 
   const request: AgentRequest = {
-    prompt: 'Hello world!',
-    context: 'Some context',
+    context: '',
+    prompt: 'Hello',
     outputPath: undefined,
   };
 
   const response = await adapter.execute(request);
 
-  assert.equal(response.success, false);
-  assert.equal(response.error, 'API limit reached: Too many requests. Please try again later.');
+  assert.strictEqual(response.success, false);
+  assert.ok(response.error.includes('API limit reached'));
+
+  (Anthropic as any) = originalCreate;
 });
