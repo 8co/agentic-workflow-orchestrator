@@ -53,8 +53,19 @@ class EnhancedLogger {
   private logToFile(message: string): void {
     try {
       fs.appendFileSync(this.logFilePath, message);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error(`[ERROR] Failed to write to log file: ${error instanceof Error ? error.message : String(error)}`);
+      
+      // Attempt to recreate the log directory and file
+      try {
+        const logDirectory: string = path.dirname(this.logFilePath);
+        if (!fs.existsSync(logDirectory)) {
+          fs.mkdirSync(logDirectory, { recursive: true });
+        }
+        fs.appendFileSync(this.logFilePath, message);
+      } catch (recoveryError: unknown) {
+        console.error(`[ERROR] Recovery attempt failed: ${recoveryError instanceof Error ? recoveryError.message : String(recoveryError)}`);
+      }
     }
   }
 
