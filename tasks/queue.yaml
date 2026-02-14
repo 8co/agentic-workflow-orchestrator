@@ -4810,7 +4810,7 @@ tasks:
     completed_at: 2026-02-14T02:26:11.031Z
     branch: auto/add-error-handling-to-security-check-runner
   - id: write-tests-for-formatErrorMessage-function
-    status: running
+    status: completed
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -4821,8 +4821,10 @@ tasks:
         Add unit tests for the formatErrorMessage function, covering all branches including typical error objects,
         unknown objects, and user-friendly message handling.
     started_at: 2026-02-14T02:26:11.102Z
+    completed_at: 2026-02-14T02:26:25.054Z
+    branch: auto/write-tests-for-formatErrorMessage-function
   - id: improve-type-safety-in-task-proposer
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-modify-file.md
     context_files:
@@ -4831,6 +4833,7 @@ tasks:
       modification_description: >
         Enhance the type safety by explicitly defining types for all functions, adjusting any implicit `any` types, and
         utilizing TypeScript's `unknown` type where applicable for better error handling.
+    started_at: 2026-02-14T02:26:25.137Z
   - id: add-missing-error-handling-to-git-ops
     status: pending
     workflow: auto
