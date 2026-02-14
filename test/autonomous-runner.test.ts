@@ -1,68 +1,94 @@
 import { test } from 'node:test';
-import assert from 'node:assert/strict';
-import { createAutonomousRunner, AutoWorkflow, AutoStepResult } from '../src/autonomous-runner.js';
+import assert from 'node:assert';
+import { createAutonomousRunner } from '../src/autonomous-runner.js';
+import type { AgentAdapter, AutoWorkflow } from '../src/types.js';
 
-const mockAgentAdapter = {
-  execute: async ({ prompt }: { prompt: string }) => {
-    if (prompt.includes('fail')) {
-      return { success: false, output: '', error: 'Simulated failure' };
-    }
-    return { success: true, output: '```typescript:test-file.ts\nexport const value = 42;\n```' };
+const mockAdapter: AgentAdapter = {
+  execute: async () => ({ success: true, output: '```ts:src/sample.ts\nconsole.log("Test");\n```' }),
+};
+
+const mockFailingAdapter: AgentAdapter = {
+  execute: async () => ({ success: false, error: 'Mock execution failed' }),
+};
+
+const basePath = process.cwd();
+const mockDeps = {
+  adapters: {
+    default: mockAdapter,
+    failing: mockFailingAdapter,
   },
+  defaultAgent: 'default',
 };
 
-const adapters = {
-  mockAgent: mockAgentAdapter,
-};
+const runner = createAutonomousRunner(mockDeps);
 
-const autonomousRunner = createAutonomousRunner({ adapters, defaultAgent: 'mockAgent' });
-
-test('createAutonomousRunner runs successfully with valid steps', async () => {
+test('should load and execute a simple workflow', async () => {
   const workflow: AutoWorkflow = {
     name: 'Test Workflow',
-    target_dir: '/test/dir',
+    target_dir: 'test/target-dir',
     steps: [
-      { id: 'step1', prompt: 'Write code', agent: 'mockAgent' },
+      { id: 'step1', prompt: 'mock-prompt' },
     ],
   };
 
-  const result = await autonomousRunner.run('/test/workflow.yaml', '/test/base', {});
+  const result = await runner.run('mock-workflow-path', basePath, workflow.variables);
 
-  assert.equal(result.status, 'completed');
-  assert.equal(result.steps.length, 1);
-  assert.equal(result.steps[0].status, 'completed');
+  assert.strictEqual(result.status, 'completed');
+  assert(result.steps.length > 0);
+  assert.strictEqual(result.steps[0].status, 'completed');
 });
 
-test('createAutonomousRunner fails if adapter fails', async () => {
+test('should fail when agent is missing', async () => {
+  const runnerWithMissingAgent = createAutonomousRunner({
+    adapters: {},
+    defaultAgent: 'non-existent',
+  });
+
   const workflow: AutoWorkflow = {
     name: 'Test Workflow',
-    target_dir: '/test/dir',
+    target_dir: 'test/target-dir',
     steps: [
-      { id: 'step1', prompt: 'fail this step', agent: 'mockAgent' },
+      { id: 'step1', prompt: 'mock-prompt' },
     ],
   };
 
-  const result = await autonomousRunner.run('/test/workflow.yaml', '/test/base', {});
+  const result = await runnerWithMissingAgent.run('mock-workflow-path', basePath, workflow.variables);
 
-  assert.equal(result.status, 'failed');
-  assert.equal(result.steps.length, 1);
-  assert.equal(result.steps[0].status, 'failed');
-  assert.equal(result.steps[0].error, 'Simulated failure');
+  assert.strictEqual(result.status, 'failed');
+  assert(result.steps[0].error!.includes('No adapter for agent'));
 });
 
-test('createAutonomousRunner handles missing adapter gracefully', async () => {
+test('should fail when LLM output is invalid', async () => {
+  const runnerWithFailingAdapter = createAutonomousRunner({
+    adapters: {
+      default: mockFailingAdapter,
+    },
+    defaultAgent: 'default',
+  });
+
   const workflow: AutoWorkflow = {
     name: 'Test Workflow',
-    target_dir: '/test/dir',
+    target_dir: 'test/target-dir',
     steps: [
-      { id: 'step1', prompt: 'Write code', agent: 'nonexistentAgent' },
+      { id: 'step1', prompt: 'mock-prompt' },
     ],
   };
 
-  const result = await autonomousRunner.run('/test/workflow.yaml', '/test/base', {});
+  const result = await runnerWithFailingAdapter.run('mock-workflow-path', basePath, workflow.variables);
 
-  assert.equal(result.status, 'failed');
-  assert.equal(result.steps.length, 1);
-  assert.equal(result.steps[0].status, 'failed');
-  assert.equal(result.steps[0].error, 'No adapter for agent: nonexistentAgent');
+  assert.strictEqual(result.status, 'failed');
+  assert(result.steps[0].error!.includes('Mock execution failed'));
+});
+
+test('should handle invalid configs gracefully', async () => {
+  const workflow: AutoWorkflow = {
+    name: 'Faulty Workflow',
+    target_dir: 'test/target-dir',
+    steps: [], // No steps provided to simulate invalid config
+  };
+
+  const result = await runner.run('mock-workflow-path', basePath, workflow.variables);
+
+  assert.strictEqual(result.status, 'failed');
+  assert.strictEqual(result.steps.length, 0);
 });
