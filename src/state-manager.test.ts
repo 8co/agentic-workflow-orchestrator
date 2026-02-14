@@ -1,48 +1,69 @@
-import { strict as assert } from 'node:assert';
-import { test } from 'node:test';
+import { describe, it, beforeEach } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { createStateManager } from './state-manager.js';
-import { writeFile } from 'node:fs/promises';
-import { resolve, join } from 'node:path';
+import type { WorkflowExecution } from './types.js';
 
-type WorkflowExecution = {
-  executionId: string;
-  startedAt: string;
-  // more fields if needed
-};
+describe('StateManager', () => {
+  let basePath: string;
+  let stateManager: ReturnType<typeof createStateManager>;
 
-const TEST_BASE_PATH = resolve('.test_state');
-const TEST_STATE_DIR = resolve(TEST_BASE_PATH, '.state');
+  beforeEach(async () => {
+    basePath = await mkdtemp(join(tmpdir(), 'state-manager-test-'));
+    stateManager = createStateManager(basePath);
+  });
 
-test('load should return correct WorkflowExecution for a valid file', async (t) => {
-  const stateManager = createStateManager(TEST_BASE_PATH);
-  const executionId = 'test-execution-id';
-  const execution: WorkflowExecution = {
-    executionId,
-    startedAt: new Date().toISOString(),
-  };
+  async function createSampleExecution(
+    executionId: string,
+    startedAt: string
+  ): Promise<WorkflowExecution> {
+    const execution = {
+      executionId,
+      startedAt,
+    } as WorkflowExecution;
+    await stateManager.save(execution);
+    return execution;
+  }
 
-  await writeFile(join(TEST_STATE_DIR, `${executionId}.json`), JSON.stringify(execution), 'utf-8');
-  const loadedExecution = await stateManager.load(executionId);
+  it('should save and load a workflow execution', async () => {
+    const execution = await createSampleExecution('test-execution-id', new Date().toISOString());
+    const loadedExecution = await stateManager.load('test-execution-id');
+    assert.deepEqual(loadedExecution, execution);
+  });
 
-  assert.deepEqual(loadedExecution, execution);
-});
+  it('should return null for non-existent workflow executions', async () => {
+    const loadedExecution = await stateManager.load('non-existent-id');
+    assert.equal(loadedExecution, null);
+  });
 
-test('load should return null if file does not exist', async (t) => {
-  const stateManager = createStateManager(TEST_BASE_PATH);
-  const nonExistentExecutionId = 'non-existent-id';
+  it('should list all saved workflow executions', async () => {
+    const execution1 = await createSampleExecution('execution1', new Date(2023, 0, 1).toISOString());
+    const execution2 = await createSampleExecution('execution2', new Date(2023, 0, 2).toISOString());
 
-  const loadedExecution = await stateManager.load(nonExistentExecutionId);
+    const executions = await stateManager.list();
+    assert.equal(executions.length, 2);
+    assert.deepEqual(executions, [execution2, execution1]); // Sorted by startedAt descending
+  });
 
-  assert.strictEqual(loadedExecution, null);
-});
+  it('should ignore non-JSON and corrupted files in list', async () => {
+    await createSampleExecution('execution1', new Date(2023, 0, 1).toISOString());
 
-test('load should return null for a corrupt JSON file', async (t) => {
-  const stateManager = createStateManager(TEST_BASE_PATH);
-  const corruptExecutionId = 'corrupt-execution';
-  const corruptContent = '{ "executionId": "invalid, "startedAt": "invalid json"'; // missing } to make it invalid
+    const filePath = join(basePath, '.state', 'corrupted-file.json');
+    await writeFile(filePath, '{ this is: not: valid json }', 'utf-8');
 
-  await writeFile(join(TEST_STATE_DIR, `${corruptExecutionId}.json`), corruptContent, 'utf-8');
-  const loadedExecution = await stateManager.load(corruptExecutionId);
+    const files = await stateManager.list();
+    assert.equal(files.length, 1);
+    assert.equal(files[0].executionId, 'execution1');
+  });
 
-  assert.strictEqual(loadedExecution, null);
+  it('should create state directory if it does not exist', async () => {
+    const stateDir = join(basePath, '.state');
+    await rm(stateDir, { recursive: true, force: true });
+
+    const execution = await createSampleExecution('execution1', new Date().toISOString());
+    const loadedExecution = await stateManager.load('execution1');
+    assert.deepEqual(loadedExecution, execution);
+  });
 });
