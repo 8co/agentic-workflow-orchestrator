@@ -961,7 +961,7 @@ tasks:
 
       ```
   - id: write-tests-errorUtility
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -971,6 +971,7 @@ tasks:
       test_description: >
         Create unit tests to cover all functionality in errorUtility.ts, including proper formatting and logging of
         error messages in different scenarios.
+    started_at: 2026-02-14T00:32:21.863Z
   - id: add-error-handling-health
     status: pending
     workflow: auto
