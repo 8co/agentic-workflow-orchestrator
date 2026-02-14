@@ -405,3 +405,36 @@ tasks:
     started_at: 2026-02-14T00:13:19.869Z
     completed_at: 2026-02-14T00:13:23.937Z
     branch: auto/add-missing-error-handling-config-validator
+  - id: write-tests-config
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/config.ts
+    variables:
+      test_target: src/config.ts
+      test_description: >
+        Write unit tests for the `loadConfig` and `validateConfig` functions to ensure they handle environment variable
+        configurations and error scenarios correctly.
+  - id: write-tests-adapters-anthropic
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/adapters/anthropic-adapter.ts
+    variables:
+      test_target: src/adapters/anthropic-adapter.ts
+      test_description: >
+        Add tests for AnthropicAdapter to cover edge cases in `execute` ensuring that network and API limit errors are
+        handled as expected.
+  - id: write-tests-queue-manager
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/queue-manager.ts
+    variables:
+      test_target: src/queue-manager.ts
+      test_description: >
+        Write tests for `Queue Manager` to ensure all CRUD operations on tasks are performed correctly and edge cases
+        like reading from a corrupted queue file are handled.
