@@ -4599,7 +4599,7 @@ tasks:
     completed_at: 2026-02-14T02:05:44.702Z
     branch: auto/write-tests-security-scanner-edge-cases
   - id: write-tests-scheduler-error-handling
-    status: running
+    status: completed
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -4610,8 +4610,10 @@ tasks:
         Create tests for error handling in the scheduler module, ensuring proper logging and state updates on task
         failure.
     started_at: 2026-02-14T02:05:44.774Z
+    completed_at: 2026-02-14T02:05:52.472Z
+    branch: auto/write-tests-scheduler-error-handling
   - id: refactor-log-util-error-handling-improvements
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-modify-file.md
     context_files:
@@ -4620,6 +4622,7 @@ tasks:
       modification_description: >
         Improve error handling within the log utility by adding more granular logging for unexpected situations and
         better exception management.
+    started_at: 2026-02-14T02:05:52.536Z
   - id: write-tests-state-manager-error-handling
     status: pending
     workflow: auto
