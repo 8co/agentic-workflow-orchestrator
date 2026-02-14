@@ -257,3 +257,45 @@ tasks:
     started_at: 2026-02-14T00:06:06.706Z
     completed_at: 2026-02-14T00:06:19.412Z
     branch: auto/create-file-util-module
+  - id: write-tests-autonomous-runner
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/autonomous-runner.ts
+    variables:
+      test_target: src/autonomous-runner.ts
+      test_description: >
+        Write comprehensive unit tests for the Autonomous Runner, covering all critical paths including successful runs,
+        retries, and failures.
+  - id: add-error-handling-openai-adapter
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/adapters/openai-adapter.ts
+    variables:
+      modification_description: >
+        Add detailed error handling to the OpenAI adapter for common scenarios like network errors, timeout, and invalid
+        API responses.
+  - id: refactor-prompt-resolver-format
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/prompt-resolver.ts
+    variables:
+      modification_description: >
+        Refactor the Prompt Resolver to improve code clarity and reduce redundancy  in variable resolution logic,
+        ensuring efficient matching and logging.
+  - id: add-tests-log-util
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/log-util.ts
+    variables:
+      test_target: src/log-util.ts
+      test_description: >
+        Implement tests for the LogUtil class to verify all logging methods (info, warn, error, debug) correctly format
+        and output messages.
