@@ -33,29 +33,23 @@ export function main(): void {
   console.log('🤖 Agentic Workflow Orchestrator - Starting...');
   let criticalFailure: boolean = false;
 
-  try {
-    initializeOrchestrationEngine();
-  } catch (error) {
-    logError({ context: 'orchestration engine initialization', error });
-    criticalFailure = true;
+  const tryInitialize = (task: () => void, context: string): void => {
+    try {
+      task();
+    } catch (error) {
+      logError({ context, error });
+      criticalFailure = true;
+    }
+  };
+
+  tryInitialize(initializeOrchestrationEngine, 'orchestration engine initialization');
+
+  if (!criticalFailure) {
+    tryInitialize(loadWorkflowConfigurations, 'workflow configurations loading');
   }
 
   if (!criticalFailure) {
-    try {
-      loadWorkflowConfigurations();
-    } catch (error) {
-      logError({ context: 'workflow configurations loading', error });
-      criticalFailure = true;
-    }
-  }
-
-  if (!criticalFailure) {
-    try {
-      connectToAIAgents();
-    } catch (error) {
-      logError({ context: 'AI agents connection', error });
-      criticalFailure = true;
-    }
+    tryInitialize(connectToAIAgents, 'AI agents connection');
   }
 
   if (criticalFailure) {
