@@ -4796,3 +4796,55 @@ tasks:
     started_at: 2026-02-14T02:25:31.638Z
     completed_at: 2026-02-14T02:25:38.429Z
     branch: auto/missing-error-handling-enhanced-logger
+  - id: add-error-handling-to-security-check-runner
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/security-check-runner.ts
+    variables:
+      modification_description: >
+        Add comprehensive error handling logic for all potential failure points, including child process execution
+        errors, file read errors, and invalid file paths.
+  - id: write-tests-for-formatErrorMessage-function
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/errorUtility.ts
+    variables:
+      test_target: src/errorUtility.ts
+      test_description: >
+        Add unit tests for the formatErrorMessage function, covering all branches including typical error objects,
+        unknown objects, and user-friendly message handling.
+  - id: improve-type-safety-in-task-proposer
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/task-proposer.ts
+    variables:
+      modification_description: >
+        Enhance the type safety by explicitly defining types for all functions, adjusting any implicit `any` types, and
+        utilizing TypeScript's `unknown` type where applicable for better error handling.
+  - id: add-missing-error-handling-to-git-ops
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/git-ops.ts
+    variables:
+      modification_description: >
+        Review and enhance error handling across Git operations, including capturing and logging errors from the
+        child_process spawn commands and edge cases like non-existent branches.
+  - id: write-tests-validation-enhancements
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/config-validator.ts
+    variables:
+      test_target: src/config-validator.ts
+      test_description: >
+        Implement edge case tests for the validateEnvConfig function, ensuring all environment variables are properly
+        handled and testing scenarios with missing or malformed environment settings.
