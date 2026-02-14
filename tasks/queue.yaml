@@ -960,3 +960,46 @@ tasks:
       src/state-manager.test.ts(83,9): error TS2304: Cannot find name 'writeFile'.
 
       ```
+  - id: write-tests-errorUtility
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/errorUtility.ts
+    variables:
+      test_target: src/errorUtility.ts
+      test_description: >
+        Create unit tests to cover all functionality in errorUtility.ts, including proper formatting and logging of
+        error messages in different scenarios.
+  - id: add-error-handling-health
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/health.ts
+    variables:
+      modification_description: >
+        Enhance error handling in the getHealthStatus function to gracefully manage fs and json parsing failures when
+        reading and processing package.json.
+  - id: consolidate-file-helper-functions
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-create-module.md
+    context_files:
+      - src/file-writer.ts
+      - src/file-util.ts
+    variables:
+      module_name: file-helper
+      module_description: >
+        Create a new module to consolidate utility functions for file operations (like reading and writing), aiming to
+        reduce duplication across file-util and file-writer components.
+  - id: improve-type-safety-deploy
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/scripts/deploy.ts
+    variables:
+      modification_description: >
+        Enhance type safety in the deploy function, ensuring all inputs, outputs, and internal variables have explicit
+        type annotations and data validation where applicable.
