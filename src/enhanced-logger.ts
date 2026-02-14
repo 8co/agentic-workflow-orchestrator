@@ -78,6 +78,8 @@ class EnhancedLogger {
 
     if (this.isTimeoutError(error)) {
       console.error(`[ERROR] The operation timed out. Retrying attempt ${attempt + 1}...`);
+    } else {
+      console.error(`[ERROR] Unknown write error encountered. Retrying attempt ${attempt + 1}...`);
     }
   }
 
@@ -88,9 +90,9 @@ class EnhancedLogger {
 
   private getErrorDescription(error: unknown): string {
     if (this.isError(error)) {
-      return `${error.message}. Stack: ${error.stack ?? 'No stack trace available.'}`;
+      return `${error.name}: ${error.message}. Stack: ${error.stack ?? 'No stack trace available.'}`;
     } else {
-      return String(error);
+      return `Non-error thrown: ${String(error)}`;
     }
   }
 
