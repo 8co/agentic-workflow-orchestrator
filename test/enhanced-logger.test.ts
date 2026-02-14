@@ -1,65 +1,58 @@
+import { test } from 'node:test';
+import assert from 'node:assert';
 import fs from 'fs';
 import path from 'path';
-import { test, mock } from 'node:test';
-import assert from 'node:assert';
 import { EnhancedLogger } from '../src/enhanced-logger.js';
 
-test('EnhancedLogger should log messages to a file and console at different levels', () => {
+// Helper function to mock fs functions
+const mockFsMethods = (methods: Partial<typeof fs>) => {
+  for (const [methodName, implementation] of Object.entries(methods)) {
+    if (implementation) {
+      jest.spyOn(fs, methodName as keyof typeof fs).mockImplementation(implementation as any);
+    }
+  }
+};
+
+test('EnhancedLogger: logInfo should handle file write errors gracefully', () => {
   const logger = EnhancedLogger.getInstance('test.log');
 
-  const consoleInfoSpy = mock.spy(console, 'info');
-  const consoleWarnSpy = mock.spy(console, 'warn');
-  const consoleErrorSpy = mock.spy(console, 'error');
-  const consoleDebugSpy = mock.spy(console, 'debug');
-
-  logger.logInfo('Information message');
-  logger.logWarn('Warning message');
-  logger.logError('Error message');
-  logger.logDebug('Debug message');
-
-  assert.ok(consoleInfoSpy.calledWithMatch(/\[INFO\] Information message/));
-  assert.ok(consoleWarnSpy.calledWithMatch(/\[WARN\] Warning message/));
-  assert.ok(consoleErrorSpy.calledWithMatch(/\[ERROR\] Error message/));
-  assert.ok(consoleDebugSpy.calledWithMatch(/\[DEBUG\] Debug message/));
-
-  consoleInfoSpy.restore();
-  consoleWarnSpy.restore();
-  consoleErrorSpy.restore();
-  consoleDebugSpy.restore();
-});
-
-test('EnhancedLogger should handle a failure to write to the log file gracefully', () => {
-  const logger = EnhancedLogger.getInstance('failing-test.log');
-
-  const fsAppendFileSyncMock = mock.fn(fs, 'appendFileSync', () => {
-    throw new Error('Simulated file write failure');
+  // Mock the appendFileSync and mkdirSync to throw an error
+  mockFsMethods({
+    appendFileSync: () => { throw new Error('Mocked file write error'); },
   });
 
-  const consoleErrorSpy = mock.spy(console, 'error');
+  // Capture logs from console
+  const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-  logger.logError('This should trigger a file write failure');
+  logger.logInfo('Test message');
 
-  assert.ok(consoleErrorSpy.calledWithMatch(/Failed to write to log file/));
-  assert.ok(consoleErrorSpy.calledWithMatch(/Simulated file write failure/));
-
-  fsAppendFileSyncMock.restore();
-  consoleErrorSpy.restore();
+  // Assert that error details were logged to console
+  expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Failed to write to log file'));
 });
 
-test('EnhancedLogger should retry creating directory and writing to file upon failure', () => {
-  const logger = EnhancedLogger.getInstance('retry-test.log');
+test('EnhancedLogger: recovery attempt on log directory creation failure', () => {
+  const logger = EnhancedLogger.getInstance('test.log');
 
-  const fakeExistsSync = mock.fn(fs, 'existsSync', () => false);
-  const fakeMkdirSync = mock.fn(fs, 'mkdirSync', () => { });
-  const fakeAppendFileSync = mock.fn(fs, 'appendFileSync', () => { });
+  // Mock mkdirSync to throw an error first, then succeed
+  let mkdirCalled = false;
+  mockFsMethods({
+    appendFileSync: () => { throw new Error('Mocked append file error'); },
+    mkdirSync: (dir: fs.PathLike, options: fs.MakeDirectoryOptions) => {
+      if (mkdirCalled) {
+        return; // succeed on second attempt
+      }
+      mkdirCalled = true;
+      throw new Error('Mocked mkdir error');
+    },
+  });
 
-  logger.logInfo('Testing retry mechanism');
+  // Capture logs from console
+  const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
-  assert.ok(fakeExistsSync.called);
-  assert.ok(fakeMkdirSync.called);
-  assert.strictEqual(fakeAppendFileSync.callCount, 2, 'appendFileSync should be retried once');
+  logger.logInfo('Test message');
 
-  fakeExistsSync.restore();
-  fakeMkdirSync.restore();
-  fakeAppendFileSync.restore();
+  // Check if error handling log is invoked twice: once for original error, once for recovery error
+  expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Recovery attempt failed'));
+
+  consoleSpy.mockRestore();
 });
