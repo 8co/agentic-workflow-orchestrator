@@ -13,7 +13,7 @@ tasks:
     completed_at: 2026-02-14T13:56:44.775Z
     branch: auto/example-create-module
   - id: example-write-tests
-    status: running
+    status: failed
     workflow: auto-implement
     prompt: prompts/auto-write-test.md
     context_files:
@@ -23,8 +23,24 @@ tasks:
       test_description: |
         Write tests for the example module. This is a sample task demonstrating test generation.
     started_at: 2026-02-14T13:56:44.778Z
+    completed_at: 2026-02-14T13:57:00.944Z
+    error: >-
+      # Verification Errors
+
+
+      The following commands failed. Fix ALL errors.
+
+
+      ## TypeScript Build (exit 2)
+
+      ```
+
+      src/example-module.test.ts(3,33): error TS2307: Cannot find module './example-module.js' or its corresponding type
+      declarations.
+
+      ```
   - id: improve-error-handling-in-cursor-adapter
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-modify-file.md
     context_files:
@@ -33,6 +49,7 @@ tasks:
       modification_description: >
         Enhance error handling in the Cursor adapter by adding checks for specific error codes such as 400, 401, and 503
         with descriptive logs.
+    started_at: 2026-02-14T13:57:00.947Z
   - id: refactor-redundant-error-patterns
     status: pending
     workflow: auto
