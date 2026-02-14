@@ -1213,3 +1213,34 @@ tasks:
     started_at: 2026-02-14T00:38:55.524Z
     completed_at: 2026-02-14T00:39:01.554Z
     branch: auto/write-tests-errorUtility-edge-cases
+  - id: improve-error-handling-ai-agents
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/aiAgents.ts
+    variables:
+      modification_description: >
+        Enhance error handling by differentiating between connection errors and other types of errors when connecting to
+        AI agents in the `connectToAIAgents` function.
+  - id: refactor-autonomous-runner-error-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/autonomous-runner.ts
+    variables:
+      modification_description: >
+        Refactor the error handling in the autonomous runner to ensure all potential error paths provide meaningful
+        error messages and utilize the unified error handling utility where applicable.
+  - id: write-tests-state-manager-edge-cases
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/state-manager.ts
+    variables:
+      test_target: src/state-manager.ts
+      test_description: >
+        Add edge case tests for the `StateManager` interface, focusing on scenarios like corrupted state files, disk
+        write failures, and non-existent execution IDs.
