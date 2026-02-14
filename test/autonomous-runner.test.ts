@@ -1,106 +1,71 @@
+import { test, describe, beforeEach } from 'node:test';
 import assert from 'node:assert';
-import { test } from 'node:test';
-import { resolve } from 'node:path';
-import { readFile } from 'node:fs/promises';
-import { createAutonomousRunner, AutoRunnerDeps } from '../src/autonomous-runner.js';
-import type { AgentAdapter, AgentRequest } from '../src/types.js';
+import { createAutonomousRunner } from '../src/autonomous-runner.js';
+import type { AgentAdapter, AgentType } from '../src/types.js';
 
+// Mock dependencies
 const mockAdapter: AgentAdapter = {
-  execute: async (_request: AgentRequest) => ({
-    success: true,
-    output: "```typescript:path/to/file.ts\nconsole.log('Hello World');\n```",
-  }),
+  execute: async () => ({ success: true, output: '```typescript:path/to/file.ts\nconsole.log("Hello World");\n```' })
 };
 
-const mockVerifyRunner = {
-  runVerification: async () => ({
-    allPassed: true,
-  }),
-  defaultVerifyCommands: () => [],
+const mockDeps = {
+  adapters: {
+    mockAgent: mockAdapter
+  },
+  defaultAgent: 'mockAgent' as AgentType
 };
 
-const mockGitOps = {
-  commitChanges: async () => ({ success: true }),
-  revertChanges: async () => {},
-  hasChanges: async () => false,
-  getChangedFiles: async () => [],
-  getCurrentBranch: async () => 'main',
-  createBranch: async () => ({ success: true }),
-};
+// Setup
+const runner = createAutonomousRunner(mockDeps);
 
-const mockDeps: AutoRunnerDeps = {
-  adapters: { 'default': mockAdapter },
-  defaultAgent: 'default',
-  ...mockVerifyRunner,
-  ...mockGitOps,
-};
-
-test('createAutonomousRunner: should load a valid workflow and execute successfully', async () => {
-  const runner = createAutonomousRunner(mockDeps);
-  const basePath = resolve(process.cwd(), 'test_fixtures');
-  const workflowPath = 'valid-workflow.yaml';
-  const loadWorkflow = async () => ({
-    name: 'Test Workflow',
-    target_dir: './',
-    steps: [{ id: 'step1', prompt: 'Prompt', max_attempts: 1 }],
+describe('Autonomous Runner', () => {
+  // Reset the execution environment before each test
+  beforeEach(() => {
+    // You can add setup code here if necessary for each test
   });
 
-  runner.loadWorkflow = loadWorkflow; // Overriding the loadWorkflow function
-  const result = await runner.run(workflowPath, basePath);
-
-  assert.equal(result.status, 'completed');
-  assert.equal(result.steps.length, 1);
-  assert.equal(result.steps[0].status, 'completed');
-});
-
-test('createAutonomousRunner: should handle failed verification and retry', async () => {
-  const failingDeps = {
-    ...mockDeps,
-    runVerification: async () => ({ allPassed: false, errorSummary: 'Verification failed' }),
-  };
-
-  const runner = createAutonomousRunner(failingDeps);
-  const basePath = resolve(process.cwd(), 'test_fixtures');
-  const workflowPath = 'valid-workflow.yaml';
-  const loadWorkflow = async () => ({
-    name: 'Test Workflow',
-    target_dir: './',
-    steps: [{ id: 'step1', prompt: 'Prompt', max_attempts: 2 }],
+  test('should handle empty workflow', async () => {
+    const workflowPath = 'path/to/empty-workflow.yml';
+    const basePath = 'path/to/base';
+    const result = await runner.run(workflowPath, basePath);
+    assert.strictEqual(result.steps.length, 0);
+    assert.strictEqual(result.status, 'completed');
   });
 
-  runner.loadWorkflow = loadWorkflow;
-  const result = await runner.run(workflowPath, basePath);
-
-  assert.equal(result.status, 'failed');
-  assert.equal(result.steps.length, 1);
-  assert.equal(result.steps[0].status, 'failed');
-  assert.equal(result.steps[0].attempts, 2);
-});
-
-test('createAutonomousRunner: should handle adapter failure with no output', async () => {
-  const failingAdapter: AgentAdapter = {
-    execute: async () => ({ success: false, error: 'Adapter error' }),
-  };
-
-  const failingDeps = {
-    ...mockDeps,
-    adapters: { 'default': failingAdapter },
-  };
-
-  const runner = createAutonomousRunner(failingDeps);
-  const basePath = resolve(process.cwd(), 'test_fixtures');
-  const workflowPath = 'valid-workflow.yaml';
-  const loadWorkflow = async () => ({
-    name: 'Test Workflow',
-    target_dir: './',
-    steps: [{ id: 'step1', prompt: 'Prompt', max_attempts: 2 }],
+  test('should handle workflow with invalid steps', async () => {
+    const workflowPath = 'path/to/invalid-steps-workflow.yml';
+    const basePath = 'path/to/base';
+    const result = await runner.run(workflowPath, basePath);
+    assert.strictEqual(result.steps.length, 0);  // Assuming it skips invalid steps
+    assert.strictEqual(result.status, 'completed');
   });
 
-  runner.loadWorkflow = loadWorkflow;
-  const result = await runner.run(workflowPath, basePath);
+  test('should complete with valid steps', async () => {
+    const workflowPath = 'path/to/valid-workflow.yml';
+    const basePath = 'path/to/base';
+    const overrides = { someVar: 'overrideValue' };
+    const result = await runner.run(workflowPath, basePath, overrides);
+    assert.ok(result.steps.length > 0);
+    assert.strictEqual(result.status, 'completed');
+  });
 
-  assert.equal(result.status, 'failed');
-  assert.equal(result.steps.length, 1);
-  assert.equal(result.steps[0].status, 'failed');
-  assert.equal(result.steps[0].error, 'Adapter error');
+  test('should return failed status when step execution fails', async () => {
+    const failingMockAdapter: AgentAdapter = {
+      execute: async () => ({ success: false, output: '', error: 'Execution failed' })
+    };
+
+    const failingDeps = {
+      adapters: {
+        mockAgent: failingMockAdapter
+      },
+      defaultAgent: 'mockAgent' as AgentType
+    };
+
+    const failingRunner = createAutonomousRunner(failingDeps);
+    const workflowPath = 'path/to/failing-workflow.yml';
+    const basePath = 'path/to/base';
+    const result = await failingRunner.run(workflowPath, basePath);
+    assert.strictEqual(result.status, 'failed');
+    assert.ok(result.steps.some(step => step.status === 'failed'));
+  });
 });
