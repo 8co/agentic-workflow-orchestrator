@@ -7,10 +7,8 @@ tasks:
       - src/types.ts
     variables:
       module_name: example module
-      module_description: >
-        Create a new utility module. This is a sample task
-        demonstrating the queue format.
-
+      module_description: |
+        Create a new utility module. This is a sample task demonstrating the queue format.
   - id: example-write-tests
     status: pending
     workflow: auto-implement
@@ -19,6 +17,57 @@ tasks:
       - src/types.ts
     variables:
       test_target: src/example-module.ts
+      test_description: |
+        Write tests for the example module. This is a sample task demonstrating test generation.
+  - id: improve-error-handling-in-cursor-adapter
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/adapters/cursor-adapter.ts
+    variables:
+      modification_description: >
+        Enhance error handling in the Cursor adapter by adding checks for specific error codes such as 400, 401, and 503
+        with descriptive logs.
+  - id: refactor-redundant-error-patterns
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/adapters/anthropic-adapter.ts
+    variables:
+      modification_description: >
+        Refactor error handling patterns in anthropic-adapter.ts to reduce redundancy, ensuring a singular, reusable
+        function is used for logging and handling errors across the file.
+  - id: add-tests-batch-execution
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/scheduler.ts
+    variables:
+      test_target: src/scheduler.ts
       test_description: >
-        Write tests for the example module. This is a sample
-        task demonstrating test generation.
+        Write unit tests to confirm that the batch execution logic in the scheduler loops through the task queue
+        correctly and handles each task, logging outcomes without side effects.
+  - id: utility-function-retry-mechanism
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-create-module.md
+    context_files:
+      - src/retryUtility.ts
+    variables:
+      module_name: src/utils/retryHelper.ts
+      module_description: >
+        Create a utility function to handle retry mechanisms for async operations, configurable with custom retry limits
+        and delays to improve code reuse and error management across the codebase.
+  - id: enhance-type-safety-autonomous-runner
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/autonomous-runner.ts
+    variables:
+      modification_description: >
+        Improve type safety in autonomous-runner by utilizing TypeScript's advanced types, such as intersection types
+        and type predicates, to validate step variables and execution results.
