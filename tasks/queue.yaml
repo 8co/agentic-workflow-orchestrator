@@ -1916,3 +1916,35 @@ tasks:
     started_at: 2026-02-14T00:50:48.435Z
     completed_at: 2026-02-14T00:50:52.729Z
     branch: auto/improve-type-safety-health-function
+  - id: write-tests-aiAgents-exception-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/aiAgents.ts
+    variables:
+      test_target: src/aiAgents.ts
+      test_description: >
+        Write tests to ensure proper handling of exceptions and unexpected inputs within the connectToAIAgents function,
+        covering possible edge cases.
+  - id: write-tests-enhanced-logger-edge-case-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/enhanced-logger.ts
+    variables:
+      test_target: src/enhanced-logger.ts
+      test_description: >
+        Create tests to cover edge case scenarios in EnhancedLogger, ensuring robustness when encountering unexpected
+        log levels or file access errors.
+  - id: add-error-handling-to-test-helper
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/test-helper.ts
+    variables:
+      modification_description: >
+        Implement comprehensive error handling within the test-helper module to capture and manage edge case errors
+        during test setup and teardown.
