@@ -186,6 +186,15 @@ export function createScheduler(config: SchedulerConfig) {
     await gitCommit(basePath, `Queue: start ${task.id}`);
 
     try {
+      // For external projects, ensure we start from main before creating a new branch.
+      // Without this, each task branches from the previous task's branch (chaining).
+      if (isExternal) {
+        const checkoutMain = await gitCmd(['checkout', 'main'], targetPath);
+        if (!checkoutMain.success) {
+          console.log(`  ⚠️  Could not checkout main in ${targetPath}: ${checkoutMain.output.slice(0, 100)}`);
+        }
+      }
+
       const { workflow } = taskToWorkflow(task, projectConfig, projectId);
 
       // Write a temporary workflow file (always in orchestrator)
