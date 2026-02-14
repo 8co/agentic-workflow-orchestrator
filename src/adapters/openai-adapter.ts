@@ -40,7 +40,11 @@ export function createOpenAIAdapter(config: OpenAIConfig, adapterName: 'openai' 
           max_tokens: 4096,
         });
 
-        const output = completion.choices[0]?.message?.content ?? '';
+        if (!completion || !Array.isArray(completion.choices) || completion.choices.length === 0 || !completion.choices[0]?.message?.content) {
+          throw new Error('Malformed response from OpenAI service');
+        }
+
+        const output = completion.choices[0].message.content;
         const durationMs = Date.now() - start;
 
         // Write to output file if specified
@@ -87,6 +91,8 @@ export function createOpenAIAdapter(config: OpenAIConfig, adapterName: 'openai' 
             errorMessage = 'Too many requests: You have hit the rate limit. Try again later.';
           } else if (err.message.includes('503')) {
             errorMessage = 'Service unavailable: OpenAI temporarily unavailable. Try again after some time.';
+          } else if (err.message.includes('Malformed response')) {
+            errorMessage = 'Received a malformed response from OpenAI. Please try again later.';
           } else {
             errorMessage = 'An unexpected error occurred. Please try again later.';
           }
