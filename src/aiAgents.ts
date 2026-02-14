@@ -52,13 +52,17 @@ export function connectToAIAgents(): void {
     });
 
   } catch (error: unknown) {
-    try {
-      const formattedError: Error = formatError(error) || new Error("An unknown error occurred while initiating connection.");
-      handleConnectionError(formattedError);
-    } catch (innerError: unknown) {
-      const criticalError: Error = formatError(innerError) || new Error("An unknown critical error occurred.");
-      logCriticalError(criticalError);
-    }
+    handleCriticalConnectionError(error);
+  }
+}
+
+function handleCriticalConnectionError(error: unknown): void {
+  try {
+    const formattedError: Error = formatError(error) || new Error("An unknown error occurred while initiating connection.");
+    handleConnectionError(formattedError);
+  } catch (innerError: unknown) {
+    const criticalError: Error = formatError(innerError) || new Error("An unknown critical error occurred.");
+    logCriticalError(criticalError);
   }
 }
 
