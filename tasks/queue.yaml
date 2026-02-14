@@ -2260,3 +2260,14 @@ tasks:
     started_at: 2026-02-14T01:00:01.692Z
     completed_at: 2026-02-14T01:00:16.389Z
     branch: auto/refactor-health-module
+  - id: write-tests-health
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/health.ts
+    variables:
+      test_target: src/health.ts
+      test_description: >
+        Implement comprehensive unit tests focusing on edge cases and scenarios  for the getHealthStatus function to
+        ensure accurate health metrics reporting.
