@@ -74,6 +74,15 @@ export function createCursorAdapter(): AgentAdapter {
               case 'ENOTDIR':
                 errorMessage = 'A component of the path is not a directory. Please check the path.';
                 break;
+              case '400':
+                errorMessage = 'Bad Request. The server could not understand the request.';
+                break;
+              case '401':
+                errorMessage = 'Unauthorized. Authentication is required and has failed.';
+                break;
+              case '503':
+                errorMessage = 'Service Unavailable. The server is currently unable to handle the request.';
+                break;
               default:
                 errorMessage = `Unhandled error (code: ${errnoError.code}): ${errnoError.message}`;
             }
