@@ -13,9 +13,9 @@ export function validateEnvConfig(): ValidationResult {
   const errors: string[] = [];
 
   try {
-    const anthropicApiKey = process.env.ANTHROPIC_API_KEY;
-    const openaiApiKey = process.env.OPENAI_API_KEY;
-    const defaultAgent = process.env.DEFAULT_AGENT as AgentType | undefined;
+    const anthropicApiKey: string | undefined = process.env.ANTHROPIC_API_KEY;
+    const openaiApiKey: string | undefined = process.env.OPENAI_API_KEY;
+    const defaultAgent: AgentType | undefined = process.env.DEFAULT_AGENT as AgentType | undefined;
 
     if (!anthropicApiKey) {
       missing.push('ANTHROPIC_API_KEY');
@@ -35,7 +35,8 @@ export function validateEnvConfig(): ValidationResult {
       }
     }
   } catch (e) {
-    errors.push(`An error occurred during validation: ${(e as Error).message}`);
+    const error = e instanceof Error ? e.message : 'Unknown error';
+    errors.push(`An error occurred during validation: ${error}`);
   }
 
   const valid = missing.length === 0 && errors.length === 0;
