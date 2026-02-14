@@ -6124,3 +6124,14 @@ tasks:
     started_at: 2026-02-14T02:50:30.078Z
     completed_at: 2026-02-14T02:50:36.800Z
     branch: auto/add-observability-enhancements-to-cli
+  - id: write-tests-aiagents-error-cases-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/aiAgents.ts
+    variables:
+      test_target: src/aiAgents.ts
+      test_description: >
+        Write tests to improve error case handling in the `aiAgents.ts` module, ensuring all potential errors are
+        covered.
