@@ -285,7 +285,7 @@ tasks:
     completed_at: 2026-02-14T00:11:28.810Z
     branch: auto/add-error-handling-openai-adapter
   - id: refactor-prompt-resolver-format
-    status: running
+    status: completed
     workflow: auto
     prompt: prompts/auto-modify-file.md
     context_files:
@@ -295,8 +295,10 @@ tasks:
         Refactor the Prompt Resolver to improve code clarity and reduce redundancy  in variable resolution logic,
         ensuring efficient matching and logging.
     started_at: 2026-02-14T00:11:28.818Z
+    completed_at: 2026-02-14T00:11:32.490Z
+    branch: auto/refactor-prompt-resolver-format
   - id: add-tests-log-util
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -306,3 +308,4 @@ tasks:
       test_description: >
         Implement tests for the LogUtil class to verify all logging methods (info, warn, error, debug) correctly format
         and output messages.
+    started_at: 2026-02-14T00:11:32.496Z
