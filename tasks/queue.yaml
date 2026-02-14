@@ -6787,3 +6787,111 @@ tasks:
     started_at: 2026-02-14T03:09:26.373Z
     completed_at: 2026-02-14T03:09:37.626Z
     branch: auto/create-security-check-runner-enhanced-tests
+  - id: create-webhook-sender
+    status: running
+    workflow: auto-implement
+    prompt: prompts/auto-create-module.md
+    context_files:
+      - src/types.ts
+      - src/error-notification.ts
+    variables:
+      module_name: webhook sender
+      module_description: >
+        Create src/webhook-sender.ts that sends alerts to external services (Slack, Discord, webhooks). Export
+        sendWebhook(url: string, payload: object): Promise<boolean>. Include retry logic (3 attempts), timeout handling
+        (5 sec), and error logging. Support both POST JSON webhooks and Slack webhook format. Type-safe with
+        WebhookPayload interface. No external dependencies beyond node:https. Named exports only.
+    started_at: 2026-02-14T03:27:16.351Z
+  - id: implement-metrics-export
+    status: pending
+    workflow: auto-implement
+    prompt: prompts/auto-create-module.md
+    context_files:
+      - src/observabilityUtil.ts
+      - src/types.ts
+    variables:
+      module_name: metrics export
+      module_description: >
+        Create src/metrics-export.ts that exports metrics to JSON files for historical analysis. Export
+        exportMetrics(metrics: PerformanceMetrics, filepath: string): Promise<void> and loadMetricsHistory(filepath:
+        string): Promise<PerformanceMetrics[]>. Store timestamped snapshots. Include functions to calculate trends
+        (memory growth, CPU average over time). Type-safe with MetricsSnapshot interface. Use node:fs/promises. Named
+        exports only.
+  - id: create-budget-manager
+    status: pending
+    workflow: auto-implement
+    prompt: prompts/auto-create-module.md
+    context_files:
+      - src/types.ts
+      - src/adapters/openai-adapter.ts
+      - src/adapters/anthropic-adapter.ts
+    variables:
+      module_name: budget manager
+      module_description: >
+        Create src/budget-manager.ts that tracks API costs and enforces spending limits. Export trackCost(tokens:
+        {input: number, output: number}, model: string): void, getRemainingBudget(): number, and checkBudgetLimit():
+        boolean. Store daily spending in JSON file. Include model pricing (gpt-4o: $0.0025/1K input, claude: $0.003/1K).
+        Export resetDailyBudget() for cron jobs. Type-safe with BudgetConfig interface. Named exports only.
+  - id: build-metrics-dashboard
+    status: pending
+    workflow: auto-implement
+    prompt: prompts/auto-create-module.md
+    context_files:
+      - src/observabilityUtil.ts
+      - src/metrics-export.ts
+    variables:
+      module_name: metrics dashboard
+      module_description: >
+        Create src/dashboard/index.html and src/dashboard/serve.ts that display real-time metrics in a web UI. The HTML
+        should use Chart.js (via CDN) to visualize memory, CPU, task success rates, and cost over time. The serve.ts
+        exports startDashboard(port: number): void using node:http to serve the HTML and a /api/metrics endpoint
+        returning current metrics JSON. Simple, clean UI with dark mode. No build step. Named exports only.
+  - id: implement-rollback-manager
+    status: pending
+    workflow: auto-implement
+    prompt: prompts/auto-create-module.md
+    context_files:
+      - src/git-ops.ts
+      - src/types.ts
+      - src/observabilityUtil.ts
+    variables:
+      module_name: rollback manager
+      module_description: >
+        Create src/rollback-manager.ts that can revert failed autonomous changes. Export rollbackToCommit(commitHash:
+        string): Promise<void>, createCheckpoint(): Promise<string>, and canSafelyRollback(commitHash: string):
+        Promise<boolean>. Include pre-rollback health checks (verify git state, check for uncommitted changes). Store
+        rollback history with timestamps and reasons. Type-safe with RollbackRecord interface. Use src/git-ops.ts
+        functions. Named exports only.
+  - id: implement-auto-merge-system
+    status: pending
+    workflow: auto-implement
+    prompt: prompts/auto-create-module.md
+    context_files:
+      - src/git-ops.ts
+      - src/verify-runner.ts
+      - src/observabilityUtil.ts
+      - src/rollback-manager.ts
+    variables:
+      module_name: auto merge system
+      module_description: >
+        Create src/auto-merge.ts that safely merges branches to main with health checks. Export
+        canMergeToMain(branchName: string): Promise<{safe: boolean, reason: string}>, autoMergeWithChecks(branchName:
+        string): Promise<boolean>, and monitorPostMerge(beforeMetrics: PerformanceMetrics): Promise<boolean>. Run all
+        verifications (build, test, security scan), compare metrics before/after, auto-rollback if metrics degrade >5%.
+        Type-safe with MergeResult interface. Named exports only.
+  - id: create-scheduled-autopilot
+    status: pending
+    workflow: auto-implement
+    prompt: prompts/auto-create-module.md
+    context_files:
+      - src/scheduler.ts
+      - src/health.ts
+      - src/budget-manager.ts
+    variables:
+      module_name: scheduled autopilot
+      module_description: >
+        Create src/scheduled-autopilot.ts that wraps autopilot for cron execution. Export runScheduledCycle():
+        Promise<void> which performs pre-flight checks (health status, budget remaining, no other autopilot running),
+        runs one autopilot cycle, and logs results to scheduled-runs.json. Include safeguards: skip if budget exceeded,
+        alert if health check fails, max 1 hour timeout per cycle. Type-safe with ScheduledRunResult interface. Named
+        exports only.
