@@ -18,20 +18,20 @@ const logger = createLogger('health');
 
 export function getHealthStatus(): HealthStatus {
   let version: string | undefined;
-  let memoryUsageMB: number = 0;
+  let memoryUsageMB = 0;
   let status: 'ok' | 'degraded' = 'ok';
-  
+
   try {
     version = extractPackageVersion();
   } catch (error) {
-    logger.error(`Version extraction error: Failed to parse package.json for version. ${error instanceof Error ? error.message : 'Unknown error'}`);
+    logError('Version extraction error', 'Failed to parse package.json for version.', error);
     status = 'degraded';
   }
-  
+
   try {
     memoryUsageMB = getSafeMemoryUsageMB();
   } catch (error) {
-    logger.error(`Memory usage retrieval error: Unable to calculate memory usage. ${error instanceof Error ? error.message : 'Unknown error'}`);
+    logError('Memory usage retrieval error', 'Unable to calculate memory usage.', error);
     status = 'degraded';
   }
 
@@ -70,12 +70,14 @@ function logHealthMonitoringData(healthStatus: HealthStatus): void {
     logHealthStatus(healthStatus);
     logMemoryUsageWarnings(healthStatus.memoryUsage);
   } catch (error) {
-    logger.error(`Logging error: Could not log health status and warnings. ${error instanceof Error ? error.message : 'Unknown error'}`);
+    logError('Logging error', 'Could not log health status and warnings.', error);
   }
 }
 
 function logHealthStatus({ uptime, memoryUsage, version }: HealthStatus): void {
-  logger.info(`Health status fetched at ${new Date().toISOString()}. Uptime: ${uptime} seconds, Memory Usage: ${memoryUsage} MB, Version: ${version ?? 'N/A'}`);
+  logger.info(
+    `Health Check - Time: ${new Date().toISOString()}, Uptime: ${uptime} seconds, Memory Usage: ${memoryUsage} MB, Version: ${version ?? 'N/A'}`
+  );
 }
 
 function logMemoryUsageWarnings(memoryUsage: number): void {
@@ -88,8 +90,15 @@ function logMemoryUsageWarnings(memoryUsage: number): void {
 
   const warning = warnings.find(w => memoryUsage > w.threshold);
   if (warning) {
-    logger[warning.level as keyof typeof logger](warning.message);
+    logger[warning.level as keyof typeof logger](
+      `Memory Usage Warning - ${warning.message}`
+    );
   } else {
-    logger.info(`Normal memory usage: ${formattedMemoryUsage}. System is healthy.`);
+    logger.info(`Memory Usage - Normal: ${formattedMemoryUsage}. System is healthy.`);
   }
+}
+
+function logError(type: string, context: string, error: unknown): void {
+  const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+  logger.error(`${type}: ${context} ${errorMessage}`);
 }
