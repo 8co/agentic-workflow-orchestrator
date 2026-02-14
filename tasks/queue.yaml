@@ -529,3 +529,55 @@ tasks:
     started_at: 2026-02-14T00:22:30.337Z
     completed_at: 2026-02-14T00:22:38.804Z
     branch: auto/add-tests-prompt-resolver
+  - id: write-tests-autonomous-runner-edge-cases
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/autonomous-runner.ts
+    variables:
+      test_target: src/autonomous-runner.ts
+      test_description: >
+        Add missing tests for edge cases in the Autonomous Runner, such as handling empty workflows or workflows with
+        invalid steps.
+  - id: improve-type-safety-autonomous-runner
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/autonomous-runner.ts
+    variables:
+      modification_description: >
+        Improve type safety in the Autonomous Runner module by replacing 'any' types with more specific types and
+        ensuring stricter type checks where applicable.
+  - id: add-error-handling-autonomous-runner
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/autonomous-runner.ts
+    variables:
+      modification_description: >
+        Enhance error handling in the Autonomous Runner by adding specific error messages and handling known errors
+        within the `executeStep` function.
+  - id: write-tests-queue-manager-edge-cases
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/queue-manager.ts
+    variables:
+      test_target: src/queue-manager.ts
+      test_description: >
+        Add tests to cover edge cases in the Queue Manager such as handling missing task files or tasks with missing
+        fields in the YAML.
+  - id: refactor-git-ops-error-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/git-ops.ts
+    variables:
+      modification_description: >
+        Refactor error handling in the Git Operations module to provide clearer error messages and handle specific git
+        operation errors more gracefully.
