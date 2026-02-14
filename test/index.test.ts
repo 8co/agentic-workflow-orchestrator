@@ -1,29 +1,97 @@
+import { strict as assert } from 'node:assert';
+import test from 'node:test';
 import { main } from '../src/index.js';
-import assert from 'node:assert';
-import { test } from 'node:test';
+import { initializeOrchestrationEngine } from '../src/orchestrationEngine.js';
+import { loadWorkflowConfigurations } from '../src/workflowConfig.js';
+import { connectToAIAgents } from '../src/aiAgents.js';
 
-test('main function should call initializeOrchestrationEngine, loadWorkflowConfigurations, and connectToAIAgents', () => {
-  let orchestrationInitialized = false;
-  let configurationsLoaded = false;
-  let aiAgentsConnected = false;
+test('main function - successful execution', () => {
+  let logOutput: string[] = [];
+  const originalLog = console.log;
 
-  // Mock functions
-  const initializeOrchestrationEngine = () => { orchestrationInitialized = true; };
-  const loadWorkflowConfigurations = () => { configurationsLoaded = true; };
-  const connectToAIAgents = () => { aiAgentsConnected = true; };
+  console.log = (message: string) => logOutput.push(message);
 
-  // Inject mocks
-  const rewire = require('rewire');
-  const index = rewire('../src/index.js');
-  index.__set__('initializeOrchestrationEngine', initializeOrchestrationEngine);
-  index.__set__('loadWorkflowConfigurations', loadWorkflowConfigurations);
-  index.__set__('connectToAIAgents', connectToAIAgents);
+  try {
+    main();
+  } finally {
+    console.log = originalLog; // restore the original console.log
+  }
 
-  // Invoke the main function
-  main();
+  assert.deepEqual(
+    logOutput, 
+    [
+      '🤖 Agentic Workflow Orchestrator - Starting...',
+      '✅ System initialized'
+    ],
+    'Log output should indicate successful start and initialization'
+  );
+});
 
-  // Assert whether each function was called
-  assert.strictEqual(orchestrationInitialized, true, 'initializeOrchestrationEngine should be called');
-  assert.strictEqual(configurationsLoaded, true, 'loadWorkflowConfigurations should be called');
-  assert.strictEqual(aiAgentsConnected, true, 'connectToAIAgents should be called');
+test('main function - error handling in initializeOrchestrationEngine', () => {
+  const originalInitialize = initializeOrchestrationEngine;
+  initializeOrchestrationEngine = () => {
+    throw new Error('Initialization failed');
+  };
+
+  let logOutput: string[] = [];
+  const originalLog = console.error;
+
+  console.error = (message: string) => logOutput.push(message);
+
+  try {
+    main();
+  } catch (e) {
+    // expecting an error
+  } finally {
+    console.error = originalLog;
+    initializeOrchestrationEngine = originalInitialize; // restore original function
+  }
+
+  assert(logOutput.includes('Initialization failed'), 'Should log initialization error');
+});
+
+test('main function - error handling in loadWorkflowConfigurations', () => {
+  const originalLoadConfig = loadWorkflowConfigurations;
+  loadWorkflowConfigurations = () => {
+    throw new Error('Configuration load failed');
+  };
+
+  let logOutput: string[] = [];
+  const originalLog = console.error;
+
+  console.error = (message: string) => logOutput.push(message);
+
+  try {
+    main();
+  } catch (e) {
+    // expecting an error
+  } finally {
+    console.error = originalLog;
+    loadWorkflowConfigurations = originalLoadConfig; // restore original function
+  }
+
+  assert(logOutput.includes('Configuration load failed'), 'Should log configuration load error');
+});
+
+test('main function - error handling in connectToAIAgents', () => {
+  const originalConnect = connectToAIAgents;
+  connectToAIAgents = () => {
+    throw new Error('AI Agent connection failed');
+  };
+
+  let logOutput: string[] = [];
+  const originalLog = console.error;
+
+  console.error = (message: string) => logOutput.push(message);
+
+  try {
+    main();
+  } catch (e) {
+    // expecting an error
+  } finally {
+    console.error = originalLog;
+    connectToAIAgents = originalConnect; // restore original function
+  }
+
+  assert(logOutput.includes('AI Agent connection failed'), 'Should log AI agent connection error');
 });
