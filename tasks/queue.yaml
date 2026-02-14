@@ -14,9 +14,8 @@ tasks:
         import ... from './...'), resolve them to absolute paths, and recursively follow imports up to 3 levels deep.
         Return a deduplicated array of file paths that are relevant context for that entry file. Use node:fs/promises
         and node:path only. No external dependencies. Export a second function getFileExports(filePath: string):
-        Promise<string[]> that reads a file and returns the names of all named exports using regex matching on
-        'export function', 'export class', 'export interface', 'export const', 'export type'. Named exports only.
-
+        Promise<string[]> that reads a file and returns the names of all named exports using regex matching on 'export
+        function', 'export class', 'export interface', 'export const', 'export type'. Named exports only.
   - id: create-execution-audit-log
     status: pending
     workflow: auto-implement
@@ -29,13 +28,12 @@ tasks:
       module_description: >
         Create src/audit-log.ts that exports an interface AuditEntry with fields: id (string), taskId (string),
         timestamp (string ISO), durationMs (number), tokensIn (number), tokensOut (number), estimatedCost (number),
-        status ('completed' | 'failed'), filesChanged (string[]), branch (string | undefined), error (string | undefined).
-        Export function logEntry(entry: AuditEntry): Promise<void> that appends the entry as a JSON line to
-        'audit-log.jsonl' in the project root. Export function loadAuditLog(): Promise<AuditEntry[]> that reads
-        the JSONL file and returns all entries. Export function getAuditSummary(): Promise<{ totalRuns: number,
-        successRate: number, totalTokensIn: number, totalTokensOut: number, totalCost: number, avgDurationMs: number }>
-        that computes summary stats from the log. Use node:fs/promises only. Named exports only.
-
+        status ('completed' | 'failed'), filesChanged (string[]), branch (string | undefined), error (string |
+        undefined). Export function logEntry(entry: AuditEntry): Promise<void> that appends the entry as a JSON line to
+        'audit-log.jsonl' in the project root. Export function loadAuditLog(): Promise<AuditEntry[]> that reads the
+        JSONL file and returns all entries. Export function getAuditSummary(): Promise<{ totalRuns: number, successRate:
+        number, totalTokensIn: number, totalTokensOut: number, totalCost: number, avgDurationMs: number }> that computes
+        summary stats from the log. Use node:fs/promises only. Named exports only.
   - id: create-diff-preview
     status: pending
     workflow: auto-implement
@@ -46,15 +44,14 @@ tasks:
     variables:
       module_name: diff-preview
       module_description: >
-        Create src/diff-preview.ts that exports a function generateDiffPreview(basePath: string): Promise<string>.
-        It should run 'git diff --staged' and 'git diff' as child processes (using node:child_process spawn) and
-        return the combined diff output as a string. Export a function formatDiffSummary(diff: string):
-        { filesChanged: string[], linesAdded: number, linesRemoved: number } that parses a unified diff string
-        and extracts file names from '--- a/' and '+++ b/' lines, counts lines starting with '+' (added) and '-'
-        (removed), excluding the --- and +++ header lines. Export a function printDiffPreview(diff: string): void
-        that prints a colorized summary to console using ANSI codes (green for additions, red for removals).
-        Use node:child_process and node:path only. Named exports only.
-
+        Create src/diff-preview.ts that exports a function generateDiffPreview(basePath: string): Promise<string>. It
+        should run 'git diff --staged' and 'git diff' as child processes (using node:child_process spawn) and return the
+        combined diff output as a string. Export a function formatDiffSummary(diff: string): { filesChanged: string[],
+        linesAdded: number, linesRemoved: number } that parses a unified diff string and extracts file names from '---
+        a/' and '+++ b/' lines, counts lines starting with '+' (added) and '-' (removed), excluding the --- and +++
+        header lines. Export a function printDiffPreview(diff: string): void that prints a colorized summary to console
+        using ANSI codes (green for additions, red for removals). Use node:child_process and node:path only. Named
+        exports only.
   - id: create-dependency-graph
     status: pending
     workflow: auto-implement
@@ -64,17 +61,16 @@ tasks:
     variables:
       module_name: dependency-graph
       module_description: >
-        Create src/dependency-graph.ts that exports an interface DependencyNode with fields: file (string),
-        imports (string[]), importedBy (string[]). Export function buildDependencyGraph(basePath: string):
-        Promise<Map<string, DependencyNode>>. It should find all .ts files in src/ using node:fs/promises readdir
-        with recursive option, read each file, extract relative import paths using regex matching on lines like
-        import ... from './...' or import ... from '../...', resolve them relative to each file's directory,
-        and build a bidirectional graph. Export function getModuleDepth(graph: Map<string, DependencyNode>,
-        file: string): number that returns how many levels deep a module is (0 for files with no imports).
-        Export function findOrphans(graph: Map<string, DependencyNode>): string[] that returns files that are
-        neither imported by anything nor import anything. Export function toJSON(graph: Map<string, DependencyNode>):
-        string that serializes the graph to a JSON string. Use node:fs/promises and node:path only. Named exports only.
-
+        Create src/dependency-graph.ts that exports an interface DependencyNode with fields: file (string), imports
+        (string[]), importedBy (string[]). Export function buildDependencyGraph(basePath: string): Promise<Map<string,
+        DependencyNode>>. It should find all .ts files in src/ using node:fs/promises readdir with recursive option,
+        read each file, extract relative import paths using regex matching on lines like import ... from './...' or
+        import ... from '../...', resolve them relative to each file's directory, and build a bidirectional graph.
+        Export function getModuleDepth(graph: Map<string, DependencyNode>, file: string): number that returns how many
+        levels deep a module is (0 for files with no imports). Export function findOrphans(graph: Map<string,
+        DependencyNode>): string[] that returns files that are neither imported by anything nor import anything. Export
+        function toJSON(graph: Map<string, DependencyNode>): string that serializes the graph to a JSON string. Use
+        node:fs/promises and node:path only. Named exports only.
   - id: create-task-cost-tracker
     status: pending
     workflow: auto-implement
@@ -85,17 +81,15 @@ tasks:
     variables:
       module_name: task-cost-tracker
       module_description: >
-        Create src/task-cost-tracker.ts that exports an interface TaskCost with fields: taskId (string),
-        model (string), tokensIn (number), tokensOut (number), cost (number), timestamp (string ISO).
-        Export const MODEL_PRICING: Record<string, { inputPer1k: number, outputPer1k: number }> with entries
-        for 'gpt-4o' (input: 0.0025, output: 0.01), 'gpt-4o-mini' (input: 0.00015, output: 0.0006),
-        'claude-sonnet-4-20250514' (input: 0.003, output: 0.015), 'claude-haiku' (input: 0.00025, output: 0.00125).
-        Export function calculateCost(model: string, tokensIn: number, tokensOut: number): number that looks up
-        the model in MODEL_PRICING and computes the cost, returning 0 if model is unknown.
-        Export function trackTaskCost(cost: TaskCost): Promise<void> that appends to 'task-costs.jsonl'.
+        Create src/task-cost-tracker.ts that exports an interface TaskCost with fields: taskId (string), model (string),
+        tokensIn (number), tokensOut (number), cost (number), timestamp (string ISO). Export const MODEL_PRICING:
+        Record<string, { inputPer1k: number, outputPer1k: number }> with entries for 'gpt-4o' (input: 0.0025, output:
+        0.01), 'gpt-4o-mini' (input: 0.00015, output: 0.0006), 'claude-sonnet-4-20250514' (input: 0.003, output: 0.015),
+        'claude-haiku' (input: 0.00025, output: 0.00125). Export function calculateCost(model: string, tokensIn: number,
+        tokensOut: number): number that looks up the model in MODEL_PRICING and computes the cost, returning 0 if model
+        is unknown. Export function trackTaskCost(cost: TaskCost): Promise<void> that appends to 'task-costs.jsonl'.
         Export function getSpendingSummary(): Promise<{ totalCost: number, costByModel: Record<string, number>,
         taskCount: number }> that reads the JSONL and aggregates. Use node:fs/promises only. Named exports only.
-
   - id: create-codebase-health-score
     status: pending
     workflow: auto-implement
@@ -106,18 +100,16 @@ tasks:
     variables:
       module_name: codebase-health-score
       module_description: >
-        Create src/health-score.ts that exports an interface HealthReport with fields: score (number 0-100),
-        timestamp (string ISO), metrics (object with: typeScriptErrors: number, totalFiles: number,
-        totalLines: number, avgFileSize: number, largestFile: { path: string, lines: number }).
-        Export function computeHealthScore(basePath: string): Promise<HealthReport>. It should: 1) run
-        'npx tsc --noEmit' via spawn and count error lines (lines containing ': error TS'), 2) find all .ts
-        files in src/ using readdir recursive, 3) count total lines across all files, 4) find the largest file.
-        Score formula: start at 100, subtract 10 per TypeScript error (min 0), subtract 5 if any file exceeds
-        500 lines, subtract 5 if avgFileSize exceeds 200 lines. Export function trackHealthScore(report: HealthReport):
-        Promise<void> that appends to 'health-scores.jsonl'. Export function getHealthTrend():
-        Promise<HealthReport[]> that reads back all scores. Use node:child_process spawn and node:fs/promises.
-        Named exports only.
-
+        Create src/health-score.ts that exports an interface HealthReport with fields: score (number 0-100), timestamp
+        (string ISO), metrics (object with: typeScriptErrors: number, totalFiles: number, totalLines: number,
+        avgFileSize: number, largestFile: { path: string, lines: number }). Export function computeHealthScore(basePath:
+        string): Promise<HealthReport>. It should: 1) run 'npx tsc --noEmit' via spawn and count error lines (lines
+        containing ': error TS'), 2) find all .ts files in src/ using readdir recursive, 3) count total lines across all
+        files, 4) find the largest file. Score formula: start at 100, subtract 10 per TypeScript error (min 0), subtract
+        5 if any file exceeds 500 lines, subtract 5 if avgFileSize exceeds 200 lines. Export function
+        trackHealthScore(report: HealthReport): Promise<void> that appends to 'health-scores.jsonl'. Export function
+        getHealthTrend(): Promise<HealthReport[]> that reads back all scores. Use node:child_process spawn and
+        node:fs/promises. Named exports only.
   - id: create-webhook-notifier
     status: pending
     workflow: auto-implement
@@ -128,13 +120,56 @@ tasks:
     variables:
       module_name: webhook-notifier
       module_description: >
-        Create src/webhook-notifier.ts that exports an interface WebhookPayload with fields: event
-        ('task.completed' | 'task.failed' | 'batch.completed'), taskId (string | undefined), status (string),
-        message (string), timestamp (string ISO), metadata (Record<string, unknown> | undefined).
-        Export function sendWebhook(url: string, payload: WebhookPayload): Promise<{ success: boolean,
-        statusCode: number | undefined }> that makes an HTTP POST request using node:https (for https URLs)
-        or node:http (for http URLs). Set Content-Type to application/json, timeout to 5000ms. Return
-        success: true if statusCode is 2xx, false otherwise. Do not throw on failure.
-        Export function createTaskCompletedPayload(taskId: string, branch: string, durationMs: number):
-        WebhookPayload and createTaskFailedPayload(taskId: string, error: string): WebhookPayload as
-        convenience constructors. Use node:http and node:https only. No external dependencies. Named exports only.
+        Create src/webhook-notifier.ts that exports an interface WebhookPayload with fields: event ('task.completed' |
+        'task.failed' | 'batch.completed'), taskId (string | undefined), status (string), message (string), timestamp
+        (string ISO), metadata (Record<string, unknown> | undefined). Export function sendWebhook(url: string, payload:
+        WebhookPayload): Promise<{ success: boolean, statusCode: number | undefined }> that makes an HTTP POST request
+        using node:https (for https URLs) or node:http (for http URLs). Set Content-Type to application/json, timeout to
+        5000ms. Return success: true if statusCode is 2xx, false otherwise. Do not throw on failure. Export function
+        createTaskCompletedPayload(taskId: string, branch: string, durationMs: number): WebhookPayload and
+        createTaskFailedPayload(taskId: string, error: string): WebhookPayload as convenience constructors. Use
+        node:http and node:https only. No external dependencies. Named exports only.
+  - id: error-handling-runtime
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/adapters/anthropic-adapter.ts
+    variables:
+      modification_description: >
+        Add more comprehensive error handling in the createAnthropicAdapter function to improve runtime safety,
+        including logging unexpected error types and making sure all error branches in the Promise flow are correctly
+        caught and logged.
+  - id: add-tests-anthropic-adapter
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/adapters/anthropic-adapter.ts
+    variables:
+      test_target: src/adapters/anthropic-adapter.ts
+      test_description: >
+        Implement unit tests for the createAnthropicAdapter function, including tests for successful request execution,
+        network errors, API limit errors, and rate limit errors.
+  - id: add-tests-openai-adapter
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/adapters/openai-adapter.ts
+    variables:
+      test_target: src/adapters/openai-adapter.ts
+      test_description: >
+        Create unit tests for the createOpenAIAdapter function, covering the valid execution paths, timeout scenarios,
+        and responses to unauthorized access.
+  - id: improve-type-coverage
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/utils/networkErrorUtil.ts
+    variables:
+      modification_description: >
+        Enhance type safety by adding TypeScript type guards for network and timeout errors, ensuring that all functions
+        that handle these errors can properly discriminate between different error types, reducing the risk of runtime
+        exceptions.
