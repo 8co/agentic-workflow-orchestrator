@@ -3880,7 +3880,7 @@ tasks:
     completed_at: 2026-02-14T01:52:58.473Z
     branch: auto/add-missing-tests-enhanced-logger-error-handling
   - id: add-tests-cli
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -3889,6 +3889,7 @@ tasks:
       test_target: src/cli.ts
       test_description: |
         Add tests for the CLI entry point to ensure commands like `run`, `auto`, `list`, and `resume` are functioning.
+    started_at: 2026-02-14T01:53:23.644Z
   - id: enhance-error-handling-security-scanner
     status: pending
     workflow: auto
