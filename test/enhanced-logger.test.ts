@@ -1,77 +1,65 @@
-import { strict as assert } from 'node:assert';
-import * as fs from 'node:fs';
-import * as path from 'node:path';
+import fs from 'fs';
+import path from 'path';
+import { test, mock } from 'node:test';
+import assert from 'node:assert';
 import { EnhancedLogger } from '../src/enhanced-logger.js';
 
-const fakeLogFileName = 'test-application.log';
-const fakeLogDirectory = path.resolve(process.cwd(), 'logs');
-const fakeLogFilePath = path.join(fakeLogDirectory, fakeLogFileName);
+test('EnhancedLogger should log messages to a file and console at different levels', () => {
+  const logger = EnhancedLogger.getInstance('test.log');
 
-function removeTestLogs(): void {
-  if (fs.existsSync(fakeLogFilePath)) {
-    fs.unlinkSync(fakeLogFilePath);
-  }
-}
+  const consoleInfoSpy = mock.spy(console, 'info');
+  const consoleWarnSpy = mock.spy(console, 'warn');
+  const consoleErrorSpy = mock.spy(console, 'error');
+  const consoleDebugSpy = mock.spy(console, 'debug');
 
-function simulateErrorDuringAppendFileSync(): void {
-  // Simulate an error by mocking fs.appendFileSync
-  jest.spyOn(fs, 'appendFileSync').mockImplementationOnce(() => {
-    throw new Error('Simulated file system error');
-  });
-}
+  logger.logInfo('Information message');
+  logger.logWarn('Warning message');
+  logger.logError('Error message');
+  logger.logDebug('Debug message');
 
-function simulateErrorDuringMkdirSync(): void {
-  // Simulate a recovery error by mocking fs.mkdirSync
-  jest.spyOn(fs, 'mkdirSync').mockImplementationOnce(() => {
-    throw new Error('Simulated directory creation error');
-  });
-}
+  assert.ok(consoleInfoSpy.calledWithMatch(/\[INFO\] Information message/));
+  assert.ok(consoleWarnSpy.calledWithMatch(/\[WARN\] Warning message/));
+  assert.ok(consoleErrorSpy.calledWithMatch(/\[ERROR\] Error message/));
+  assert.ok(consoleDebugSpy.calledWithMatch(/\[DEBUG\] Debug message/));
 
-function restoreFsMethods(): void {
-  jest.restoreAllMocks();
-}
+  consoleInfoSpy.restore();
+  consoleWarnSpy.restore();
+  consoleErrorSpy.restore();
+  consoleDebugSpy.restore();
+});
 
-describe('EnhancedLogger Error Handling', () => {
-  beforeEach(() => {
-    removeTestLogs();
+test('EnhancedLogger should handle a failure to write to the log file gracefully', () => {
+  const logger = EnhancedLogger.getInstance('failing-test.log');
+
+  const fsAppendFileSyncMock = mock.fn(fs, 'appendFileSync', () => {
+    throw new Error('Simulated file write failure');
   });
 
-  afterEach(() => {
-    removeTestLogs();
-    restoreFsMethods();
-  });
+  const consoleErrorSpy = mock.spy(console, 'error');
 
-  it('should log an error detail if the file writing fails', () => {
-    const logger = EnhancedLogger.getInstance(fakeLogFileName);
-    simulateErrorDuringAppendFileSync();
+  logger.logError('This should trigger a file write failure');
 
-    assert.doesNotThrow(() => {
-      logger.logError('This is a test error message');
-    });
+  assert.ok(consoleErrorSpy.calledWithMatch(/Failed to write to log file/));
+  assert.ok(consoleErrorSpy.calledWithMatch(/Simulated file write failure/));
 
-    assert(fs.existsSync(fakeLogFilePath), 'Log file should exist after recovery');
-  });
+  fsAppendFileSyncMock.restore();
+  consoleErrorSpy.restore();
+});
 
-  it('should attempt recovery if an error occurs during file writing', () => {
-    const logger = EnhancedLogger.getInstance(fakeLogFileName);
-    simulateErrorDuringAppendFileSync();
+test('EnhancedLogger should retry creating directory and writing to file upon failure', () => {
+  const logger = EnhancedLogger.getInstance('retry-test.log');
 
-    assert.doesNotThrow(() => {
-      logger.logInfo('This is a test info message');
-    });
+  const fakeExistsSync = mock.fn(fs, 'existsSync', () => false);
+  const fakeMkdirSync = mock.fn(fs, 'mkdirSync', () => { });
+  const fakeAppendFileSync = mock.fn(fs, 'appendFileSync', () => { });
 
-    assert(fs.existsSync(fakeLogFilePath), 'Log file should exist after recovery');
-  });
+  logger.logInfo('Testing retry mechanism');
 
-  it('should log recovery attempt failures when both append and mkdir fail', () => {
-    const logger = EnhancedLogger.getInstance(fakeLogFileName);
-    simulateErrorDuringAppendFileSync();
-    simulateErrorDuringMkdirSync();
+  assert.ok(fakeExistsSync.called);
+  assert.ok(fakeMkdirSync.called);
+  assert.strictEqual(fakeAppendFileSync.callCount, 2, 'appendFileSync should be retried once');
 
-    assert.doesNotThrow(() => {
-      logger.logWarn('This is a test warn message');
-    });
-
-    assert(!fs.existsSync(fakeLogFilePath), 'Log file should not exist if recovery fails');
-  });
+  fakeExistsSync.restore();
+  fakeMkdirSync.restore();
+  fakeAppendFileSync.restore();
 });
