@@ -3210,7 +3210,7 @@ tasks:
               Type 'StepResult' is missing the following properties from type 'StepResult': stepId, attempts
       ```
   - id: write-anthropic-adapter-exception-tests
-    status: running
+    status: completed
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -3221,8 +3221,10 @@ tasks:
         Write additional tests for edge cases and error handling in the Anthropic Adapter module, especially focusing on
         unexpected API responses and network errors. Ensure comprehensive coverage of possible exceptions.
     started_at: 2026-02-14T01:23:46.388Z
+    completed_at: 2026-02-14T01:23:55.450Z
+    branch: auto/write-anthropic-adapter-exception-tests
   - id: enhance-openai-adapter-type-safety
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-modify-file.md
     context_files:
@@ -3231,6 +3233,7 @@ tasks:
       modification_description: >
         Enhance type safety in the OpenAI Adapter by specifying more detailed types for API responses and function
         return values. Include handling for possible undefined or null values.
+    started_at: 2026-02-14T01:23:55.517Z
   - id: add-error-handling-in-index
     status: pending
     workflow: auto
