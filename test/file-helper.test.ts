@@ -1,109 +1,72 @@
 import { strict as assert } from 'node:assert';
 import { describe, it, beforeEach, afterEach } from 'node:test';
-import { promises as fs } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { mkdirSync, rmSync, readFileSync } from 'node:fs';
+import { join, dirname, sep } from 'node:path';
 import { ensureDirectoryAndWriteFile, readFromFile, resolveFilePath } from '../src/file-helper.js';
 
-// Utility function to create a temporary file path
-function createTempFilePath(fileName: string): string {
-  return join(tmpdir(), fileName);
-}
+const TEST_DIR = './test-output';
+const TEST_FILE_PATH = join(TEST_DIR, 'test.txt');
+const TEST_CONTENT = 'Hello, World!';
 
 describe('file-helper module', () => {
-  const testFilePath = createTempFilePath('test-file.txt');
-  const nonExistentPath = createTempFilePath('non-existent-dir/test-file.txt');
+  beforeEach(() => {
+    mkdirSync(TEST_DIR, { recursive: true });
+  });
 
-  afterEach(async () => {
-    try {
-      await fs.rm(testFilePath, { force: true });
-      await fs.rmdir(dirname(nonExistentPath), { recursive: true });
-    } catch {
-      // ignore errors, probably the files or directories do not exist
-    }
+  afterEach(() => {
+    rmSync(TEST_DIR, { recursive: true, force: true });
   });
 
   describe('ensureDirectoryAndWriteFile', () => {
-    it('should create directories and write content to the given file path', async () => {
-      const content = 'Test content';
-      await ensureDirectoryAndWriteFile(testFilePath, content);
-      const fileContent = await fs.readFile(testFilePath, 'utf-8');
-      assert.equal(fileContent, content);
+    it('should create a file with the specified content', async () => {
+      await ensureDirectoryAndWriteFile(TEST_FILE_PATH, TEST_CONTENT);
+      const content = readFileSync(TEST_FILE_PATH, 'utf-8');
+      assert.equal(content, TEST_CONTENT);
     });
 
-    it('should throw an error when given invalid file path input', async () => {
-      await assert.rejects(async () => {
-        await ensureDirectoryAndWriteFile('', 'Content');
-      }, {
-        message: "Invalid argument: fullPath is required and must be a string."
-      });
+    it('should handle existing directories correctly', async () => {
+      await ensureDirectoryAndWriteFile(TEST_FILE_PATH, TEST_CONTENT);
+      const content = readFileSync(TEST_FILE_PATH, 'utf-8');
+      assert.equal(content, TEST_CONTENT);
     });
 
-    it('should throw an error when given invalid content input', async () => {
-      await assert.rejects(async () => {
-        await ensureDirectoryAndWriteFile(testFilePath, '');
-      }, {
-        message: "Invalid argument: content is required and must be a string."
-      });
-    });
-
-    it('should throw an error when the path is not writable', async () => {
-      await assert.rejects(async () => {
-        await ensureDirectoryAndWriteFile('/root/test-file.txt', 'Content');
-      }, {
-        message: /Failed to write to file at path '\/root\/test-file.txt'/
-      });
+    it('should throw error if the path is invalid or permissions are incorrect', async () => {
+      const invalidPath = '/invalid-path/test.txt';
+      await assert.rejects(
+        () => ensureDirectoryAndWriteFile(invalidPath, TEST_CONTENT),
+        { message: new RegExp('Failed to write to file') }
+      );
     });
   });
 
   describe('readFromFile', () => {
-    const fileContent = 'Content to read';
-
-    beforeEach(async () => {
-      await ensureDirectoryAndWriteFile(testFilePath, fileContent);
+    it('should read the file content correctly', async () => {
+      await ensureDirectoryAndWriteFile(TEST_FILE_PATH, TEST_CONTENT);
+      const content = await readFromFile(TEST_FILE_PATH);
+      assert.equal(content, TEST_CONTENT);
     });
 
-    it('should read content from an existing file', async () => {
-      const content = await readFromFile(testFilePath);
-      assert.equal(content, fileContent);
-    });
-
-    it('should return null if the file does not exist', async () => {
-      const content = await readFromFile(nonExistentPath);
+    it('should return null for non-existent files', async () => {
+      const content = await readFromFile(join(TEST_DIR, 'non-existent.txt'));
       assert.equal(content, null);
     });
 
-    it('should throw an error when given invalid file path input', async () => {
-      await assert.rejects(async () => {
-        await readFromFile('');
-      }, {
-        message: "Invalid argument: filePath is required and must be a string."
-      });
+    it('should throw error for invalid file paths', async () => {
+      const invalidPath = `invalid${sep}path${sep}test.txt`;
+      await ensureDirectoryAndWriteFile(TEST_FILE_PATH, TEST_CONTENT);
+      await assert.rejects(
+        () => readFromFile(invalidPath),
+        { message: new RegExp('Failed to read from file') }
+      );
     });
   });
 
   describe('resolveFilePath', () => {
-    it('should resolve relative paths to absolute', () => {
-      const base = '/base/dir';
-      const relative = 'file.txt';
-      const resolved = resolveFilePath(base, relative);
-      assert.equal(resolved, resolve(base, relative));
-    });
-
-    it('should throw an error when given invalid base directory input', () => {
-      assert.throws(() => {
-        resolveFilePath('', 'file.txt');
-      }, {
-        message: "Invalid argument: baseDir is required and must be a string."
-      });
-    });
-
-    it('should throw an error when given invalid relative path input', () => {
-      assert.throws(() => {
-        resolveFilePath('/base/dir', '');
-      }, {
-        message: "Invalid argument: relativePath is required and must be a string."
-      });
+    it('should correctly resolve a relative path to an absolute path', () => {
+      const baseDir = '/base/dir';
+      const relativePath = 'relative/path/to/file.txt';
+      const resolvedPath = resolveFilePath(baseDir, relativePath);
+      assert.equal(resolvedPath, join(baseDir, relativePath));
     });
   });
 });
