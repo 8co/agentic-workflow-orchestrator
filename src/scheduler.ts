@@ -83,6 +83,10 @@ export function createScheduler(config: SchedulerConfig) {
 
     await queue.markRunning(task.id);
 
+    // Commit queue state so reverts during task execution don't lose it
+    const { commitChanges: gitCommit } = await import('./git-ops.js');
+    await gitCommit(basePath, `Queue: start ${task.id}`);
+
     try {
       const { workflow } = taskToWorkflow(task);
 

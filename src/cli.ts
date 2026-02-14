@@ -259,6 +259,10 @@ async function main() {
         break;
       }
 
+      // Commit queue state before scheduler starts (protects from reverts)
+      const { commitChanges: gitCommit } = await import('./git-ops.js');
+      await gitCommit(basePath, `Queue: add ${newTasks.length} proposed tasks`);
+
       // Step 2: Run all pending tasks
       const scheduler = createScheduler({
         basePath,
