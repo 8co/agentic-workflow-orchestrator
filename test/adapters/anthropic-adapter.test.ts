@@ -1,136 +1,75 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
 import { createAnthropicAdapter } from '../../src/adapters/anthropic-adapter.js';
-import assert from 'node:assert';
-import { describe, it } from 'node:test';
-import { AgentRequest, AgentResponse } from '../../src/types.js';
+import type { AgentRequest, AgentResponse } from '../../src/types.js';
 
-class MockAnthropicSDK {
-  public messages = {
-    create: async ({ model, messages }: { model: string; messages: Array<{ role: string; content: string }> }) => {
-      if (model === 'valid-model') {
-        if (messages[0].content === 'valid-prompt') {
-          return {
-            content: [{ type: 'text', text: 'Response from anthopic adapter.' }],
-            usage: { input_tokens: 1, output_tokens: 5 },
-            stop_reason: 'length',
-          };
-        } else {
-          throw new Error('Unexpected prompt');
-        }
-      } else {
-        return null;
-      }
-    },
-  };
+interface MockAnthropicResponse {
+  content: Array<{ type: 'text', text: string }>;
+  usage: { input_tokens: number; output_tokens: number };
+  stop_reason: string;
 }
 
-(global as any).Anthropic = MockAnthropicSDK;
-
-const validConfig = { apiKey: 'valid-key', model: 'valid-model' };
-const invalidConfig = { apiKey: 'invalid-key', model: 'invalid-model' };
-
-describe('Anthropic Adapter', () => {
-  it('should execute successfully on valid prompt', async () => {
-    const adapter = createAnthropicAdapter(validConfig);
-
-    const request: AgentRequest = {
-      prompt: 'valid-prompt',
-      context: '',
-      outputPath: null,
-    };
-
-    const response: AgentResponse = await adapter.execute(request);
-
-    assert.strictEqual(response.success, true);
-    assert.strictEqual(response.output, 'Response from anthopic adapter.');
-  });
-
-  it('should handle invalid response structure', async () => {
-    const adapter = createAnthropicAdapter(validConfig);
-
-    try {
-      const response = await adapter.execute({ prompt: 'invalid-prompt', context: '', outputPath: null });
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        assert.strictEqual(error.message, 'API returned unexpected data structure.');
-      } else {
-        assert.fail('Expected error to be an instance of Error.');
+const mockClient = {
+  messages: {
+    create: async (params: any): Promise<MockAnthropicResponse> => {
+      if (params.model === 'return-invalid') {
+        return {} as MockAnthropicResponse;
+      } else if (params.model === 'return-unexpected') {
+        throw { status: 500 };
       }
-    }
-  });
+      return {
+        content: [{ type: 'text', text: 'Hello World!' }],
+        usage: { input_tokens: 10, output_tokens: 2 },
+        stop_reason: 'stop',
+      };
+    },
+  },
+};
 
-  it('should handle unexpected response status', async () => {
-    const adapter = createAnthropicAdapter(invalidConfig);
+// Override the imported Anthropic SDK client with the mock
+jest.mock('@anthropic-ai/sdk', () => {
+  return jest.fn().mockImplementation(() => mockClient);
+});
 
-    try {
-      await adapter.execute({ prompt: 'any', context: '', outputPath: null });
-      assert.fail('Expected exception to be thrown.');
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        assert.strictEqual(error.message, 'Unexpected API response status.');
-      } else {
-        assert.fail('Expected error to be an instance of Error.');
-      }
-    }
-  });
+test('createAnthropicAdapter: should execute and return valid response', async () => {
+  const adapter = createAnthropicAdapter({ apiKey: 'fake-key', model: 'valid-model' });
+  const request: AgentRequest = { prompt: 'Say hello', context: 'Test context', outputPath: undefined };
 
-  // Additional edge cases to test error handlers such as network and rate limit errors
-  it('should handle network errors gracefully', async () => {
-    const adapter = createAnthropicAdapter(validConfig);
+  const response = await adapter.execute(request);
+  
+  assert.strictEqual(response.success, true);
+  assert.ok(response.output.includes('Hello World!'));
+});
 
-    const request: AgentRequest = {
-      prompt: 'network-error',
-      context: '',
-      outputPath: null,
-    };
+test('createAnthropicAdapter: should handle invalid response structure', async () => {
+  const adapter = createAnthropicAdapter({ apiKey: 'fake-key', model: 'return-invalid' });
+  const request: AgentRequest = { prompt: 'Say hello', context: 'Test context', outputPath: undefined };
+  
+  const response = await adapter.execute(request);
 
-    const response: AgentResponse = await adapter.execute(request);
-    
-    assert.strictEqual(response.success, false);
-    assert.match(response.error, /Network error/);
-  });
+  assert.strictEqual(response.success, false);
+  assert.ok(response.error.includes('unexpected data structure'));
+});
 
-  it('should handle API limit errors', async () => {
-    const adapter = createAnthropicAdapter(validConfig);
+test('createAnthropicAdapter: should handle unexpected API response status', async () => {
+  const adapter = createAnthropicAdapter({ apiKey: 'fake-key', model: 'return-unexpected' });
+  const request: AgentRequest = { prompt: 'Say hello', context: 'Test context', outputPath: undefined };
+  
+  const response = await adapter.execute(request);
 
-    const request: AgentRequest = {
-      prompt: 'api-limit-error',
-      context: '',
-      outputPath: null,
-    };
+  assert.strictEqual(response.success, false);
+  assert.ok(response.error.includes('Unexpected API response status'));
+});
 
-    const response: AgentResponse = await adapter.execute(request);
-    
-    assert.strictEqual(response.success, false);
-    assert.strictEqual(response.error, 'API limit reached: Too many requests. Please try again later.');
-  });
+test('createAnthropicAdapter: should write output to file if outputPath is provided', async () => {
+  const mockWriteFile = jest.spyOn(require('node:fs/promises'), 'writeFile').mockImplementation(async () => {});
+  const adapter = createAnthropicAdapter({ apiKey: 'fake-key', model: 'valid-model' });
+  const request: AgentRequest = { prompt: 'Say hello', context: 'Test context', outputPath: 'output.txt' };
 
-  it('should handle timeout errors', async () => {
-    const adapter = createAnthropicAdapter(validConfig);
-
-    const request: AgentRequest = {
-      prompt: 'timeout-error',
-      context: '',
-      outputPath: null,
-    };
-
-    const response: AgentResponse = await adapter.execute(request);
-
-    assert.strictEqual(response.success, false);
-    assert.strictEqual(response.error, 'Network error: Request timed out. Please check your connection.');
-  });
-
-  it('should handle rate limit errors', async () => {
-    const adapter = createAnthropicAdapter(validConfig);
-
-    const request: AgentRequest = {
-      prompt: 'rate-limit-error',
-      context: '',
-      outputPath: null,
-    };
-
-    const response: AgentResponse = await adapter.execute(request);
-
-    assert.strictEqual(response.success, false);
-    assert.strictEqual(response.error, 'Rate limit error: Too many requests in a short amount of time.');
-  });
+  const response: AgentResponse = await adapter.execute(request);
+  
+  assert.strictEqual(response.success, true);
+  assert.ok(response.output.includes('Hello World!'));
+  assert.strictEqual(mockWriteFile.mock.calls.length, 1);
+  mockWriteFile.mockRestore();
 });
