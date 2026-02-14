@@ -2703,3 +2703,55 @@ tasks:
     started_at: 2026-02-14T01:13:49.153Z
     completed_at: 2026-02-14T01:13:59.514Z
     branch: auto/write-tests-openai-adapter-exception-handling
+  - id: write-tests-autonomous-runner-error-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/autonomous-runner.ts
+    variables:
+      test_target: src/autonomous-runner.ts
+      test_description: |
+        Ensure error handling logic is thoroughly tested, covering scenarios like invalid configurations.
+  - id: add-type-safety-enhancements-state-manager
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/state-manager.ts
+    variables:
+      modification_description: >
+        Add TypeScript type annotations and improve existing type checks to enhance type safety and prevent runtime
+        errors.
+  - id: write-tests-health-status-error-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/health.ts
+    variables:
+      test_target: src/health.ts
+      test_description: >
+        Verify the error handling when extracting version or memory information, including scenarios where JSON parsing
+        or system data retrieval fails.
+  - id: create-utility-function-for-networkError
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-create-module.md
+    context_files:
+      - src/adapters/anthropic-adapter.ts
+    variables:
+      module_name: networkErrorUtil.ts
+      module_description: >
+        Create a utility function to encapsulate network error detection logic used across multiple adapters to reduce
+        duplication.
+  - id: refactor-enhanced-logger-error-logging
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/enhanced-logger.ts
+    variables:
+      modification_description: >
+        Refactor error logging to use a consistent and informative format, improving the clarity and usefulness of
+        logged error details.
