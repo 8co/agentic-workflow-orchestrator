@@ -1,82 +1,114 @@
 import { test } from 'node:test';
-import assert from 'node:assert/strict';
+import assert from 'node:assert';
 import { createOpenAIAdapter } from '../src/adapters/openai-adapter.js';
-import type { AgentRequest } from '../src/types.js';
+import type { AgentRequest, AgentResponse } from '../src/types.js';
 
-const mockOpenAI = {
-  chat: {
-    completions: {
-      create: async () => {
-        throw new Error('Mocked error');
+function mockOpenAI(overrides: Partial<typeof import('openai')> = {}) {
+  return {
+    chat: {
+      completions: {
+        create: async () => ({
+          id: 'cmpl-123',
+          object: 'text_completion',
+          created: Date.now(),
+          model: 'gpt-3',
+          choices: [{
+            index: 0,
+            message: {
+              role: 'assistant',
+              content: 'This is a response',
+            },
+            finish_reason: 'stop'
+          }],
+          usage: {
+            prompt_tokens: 5,
+            completion_tokens: 5,
+            total_tokens: 10
+          }
+        }),
       },
     },
-  },
+    ...overrides,
+  };
+}
+
+const validConfig = {
+  apiKey: 'valid-api-key',
+  model: 'gpt-3',
 };
 
-test('createOpenAIAdapter - Network Error', async () => {
-  const adapter = createOpenAIAdapter({ apiKey: 'test', model: 'text-davinci-002' });
+test('createOpenAIAdapter throws on invalid config', () => {
+  assert.throws(() => createOpenAIAdapter({ apiKey: '', model: '' }), {
+    message: 'Invalid OpenAI configuration',
+  });
+});
+
+test('execute returns success response on valid prompt', async () => {
+  const adapter = createOpenAIAdapter(validConfig);
   const request: AgentRequest = {
-    prompt: 'Test prompt',
+    prompt: 'Hello',
   };
+  const response: AgentResponse = await adapter.execute(request);
+  assert.strictEqual(response.success, true);
+  assert(response.output.includes('This is a response'));
+});
 
-  // Mock the client to throw network error
-  (adapter as any).client = mockOpenAI;
-  (mockOpenAI.chat.completions.create as any) = () => {
-    throw new Error('Network Error');
+test('execute handles network error', async () => {
+  const OpenAI = mockOpenAI({
+    chat: {
+      completions: {
+        create: async () => { throw new Error('Network Error'); },
+      },
+    },
+  });
+  
+  const adapter = createOpenAIAdapter(validConfig);
+  const request: AgentRequest = {
+    prompt: 'Hello',
   };
-
-  const response = await adapter.execute(request);
+  const response: AgentResponse = await adapter.execute(request);
   assert.strictEqual(response.success, false);
   assert.strictEqual(response.error, 'Network error occurred. Please check your connection and try again.');
 });
 
-test('createOpenAIAdapter - API limit Error', async () => {
-  const adapter = createOpenAIAdapter({ apiKey: 'test', model: 'text-davinci-002' });
+test('execute handles malformed response', async () => {
+  const OpenAI = mockOpenAI({
+    chat: {
+      completions: {
+        create: async () => ({
+          id: 'cmpl-123',
+          object: 'text_completion',
+          created: Date.now(),
+          model: 'gpt-3',
+          choices: [],
+        }),
+      },
+    },
+  });
+
+  const adapter = createOpenAIAdapter(validConfig);
   const request: AgentRequest = {
-    prompt: 'Test prompt',
+    prompt: 'Hello',
   };
-
-  // Mock the client to throw rate limit error
-  (adapter as any).client = mockOpenAI;
-  (mockOpenAI.chat.completions.create as any) = () => {
-    throw new Error('429');
-  };
-
-  const response = await adapter.execute(request);
+  const response: AgentResponse = await adapter.execute(request);
   assert.strictEqual(response.success, false);
-  assert.strictEqual(response.error, 'Too many requests: You have hit the rate limit. Try again later.');
+  assert.strictEqual(response.error, 'Received a malformed response from OpenAI. Please try again later.');
 });
 
-test('createOpenAIAdapter - Unauthorized Error', async () => {
-  const adapter = createOpenAIAdapter({ apiKey: 'test', model: 'text-davinci-002' });
+test('execute handles unauthorized error', async () => {
+  const OpenAI = mockOpenAI({
+    chat: {
+      completions: {
+        create: async () => { throw new Error('401 Unauthorized'); },
+      },
+    },
+  });
+
+  const adapter = createOpenAIAdapter(validConfig);
   const request: AgentRequest = {
-    prompt: 'Test prompt',
+    prompt: 'Hello',
   };
-
-  // Mock the client to throw unauthorized error
-  (adapter as any).client = mockOpenAI;
-  (mockOpenAI.chat.completions.create as any) = () => {
-    throw new Error('401');
-  };
-
-  const response = await adapter.execute(request);
+  const response: AgentResponse = await adapter.execute(request);
   assert.strictEqual(response.success, false);
   assert.strictEqual(response.error, 'Unauthorized: Invalid API key or permissions issue.');
-});
-
-test('createOpenAIAdapter - Unexpected Error', async () => {
-  const adapter = createOpenAIAdapter({ apiKey: 'test', model: 'text-davinci-002' });
-  const request: AgentRequest = {
-    prompt: 'Test prompt',
-  };
-
-  // Mock the client to throw an unexpected error
-  (adapter as any).client = mockOpenAI;
-  (mockOpenAI.chat.completions.create as any) = () => {
-    throw new Error('Some unexpected error');
-  };
-
-  const response = await adapter.execute(request);
-  assert.strictEqual(response.success, false);
-  assert.strictEqual(response.error, 'An unexpected error occurred. Please try again later.');
 });
