@@ -28,20 +28,20 @@ export function connectToAIAgents(): void {
 
     connectionTimeout = setTimeout(() => {
       const timeoutError: Error = new Error(`Connection timed out after ${connectionTimeoutDuration / 1000} seconds to Host: ${aiAgentHost}, Port: ${aiAgentPort}`);
-      handleConnectionError(timeoutError);
+      retryConnection(timeoutError, connectionOptions);
       socket.destroy();
     }, connectionTimeoutDuration);
 
     socket.on('error', (error: Error): void => {
       clearTimeout(connectionTimeout);
       const formattedError: Error = formatErrorWithDetails(error, aiAgentHost, aiAgentPort);
-      handleConnectionError(formattedError);
+      retryConnection(formattedError, connectionOptions);
     });
 
     socket.on('timeout', (): void => {
       clearTimeout(connectionTimeout);
       const timeoutError: Error = new Error(`Connection timed out to Host: ${aiAgentHost}, Port: ${aiAgentPort}`);
-      handleConnectionError(timeoutError);
+      retryConnection(timeoutError, connectionOptions);
       socket.end();
     });
 
@@ -54,6 +54,24 @@ export function connectToAIAgents(): void {
   } catch (error: unknown) {
     handleCriticalConnectionError(error);
   }
+}
+
+function retryConnection(error: Error, connectionOptions: TcpSocketConnectOpts): void {
+  const maxRetries: number = 3;
+  let retryCount: number = 0;
+
+  const retry = (): void => {
+    if (retryCount < maxRetries) {
+      retryCount++;
+      logConnectionEvent('info', `Retrying connection attempt ${retryCount} to ${connectionOptions.host}:${connectionOptions.port}`, {});
+      connectToAIAgents();
+    } else {
+      handleConnectionError(error);
+    }
+  };
+
+  logConnectionEvent('error', `Connection error occurred: ${error.message}. Attempting reconnection...`, {});
+  setTimeout(retry, 2000); // wait 2 seconds before retrying
 }
 
 function handleCriticalConnectionError(error: unknown): void {
