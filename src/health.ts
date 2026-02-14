@@ -35,16 +35,18 @@ export function getHealthStatus(): HealthStatus {
     logger.error('Health: Returning status with unknown version due to file read error.');
   }
 
+  const memoryUsageMB = Number((process.memoryUsage().heapUsed / 1048576).toFixed(2)); // converting bytes to MB
+
   const status: HealthStatus = {
     status: 'ok',
     uptime: Number(process.uptime().toFixed(2)),
-    memoryUsage: Number((process.memoryUsage().heapUsed / (1024 * 1024)).toFixed(2)), // converting bytes to MB
+    memoryUsage: memoryUsageMB,
     timestamp: new Date().toISOString(), // ISO 8601 formatted string
     version: version !== 'unknown' ? version : undefined,
   };
 
   logger.info(`Health: Status fetched: ${JSON.stringify(status)}`);
-  logMemoryUsageWarnings(status.memoryUsage);
+  logMemoryUsageWarnings(memoryUsageMB);
 
   return status;
 }
