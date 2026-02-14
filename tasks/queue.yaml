@@ -689,7 +689,7 @@ tasks:
     completed_at: 2026-02-14T00:25:18.321Z
     branch: auto/implement-error-handling-promp-resolver
   - id: add-unified-error-utility
-    status: running
+    status: completed
     workflow: auto
     prompt: prompts/auto-create-module.md
     context_files:
@@ -700,3 +700,5 @@ tasks:
         Create a utility module to standardize error handling procedures across the project, including functions for
         logging error details and formatting error messages for user-friendly outputs.
     started_at: 2026-02-14T00:25:18.333Z
+    completed_at: 2026-02-14T00:25:26.120Z
+    branch: auto/add-unified-error-utility
