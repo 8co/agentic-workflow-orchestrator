@@ -3330,3 +3330,54 @@ tasks:
     started_at: 2026-02-14T01:40:47.566Z
     completed_at: 2026-02-14T01:40:56.473Z
     branch: auto/add-type-safety-to-file-writer
+  - id: write-tests-adapters-cursor
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/adapters/cursor-adapter.ts
+    variables:
+      test_target: src/adapters/cursor-adapter.ts
+      test_description: |
+        Write comprehensive tests for the 'Cursor Agent Adapter' to cover edge cases and error handling scenarios.
+  - id: enhance-type-safety-adapters-cursor
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/adapters/cursor-adapter.ts
+    variables:
+      modification_description: >
+        Improve type safety in 'Cursor Agent Adapter' by ensuring all variables have explicit types and updating any
+        conditional checks as needed.
+  - id: add-missing-error-handling-ai-agents
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/aiAgents.ts
+    variables:
+      modification_description: >
+        Add comprehensive error handling to 'connectToAIAgents' to manage errors effectively and log meaningful error
+        messages.
+  - id: refactor-ai-agents-logging
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/aiAgents.ts
+    variables:
+      modification_description: >
+        Refactor logging in 'connectToAIAgents' to use a consistent format and include contextual information about
+        connection events.
+  - id: write-tests-index-enhancements
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/index.ts
+    variables:
+      test_target: src/index.ts
+      test_description: >
+        Enhance existing tests for 'index.ts' to cover the full execution flow including successful initialization and
+        error cases.
