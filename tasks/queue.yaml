@@ -1730,3 +1730,43 @@ tasks:
     started_at: 2026-02-14T00:47:54.926Z
     completed_at: 2026-02-14T00:48:07.196Z
     branch: auto/error-handling-improvements-in-openai-adapter
+  - id: write-tests-adapters-anthropic-edge-case-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/adapters/anthropic-adapter.ts
+    variables:
+      test_target: src/adapters/anthropic-adapter.ts
+      test_description: >
+        Write tests to cover edge cases in the `execute` method, particularly focusing on network errors and API limit
+        exceeded responses.
+  - id: add-error-handling-to-openai-adapter-edge-cases
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/adapters/openai-adapter.ts
+    variables:
+      modification_description: >
+        Enhance error handling for edge cases like unexpected status codes and malformed responses in the OpenAI adapter.
+  - id: create-test-helper-for-file-operations
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-create-module.md
+    context_files:
+      - src/file-helper.ts
+    variables:
+      module_name: test-file-helper
+      module_description: >
+        Create a utility module to mock file read/write operations for easier testing of file-dependent functionality
+        across the codebase.
+  - id: refactor-health-logging-for-improved-readability
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/health.ts
+    variables:
+      modification_description: |
+        Simplify and clean up logging statements in the health module to enhance code readability and consistency.
