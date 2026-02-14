@@ -17,8 +17,21 @@ interface HealthStatus {
 const logger = createLogger('health');
 
 export function getHealthStatus(): HealthStatus {
-  const version = extractPackageVersion();
-  const memoryUsageMB = getSafeMemoryUsageMB();
+  let version: string | undefined;
+  let memoryUsageMB: number = 0;
+  
+  try {
+    version = extractPackageVersion();
+  } catch (error) {
+    logger.error(`Version extraction error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+  
+  try {
+    memoryUsageMB = getSafeMemoryUsageMB();
+  } catch (error) {
+    logger.error(`Memory usage retrieval error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+
   const uptime = Number(process.uptime().toFixed(2));
 
   const status: HealthStatus = {
@@ -29,35 +42,29 @@ export function getHealthStatus(): HealthStatus {
     version,
   };
 
-  logHealthStatus(uptime, memoryUsageMB, version);
-  logMemoryUsageWarnings(memoryUsageMB);
+  try {
+    logHealthStatus(uptime, memoryUsageMB, version);
+    logMemoryUsageWarnings(memoryUsageMB);
+  } catch (error) {
+    logger.error(`Logging error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
 
   return status;
 }
 
 function extractPackageVersion(): string | undefined {
   const packageJsonPath = join(process.cwd(), 'package.json');
-  try {
-    const packageJsonContent = readFileSync(packageJsonPath, 'utf-8');
-    const packageJson = JSON.parse(packageJsonContent) as PackageJson;
-    const version = packageJson.version ?? 'unknown';
-    logger.debug(`Package version extracted: ${version}`);
-    return version !== 'unknown' ? version : undefined;
-  } catch (error) {
-    logger.error(`Failed to read or parse package.json: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    return undefined;
-  }
+  const packageJsonContent = readFileSync(packageJsonPath, 'utf-8');
+  const packageJson = JSON.parse(packageJsonContent) as PackageJson;
+  const version = packageJson.version ?? 'unknown';
+  logger.debug(`Package version extracted: ${version}`);
+  return version !== 'unknown' ? version : undefined;
 }
 
 function getSafeMemoryUsageMB(): number {
-  try {
-    const heapUsed = process.memoryUsage().heapUsed;
-    if (isNaN(heapUsed)) throw new Error('Heap used is NaN');
-    return Number((heapUsed / 1048576).toFixed(2));
-  } catch (error) {
-    logger.error(`Error retrieving memory usage: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    return 0; // return 0 if there is an error retrieving memory usage
-  }
+  const heapUsed = process.memoryUsage().heapUsed;
+  if (isNaN(heapUsed)) throw new Error('Heap used is NaN');
+  return Number((heapUsed / 1048576).toFixed(2));
 }
 
 function logHealthStatus(uptime: number, memoryUsageMB: number, version?: string): void {
