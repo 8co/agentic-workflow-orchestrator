@@ -1,12 +1,12 @@
 import os from 'os';
 
-interface MemoryUsage {
+export interface MemoryUsage {
   totalMemory: number;
   freeMemory: number;
   usedMemory: number;
 }
 
-interface CpuUsage {
+export interface CpuUsage {
   model: string;
   speed: number;
   times: {
@@ -18,7 +18,7 @@ interface CpuUsage {
   };
 }
 
-interface PerformanceMetrics {
+export interface PerformanceMetrics {
   memory: MemoryUsage;
   cpu: CpuUsage[];
 }
