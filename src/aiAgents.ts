@@ -14,7 +14,7 @@ export function connectToAIAgents(): void {
     });
 
     socket.on('error', (error: Error) => {
-      const formattedError: Error = formatError(error) || new Error('Unknown error');
+      const formattedError: Error = formatErrorWithDetails(error, aiAgentHost, aiAgentPort) || new Error('Unknown error');
       handleConnectionError(formattedError);
     });
 
@@ -36,6 +36,11 @@ export function formatError(error: unknown): Error | null {
     return new Error(error);
   }
   return null;
+}
+
+export function formatErrorWithDetails(error: Error, host: string, port: number): Error {
+  const detailedMessage = `Host: ${host}, Port: ${port}, Error: ${error.message}`;
+  return new Error(detailedMessage);
 }
 
 export function handleConnectionError(error: Error): void {
