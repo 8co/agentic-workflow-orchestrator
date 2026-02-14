@@ -13,8 +13,13 @@ interface AnthropicConfig {
   model: string;
 }
 
-interface AnthropicResponse {
-  content: Array<Anthropic.TextBlock>;
+interface TextBlock {
+  type: 'text';
+  text: string;
+}
+
+interface ValidAnthropicResponse {
+  content: Array<TextBlock>;
   usage: {
     input_tokens: number;
     output_tokens: number;
@@ -30,7 +35,7 @@ function isAPILimitError(err: unknown): boolean {
   return typeof err === 'object' && err !== null && 'response' in err && (err as { response: { status: number } }).response.status === 429;
 }
 
-function isInvalidResponseError(response: unknown): response is Partial<AnthropicResponse> {
+function isInvalidResponseError(response: unknown): response is Partial<ValidAnthropicResponse> {
   return typeof response !== 'object' || response === null || !('content' in response) || !('usage' in response);
 }
 
@@ -76,9 +81,12 @@ export function createAnthropicAdapter(config: AnthropicConfig): AgentAdapter {
           throw new Error('Unexpected API response status.');
         }
 
+        // explicit cast to ValidAnthropicResponse after checks
+        const validResponse = message as ValidAnthropicResponse;
+
         // Extract text from response
-        const textBlocks = message.content.filter(
-          (block): block is Anthropic.TextBlock => block.type === 'text'
+        const textBlocks = validResponse.content.filter(
+          (block): block is TextBlock => block.type === 'text'
         );
         const output = textBlocks.map((b) => b.text).join('\n');
 
@@ -102,8 +110,8 @@ export function createAnthropicAdapter(config: AnthropicConfig): AgentAdapter {
 
         console.log('│');
         console.log(`│ ⏱  Duration: ${durationMs}ms`);
-        console.log(`│ 📊 Tokens: ${message.usage.input_tokens} in / ${message.usage.output_tokens} out`);
-        console.log(`│ 🛑 Stop: ${message.stop_reason}`);
+        console.log(`│ 📊 Tokens: ${validResponse.usage.input_tokens} in / ${validResponse.usage.output_tokens} out`);
+        console.log(`│ 🛑 Stop: ${validResponse.stop_reason}`);
         console.log('└─────────────────────────────────────────\n');
 
         return {
