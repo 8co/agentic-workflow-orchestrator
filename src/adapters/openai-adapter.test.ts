@@ -1,104 +1,106 @@
-import { test } from 'node:test';
-import assert from 'node:assert';
+import { strict as assert } from 'node:assert';
+import test from 'node:test';
 import { createOpenAIAdapter } from './openai-adapter.js';
-import type { AgentRequest, AgentResponse } from '../types.js';
-import { writeFile, mkdir } from 'node:fs/promises';
-import path from 'node:path';
+import type { AgentRequest } from '../types.js';
 
-// Mock OpenAI client and its methods
 class MockOpenAI {
-  chat = {
+  private response: any;
+
+  constructor(response: any) {
+    this.response = response;
+  }
+
+  public chat = {
     completions: {
-      create: async ({ model, messages, max_tokens }: { model: string; messages: any; max_tokens: number }): Promise<any> => {
-        return {
-          choices: [
-            {
-              index: 0,
-              message: {
-                role: 'assistant',
-                content: 'This is a test response from OpenAI.',
-              },
-              finish_reason: 'stop',
-            },
-          ],
-          usage: {
-            prompt_tokens: 5,
-            completion_tokens: 12,
-            total_tokens: 17,
-          },
-        };
-      },
+      create: async () => this.response,
     },
   };
 }
 
-// Mock OpenAI module import
-function OpenAI({ apiKey }: { apiKey: string }) {
-  return new MockOpenAI();
-}
-
-// Mock node:fs/promises methods
-const mockWriteFile = writeFile;
-const mockMkdir = mkdir;
-
-test('OpenAI Adapter: Successful execution', async (t) => {
-  const config = {
-    apiKey: 'test-api-key',
-    model: 'text-davinci-002',
+test('OpenAI Adapter: execute - successful response', async () => {
+  const mockResponse = {
+    choices: [{
+      message: {
+        content: 'Test successful completion',
+      },
+    }],
+    usage: {
+      prompt_tokens: 5,
+      completion_tokens: 5,
+      total_tokens: 10,
+    },
   };
-  const adapterName = 'openai';
-  const adapter = createOpenAIAdapter(config, adapterName);
-  
-  // Agent request
+
+  const openAIAdapter = createOpenAIAdapter(
+    { apiKey: 'valid-api-key', model: 'test-model' },
+    'openai'
+  );
+
   const request: AgentRequest = {
-    prompt: 'Test the OpenAI adapter.',
+    prompt: 'test prompt',
+    context: 'test context',
   };
 
-  // Execute the adapter and verify the response
-  const response: AgentResponse = await adapter.execute(request);
-  assert.strictEqual(response.success, true);
-  assert.strictEqual(response.output, 'This is a test response from OpenAI.');
-  assert.strictEqual(typeof response.durationMs, 'number');
+  (openAIAdapter as any).client = new MockOpenAI(mockResponse);
+
+  const result = await openAIAdapter.execute(request);
+
+  assert.equal(result.success, true);
+  assert.equal(result.output, 'Test successful completion');
 });
 
-test('OpenAI Adapter: Proper file writing', async (t) => {
-  const config = {
-    apiKey: 'test-api-key',
-    model: 'text-davinci-002',
+test('OpenAI Adapter: execute - malformed response', async () => {
+  const mockResponse = {
+    choices: [],
   };
-  const adapterName = 'openai';
-  const adapter = createOpenAIAdapter(config, adapterName);
 
-  // Agent request with output path
-  const outputPath = path.join(__dirname, 'output.txt');
+  const openAIAdapter = createOpenAIAdapter(
+    { apiKey: 'valid-api-key', model: 'test-model' },
+    'openai'
+  );
+
   const request: AgentRequest = {
-    prompt: 'Test the OpenAI adapter.',
-    outputPath,
+    prompt: 'test prompt',
+    context: 'test context',
   };
 
-  // Stubbing the mkdir and writeFile
-  let writeCalled = false;
-  let mkdirCalled = false;
+  (openAIAdapter as any).client = new MockOpenAI(mockResponse);
 
-  async function mockMkdirFn(dir: string, options: { recursive: boolean }) {
-    mkdirCalled = true;
-    assert.strictEqual(dir, path.dirname(outputPath));
-    assert.strictEqual(options.recursive, true);
-  }
+  const result = await openAIAdapter.execute(request);
 
-  async function mockWriteFileFn(file: string, data: string) {
-    writeCalled = true;
-    assert.strictEqual(file, outputPath);
-    assert.strictEqual(data, 'This is a test response from OpenAI.');
-  }
+  assert.equal(result.success, false);
+  assert.equal(result.error, 'Received a malformed response from OpenAI. Please try again later.');
+});
 
-  // Override mocks
-  (mkdir as unknown) = mockMkdirFn;
-  (writeFile as unknown) = mockWriteFileFn;
+test('OpenAI Adapter: execute - network error', async () => {
+  const openAIAdapter = createOpenAIAdapter(
+    { apiKey: 'valid-api-key', model: 'test-model' },
+    'openai'
+  );
 
-  // Execute the adapter
-  const response: AgentResponse = await adapter.execute(request);
-  assert.strictEqual(response.success, true);
-  assert.strictEqual(writeCalled, true);
-  assert.strictEqual(mkdirCalled, true);
+  const request: AgentRequest = {
+    prompt: 'test prompt',
+    context: 'test context',
+  };
+
+  (openAIAdapter as any).client = {
+    chat: {
+      completions: {
+        create: async () => {
+          throw new Error('Network Error: connection failed');
+        },
+      },
+    },
+  };
+
+  const result = await openAIAdapter.execute(request);
+
+  assert.equal(result.success, false);
+  assert.equal(result.error, 'Network error occurred. Please check your connection and try again.');
+});
+
+test('OpenAI Adapter: invalid configuration', () => {
+  assert.throws(() => {
+    createOpenAIAdapter({ apiKey: '', model: '' });
+  }, new Error('Invalid OpenAI configuration'));
 });
