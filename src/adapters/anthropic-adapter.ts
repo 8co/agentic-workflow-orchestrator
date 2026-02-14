@@ -34,6 +34,10 @@ function isInvalidResponseError(response: unknown): response is Partial<Anthropi
   return typeof response !== 'object' || response === null || !('content' in response) || !('usage' in response);
 }
 
+function isUnexpectedResponseError(response: unknown): boolean {
+  return typeof response === 'object' && response !== null && 'status' in response && (response as { status: number }).status >= 400;
+}
+
 export function createAnthropicAdapter(config: AnthropicConfig): AgentAdapter {
   const client = new Anthropic({ apiKey: config.apiKey });
 
@@ -65,8 +69,11 @@ export function createAnthropicAdapter(config: AnthropicConfig): AgentAdapter {
         });
 
         if (isInvalidResponseError(message)) {
-          console.error('Received an invalid response structure from the API:', message);
+          console.error('Invalid response structure:', message);
           throw new Error('API returned unexpected data structure.');
+        } else if (isUnexpectedResponseError(message)) {
+          console.error('Unexpected API response status:', message);
+          throw new Error('Unexpected API response status.');
         }
 
         // Extract text from response
