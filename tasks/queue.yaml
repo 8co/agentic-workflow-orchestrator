@@ -1663,3 +1663,45 @@ tasks:
     started_at: 2026-02-14T00:46:42.657Z
     completed_at: 2026-02-14T00:46:46.270Z
     branch: auto/add-type-safety-to-enhanced-logger
+  - id: add-tests-anthropic-adapter-error-cases
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/adapters/anthropic-adapter.ts
+    variables:
+      test_target: src/adapters/anthropic-adapter.ts
+      test_description: >
+        Add unit tests for error handling paths in the AnthropicAdapter execute function to verify network errors, API
+        limit errors, and invalid response errors are correctly handled.
+  - id: add-error-handling-state-manager
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/state-manager.ts
+    variables:
+      modification_description: >
+        Implement comprehensive error handling in all read and write operations of the state manager to ensure robust
+        state file access and notify any errors encountered.
+  - id: write-tests-deploy-script-error-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/scripts/deploy.ts
+    variables:
+      test_target: src/scripts/deploy.ts
+      test_description: >
+        Create tests for the deploy script that cover various error scenarios, including invalid configuration, command
+        execution errors, and file read/write issues.
+  - id: improve-type-safety-ai-agents
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/aiAgents.ts
+    variables:
+      modification_description: >
+        Enhance type-safe definitions in the aiAgents module, particularly focusing on error formatting and network
+        details functions for consistent type consulting.
