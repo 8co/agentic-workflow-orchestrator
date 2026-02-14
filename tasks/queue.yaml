@@ -2207,7 +2207,7 @@ tasks:
     completed_at: 2026-02-14T00:59:38.393Z
     branch: auto/add-missing-tests-enhanced-logger
   - id: refactor-queue-manager-error-handling
-    status: running
+    status: completed
     workflow: auto
     prompt: prompts/auto-modify-file.md
     context_files:
@@ -2217,8 +2217,10 @@ tasks:
         Add error handling for all asynchronous operations within the queue-manager module, ensuring that file reading
         and writing operations are wrapped in try-catch blocks, with appropriate logging for any errors that occur.
     started_at: 2026-02-14T00:59:38.426Z
+    completed_at: 2026-02-14T00:59:44.702Z
+    branch: auto/refactor-queue-manager-error-handling
   - id: add-type-safety-enhancements-to-file-writer
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-modify-file.md
     context_files:
@@ -2228,6 +2230,7 @@ tasks:
         Enhance type safety in the file-writer module by refining type definitions and ensuring all functions and
         variables have explicit TypeScript types defined, including ensuring that parsed file changes strictly conform
         to the FileChange type.
+    started_at: 2026-02-14T00:59:44.729Z
   - id: write-tests-errorUtility-enhancements
     status: pending
     workflow: auto
