@@ -21,12 +21,12 @@ export function getHealthStatus(): HealthStatus {
     try {
       const packageJson = JSON.parse(packageJsonContent);
       version = packageJson.version || 'unknown';
-      logger.debug(`Package version extracted: ${version}`);
+      logger.debug(`Health: Package version extracted: ${version}`);
     } catch (jsonError) {
-      logger.error(`Failed to parse package.json: ${(jsonError as Error).message}`);
+      logger.error(`Health: Failed to parse package.json: ${(jsonError as Error).message}`);
     }
   } catch (fsError) {
-    logger.error(`Failed to read package.json: ${(fsError as Error).message}`);
+    logger.error(`Health: Failed to read package.json: ${(fsError as Error).message}`);
   }
 
   const status: HealthStatus = {
@@ -37,10 +37,10 @@ export function getHealthStatus(): HealthStatus {
     version,
   };
 
-  logger.info(`Health status fetched: ${JSON.stringify(status)}`);
+  logger.info(`Health: Status fetched: ${JSON.stringify(status)}`);
 
   if (status.memoryUsage > 500) {
-    logger.warn(`High memory usage detected: ${status.memoryUsage} MB`);
+    logger.warn(`Health: High memory usage detected: ${status.memoryUsage} MB`);
   }
 
   return status;
