@@ -84,16 +84,16 @@ export function createAnthropicAdapter(config: AnthropicConfig): AgentAdapter {
     name: 'anthropic',
 
     async execute(request: AgentRequest): Promise<AgentResponse> {
-      const start = Date.now();
-      const maxRetries = 3;
-      const retryDelayMs = 1000; // 1 second delay
+      const start: number = Date.now();
+      const maxRetries: number = 3;
+      const retryDelayMs: number = 1000; // 1 second delay
 
       try {
         console.log('\n┌─────────────────────────────────────────');
         console.log(`│ 🧠 Anthropic (${config.model}) — Executing`);
         console.log('├─────────────────────────────────────────');
 
-        const systemPrompt = request.context
+        const systemPrompt: string = request.context
           ? `You are an expert software engineer. Follow all instructions precisely.\n\nContext:\n${request.context}`
           : 'You are an expert software engineer. Follow all instructions precisely. Return only the requested output — no preamble, no explanation unless asked.';
 
@@ -123,15 +123,15 @@ export function createAnthropicAdapter(config: AnthropicConfig): AgentAdapter {
         }
 
         // explicit cast to ValidAnthropicResponse after checks
-        const validResponse = message as ValidAnthropicResponse;
+        const validResponse: ValidAnthropicResponse = message as ValidAnthropicResponse;
 
         // Extract text from response
         const textBlocks: TextBlock[] = validResponse.content.filter(
           (block): block is TextBlock => block.type === 'text'
         );
-        const output = textBlocks.map((b) => b.text).join('\n');
+        const output: string = textBlocks.map((b) => b.text).join('\n');
 
-        const durationMs = Date.now() - start;
+        const durationMs: number = Date.now() - start;
 
         // Write to output file if specified
         if (request.outputPath) {
@@ -141,8 +141,8 @@ export function createAnthropicAdapter(config: AnthropicConfig): AgentAdapter {
         }
 
         // Log preview
-        const lines = output.split('\n');
-        const preview = lines.slice(0, 10).join('\n');
+        const lines: string[] = output.split('\n');
+        const preview: string = lines.slice(0, 10).join('\n');
         console.log('│');
         console.log(preview.replace(/^/gm, '│  '));
         if (lines.length > 10) {
@@ -161,8 +161,8 @@ export function createAnthropicAdapter(config: AnthropicConfig): AgentAdapter {
           durationMs,
         };
       } catch (err) {
-        let error = 'An unknown error occurred.';
-        const durationMs = Date.now() - start;
+        let error: string = 'An unknown error occurred.';
+        const durationMs: number = Date.now() - start;
 
         if (isNetworkError(err)) {
           error = 'Network error: Unable to reach the API. Retrying...';
