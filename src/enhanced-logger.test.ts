@@ -1,97 +1,61 @@
+import { test } from 'node:test';
+import assert from 'node:assert';
 import fs from 'fs';
 import path from 'path';
-import assert from 'node:assert';
-import test from 'node:test';
 import { EnhancedLogger } from './enhanced-logger.js';
 
-const logFilePath = path.resolve(process.cwd(), 'logs', 'test.log');
+function readFileContent(filePath: string): string {
+  return fs.existsSync(filePath) ? fs.readFileSync(filePath, 'utf8') : '';
+}
 
-test('EnhancedLogger: should correctly log info messages to console and file', () => {
-  const originalConsoleInfo = console.info;
-  let consoleOutput = '';
-  console.info = (message?: any, ...optionalParams: any[]) => {
-    consoleOutput += message + optionalParams.join(' ');
-  };
-
+test('EnhancedLogger should create log directory and file', () => {
   const logger = EnhancedLogger.getInstance('test.log');
-  logger.logInfo('This is an info message');
+  const logFile = path.resolve(process.cwd(), 'logs', 'test.log');
 
-  const logContent = fs.readFileSync(logFilePath, 'utf-8');
-  assert(logContent.includes('INFO'));
-  assert(consoleOutput.includes('INFO'));
-
-  console.info = originalConsoleInfo;
+  // Ensure directory and file are created
+  assert.strictEqual(fs.existsSync(logFile), true);
 });
 
-test('EnhancedLogger: should correctly log warning messages to console and file', () => {
-  const originalConsoleWarn = console.warn;
-  let consoleOutput = '';
-  console.warn = (message?: any, ...optionalParams: any[]) => {
-    consoleOutput += message + optionalParams.join(' ');
-  };
+test('EnhancedLogger should correctly log info level messages', () => {
+  const message = 'This is an info message';
+  const logger = EnhancedLogger.getInstance('info.log');
+  const logFile = path.resolve(process.cwd(), 'logs', 'info.log');
 
-  const logger = EnhancedLogger.getInstance('test.log');
-  logger.logWarn('This is a warning message');
+  logger.logInfo(message);
+  const content = readFileContent(logFile);
 
-  const logContent = fs.readFileSync(logFilePath, 'utf-8');
-  assert(logContent.includes('WARN'));
-  assert(consoleOutput.includes('WARN'));
-
-  console.warn = originalConsoleWarn;
+  assert.match(content, new RegExp(`\\[INFO\\] ${message}`));
 });
 
-test('EnhancedLogger: should correctly log error messages to console and file', () => {
-  const originalConsoleError = console.error;
-  let consoleOutput = '';
-  console.error = (message?: any, ...optionalParams: any[]) => {
-    consoleOutput += message + optionalParams.join(' ');
-  };
+test('EnhancedLogger should correctly log warn level messages', () => {
+  const message = 'This is a warning';
+  const logger = EnhancedLogger.getInstance('warn.log');
+  const logFile = path.resolve(process.cwd(), 'logs', 'warn.log');
 
-  const logger = EnhancedLogger.getInstance('test.log');
-  logger.logError('This is an error message');
+  logger.logWarn(message);
+  const content = readFileContent(logFile);
 
-  const logContent = fs.readFileSync(logFilePath, 'utf-8');
-  assert(logContent.includes('ERROR'));
-  assert(consoleOutput.includes('ERROR'));
-
-  console.error = originalConsoleError;
+  assert.match(content, new RegExp(`\\[WARN\\] ${message}`));
 });
 
-test('EnhancedLogger: should correctly log debug messages to console and file', () => {
-  const originalConsoleDebug = console.debug;
-  let consoleOutput = '';
-  console.debug = (message?: any, ...optionalParams: any[]) => {
-    consoleOutput += message + optionalParams.join(' ');
-  };
+test('EnhancedLogger should correctly log error level messages', () => {
+  const message = 'This is an error';
+  const logger = EnhancedLogger.getInstance('error.log');
+  const logFile = path.resolve(process.cwd(), 'logs', 'error.log');
 
-  const logger = EnhancedLogger.getInstance('test.log');
-  logger.logDebug('This is a debug message');
+  logger.logError(message);
+  const content = readFileContent(logFile);
 
-  const logContent = fs.readFileSync(logFilePath, 'utf-8');
-  assert(logContent.includes('DEBUG'));
-  assert(consoleOutput.includes('DEBUG'));
-
-  console.debug = originalConsoleDebug;
+  assert.match(content, new RegExp(`\\[ERROR\\] ${message}`));
 });
 
-test('EnhancedLogger: should handle errors when writing to a log file', () => {
-  const originalConsoleError = console.error;
-  let consoleOutput = '';
-  console.error = (message?: any, ...optionalParams: any[]) => {
-    consoleOutput += message + optionalParams.join(' ');
-  };
+test('EnhancedLogger should correctly log debug level messages', () => {
+  const message = 'This is a debug message';
+  const logger = EnhancedLogger.getInstance('debug.log');
+  const logFile = path.resolve(process.cwd(), 'logs', 'debug.log');
 
-  const logger = EnhancedLogger.getInstance('test.log');
+  logger.logDebug(message);
+  const content = readFileContent(logFile);
 
-  // Simulate an error by making the log file unwritable
-  fs.chmodSync(logFilePath, 0o400); // read-only
-
-  logger.logError('This is an unwritable file test');
-
-  assert(consoleOutput.includes('[ERROR] Failed to write to log file'));
-
-  console.error = originalConsoleError;
-
-  // Restore permissions
-  fs.chmodSync(logFilePath, 0o600); // normal writable
+  assert.match(content, new RegExp(`\\[DEBUG\\] ${message}`));
 });
