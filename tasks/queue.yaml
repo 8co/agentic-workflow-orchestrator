@@ -3464,3 +3464,45 @@ tasks:
     started_at: 2026-02-14T01:42:42.821Z
     completed_at: 2026-02-14T01:42:46.306Z
     branch: auto/create-error-notification-module
+  - id: write-tests-index-error-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/index.ts
+    variables:
+      test_target: src/index.ts
+      test_description: >
+        Develop comprehensive tests focusing on the error handling within the main index file to ensure all edge cases
+        are covered.
+  - id: add-error-handling-prompt-resolver-load
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/prompt-resolver.ts
+    variables:
+      modification_description: >
+        Introduce robust error handling when loading and parsing prompt templates, ensuring any I/O errors or parsing
+        issues are logged and managed gracefully.
+  - id: write-tests-file-writer-error-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/file-writer.ts
+    variables:
+      test_target: src/file-writer.ts
+      test_description: >
+        Implement tests for all error handling paths in the file writer utility, especially focusing on I/O operations
+        and path validations.
+  - id: refactor-queue-manager-load-error-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/queue-manager.ts
+    variables:
+      modification_description: >
+        Refactor the queue manager's task loading logic to include detailed error handling, improving resilience against
+        file read failures and malformed queue configurations.
