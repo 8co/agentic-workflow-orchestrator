@@ -6165,3 +6165,56 @@ tasks:
     started_at: 2026-02-14T02:52:21.014Z
     completed_at: 2026-02-14T02:52:40.622Z
     branch: auto/refactor-scheduler-error-handling
+  - id: write-tests-aiAgents-type-safety
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/aiAgents.ts
+    variables:
+      test_target: src/aiAgents.ts
+      test_description: >
+        Write test cases to ensure type safety within the aiAgents module, particularly focusing on handling poorly
+        typed or unexpected inputs to ensure robustness.
+  - id: add-tests-health-comprehensive
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/health.ts
+    variables:
+      test_target: src/health.ts
+      test_description: >
+        Develop comprehensive tests to cover all edge cases and error scenarios in the health module, ensuring
+        reliability and robustness.
+  - id: refactor-main-type-safety
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/index.ts
+    variables:
+      modification_description: >
+        Refactor the main function to improve type safety by adding specific type annotations where applicable,
+        particularly focusing on function parameters and return types.
+  - id: add-logs-enhanced-logger
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/enhanced-logger.ts
+    variables:
+      modification_description: >
+        Enhance the enhanced-logger module by adding additional logging for error cases  to provide more insights during
+        debugging, focusing particularly on type-related errors.
+  - id: write-type-safety-tests-openai-adapter
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/adapters/openai-adapter.ts
+    variables:
+      test_target: src/adapters/openai-adapter.ts
+      test_description: >
+        Introduce type safety tests to the openai-adapter module, ensuring that type-related issues are identified and
+        handled gracefully during execution.
