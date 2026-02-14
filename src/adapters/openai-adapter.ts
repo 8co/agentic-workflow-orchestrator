@@ -83,8 +83,12 @@ export function createOpenAIAdapter(config: OpenAIConfig, adapterName: 'openai' 
             errorMessage = 'Unauthorized: Invalid API key or permissions issue.';
           } else if (err.message.includes('500')) {
             errorMessage = 'Internal server error. Try again after some time.';
+          } else if (err.message.includes('429')) {
+            errorMessage = 'Too many requests: You have hit the rate limit. Try again later.';
+          } else if (err.message.includes('503')) {
+            errorMessage = 'Service unavailable: OpenAI temporarily unavailable. Try again after some time.';
           } else {
-            errorMessage = err.message;
+            errorMessage = 'An unexpected error occurred. Please try again later.';
           }
         } else {
           errorMessage = 'An unknown error occurred.';
