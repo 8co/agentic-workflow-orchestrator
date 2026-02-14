@@ -1,112 +1,61 @@
+import assert from 'node:assert';
+import { test } from 'node:test';
 import { validateEnvConfig } from '../src/config-validator.js';
-import { strict as assert } from 'node:assert';
 
-function setEnv(env: { [key: string]: string | undefined }): void {
-  for (const key in env) {
-    process.env[key] = env[key];
-  }
-}
-
-function clearEnv(keys: string[]): void {
-  for (const key of keys) {
-    delete process.env[key];
-  }
-}
-
-test('validateEnvConfig - all keys present and valid', () => {
-  setEnv({
-    ANTHROPIC_API_KEY: 'testKeyAnthropic',
-    OPENAI_API_KEY: 'testKeyOpenAI',
-    DEFAULT_AGENT: 'anthropic'
-  });
+test('validateEnvConfig returns valid=false with missing keys and appropriate messages', () => {
+  process.env.ANTHROPIC_API_KEY = '';
+  process.env.OPENAI_API_KEY = '';
+  process.env.DEFAULT_AGENT = 'codex';
 
   const result = validateEnvConfig();
-  assert.deepEqual(result, {
-    valid: true,
-    missing: [],
-    warnings: [],
-    errors: []
-  });
-
-  clearEnv(['ANTHROPIC_API_KEY', 'OPENAI_API_KEY', 'DEFAULT_AGENT']);
-});
-
-test('validateEnvConfig - missing ANTHROPIC_API_KEY', () => {
-  setEnv({
-    OPENAI_API_KEY: 'testKeyOpenAI',
-    DEFAULT_AGENT: 'anthropic'
-  });
-
-  const result = validateEnvConfig();
-  assert.deepEqual(result, {
-    valid: false,
-    missing: ['ANTHROPIC_API_KEY'],
-    warnings: ['DEFAULT_AGENT is set to "anthropic" but ANTHROPIC_API_KEY is missing.'],
-    errors: []
-  });
-
-  clearEnv(['OPENAI_API_KEY', 'DEFAULT_AGENT']);
-});
-
-test('validateEnvConfig - missing OPENAI_API_KEY', () => {
-  setEnv({
-    ANTHROPIC_API_KEY: 'testKeyAnthropic',
-    DEFAULT_AGENT: 'openai'
-  });
-
-  const result = validateEnvConfig();
-  assert.deepEqual(result, {
-    valid: false,
-    missing: ['OPENAI_API_KEY'],
-    warnings: ['DEFAULT_AGENT is set to "openai" but OPENAI_API_KEY is missing.'],
-    errors: []
-  });
-
-  clearEnv(['ANTHROPIC_API_KEY', 'DEFAULT_AGENT']);
-});
-
-test('validateEnvConfig - missing both API keys', () => {
-  setEnv({
-    DEFAULT_AGENT: 'codex'
-  });
-
-  const result = validateEnvConfig();
-  assert.deepEqual(result, {
-    valid: false,
-    missing: ['ANTHROPIC_API_KEY', 'OPENAI_API_KEY'],
-    warnings: ['DEFAULT_AGENT is set to "codex" but OPENAI_API_KEY is missing.'],
-    errors: []
-  });
-
-  clearEnv(['DEFAULT_AGENT']);
-});
-
-test('validateEnvConfig - unrecognized DEFAULT_AGENT', () => {
-  setEnv({
-    ANTHROPIC_API_KEY: 'testKeyAnthropic',
-    OPENAI_API_KEY: 'testKeyOpenAI',
-    DEFAULT_AGENT: 'unknown'
-  });
-
-  const result = validateEnvConfig();
-  assert.deepEqual(result, {
-    valid: false,
-    missing: [],
-    warnings: [],
-    errors: ['DEFAULT_AGENT is set to an unrecognized value: "unknown".']
-  });
-
-  clearEnv(['ANTHROPIC_API_KEY', 'OPENAI_API_KEY', 'DEFAULT_AGENT']);
-});
-
-test('validateEnvConfig - no vars set', () => {
-  clearEnv(['ANTHROPIC_API_KEY', 'OPENAI_API_KEY', 'DEFAULT_AGENT']);
   
+  assert.strictEqual(result.valid, false);
+  assert.deepStrictEqual(result.missing, ['ANTHROPIC_API_KEY', 'OPENAI_API_KEY']);
+  assert.deepStrictEqual(result.warnings, ['DEFAULT_AGENT is set to "codex" but OPENAI_API_KEY is missing.']);
+  assert.deepStrictEqual(result.errors, []);
+});
+
+test('validateEnvConfig returns valid=true when all environment variables are set correctly', () => {
+  process.env.ANTHROPIC_API_KEY = 'sample-anthropic-key';
+  process.env.OPENAI_API_KEY = 'sample-openai-key';
+  process.env.DEFAULT_AGENT = 'anthropic';
+
   const result = validateEnvConfig();
-  assert.deepEqual(result, {
-    valid: false,
-    missing: ['ANTHROPIC_API_KEY', 'OPENAI_API_KEY'],
-    warnings: [],
-    errors: []
+
+  assert.strictEqual(result.valid, true);
+  assert.deepStrictEqual(result.missing, []);
+  assert.deepStrictEqual(result.warnings, []);
+  assert.deepStrictEqual(result.errors, []);
+});
+
+test('validateEnvConfig returns an error if DEFAULT_AGENT has an unrecognized value', () => {
+  process.env.ANTHROPIC_API_KEY = 'sample-anthropic-key';
+  process.env.OPENAI_API_KEY = 'sample-openai-key';
+  process.env.DEFAULT_AGENT = 'unknown';
+
+  const result = validateEnvConfig();
+
+  assert.strictEqual(result.valid, false);
+  assert.deepStrictEqual(result.missing, []);
+  assert.deepStrictEqual(result.warnings, []);
+  assert.deepStrictEqual(result.errors, ['DEFAULT_AGENT is set to an unrecognized value: "unknown".']);
+});
+
+test('validateEnvConfig handles unknown error gracefully', () => {
+  const original = process.env;
+
+  Object.defineProperty(process, 'env', {
+    value: null,
+    writable: true
   });
+
+  const result = validateEnvConfig();
+  
+  assert.strictEqual(result.valid, false);
+  assert.deepStrictEqual(result.missing, []);
+  assert.deepStrictEqual(result.warnings, []);
+  assert.strictEqual(result.errors.length, 1);
+  assert.ok(result.errors[0].startsWith('An error occurred during validation:'));
+
+  Object.defineProperty(process, 'env', { value: original, writable: true });
 });
