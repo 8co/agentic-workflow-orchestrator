@@ -2921,7 +2921,7 @@ tasks:
     completed_at: 2026-02-14T01:18:45.773Z
     branch: auto/refactor-error-handling-in-git-ops
   - id: add-tests-for-environment-setup-in-main
-    status: running
+    status: completed
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -2932,8 +2932,10 @@ tasks:
         Create tests to validate successful environment setup in the main function, including cases where required
         configurations are missing or incomplete.
     started_at: 2026-02-14T01:18:45.833Z
+    completed_at: 2026-02-14T01:18:51.465Z
+    branch: auto/add-tests-for-environment-setup-in-main
   - id: write-tests-for-retryUtility
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -2943,3 +2945,4 @@ tasks:
       test_description: >
         Write tests to cover different scenarios for the retry utility, ensuring proper handling of retry logic and
         exception cases.
+    started_at: 2026-02-14T01:18:51.507Z
