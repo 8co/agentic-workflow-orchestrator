@@ -86,11 +86,38 @@ async function main() {
     process.exit(0);
   }
 
-  const { command, positional, vars, agent } = parseArgs(args);
+  const { command, positional, vars, agent, project } = parseArgs(args);
   const config = loadConfig();
 
-  const stateManager = createStateManager(basePath);
-  const promptResolver = createPromptResolver(basePath);
+  // Load project registry
+  const registry = createProjectRegistry(basePath);
+  await registry.load();
+
+  // Resolve project config
+  let projectConfig: ProjectConfig;
+  if (project) {
+    const found = registry.get(project);
+    if (!found) {
+      console.error(`❌ Unknown project: ${project}`);
+      console.error(`   Available projects: ${registry.listIds().join(', ')}`);
+      process.exit(1);
+    }
+    projectConfig = found;
+  } else {
+    projectConfig = registry.getDefault();
+  }
+
+  // Show which project we're operating on
+  if (command !== 'list' && command !== 'projects') {
+    console.log(`📁 Project: ${projectConfig.name} (${projectConfig.id})`);
+    console.log(`   Path: ${projectConfig.path}\n`);
+  }
+
+  // Use project path as the working directory for all operations
+  const workingPath = projectConfig.path;
+
+  const stateManager = createStateManager(workingPath);
+  const promptResolver = createPromptResolver(basePath); // Prompts still live in orchestrator
   const adapters = buildAdapters(config);
 
   // If agent override provided via CLI, validate its config
@@ -102,11 +129,16 @@ async function main() {
     stateManager,
     promptResolver,
     adapters,
-    basePath,
+    basePath: workingPath,
     defaultAgent: agent ?? config.defaultAgent,
   });
 
   switch (command) {
+    case 'projects': {
+      registry.print();
+      break;
+    }
+
     case 'run': {
       const workflowPath = positional[0];
       if (!workflowPath) {
