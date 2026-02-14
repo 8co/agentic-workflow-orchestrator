@@ -271,8 +271,11 @@ async function main() {
       });
 
       const results = await scheduler.loop();
-      const failed = results.some((r) => !r.success);
-      if (failed) process.exit(1);
+      const failed = results.filter((r) => !r.success).length;
+      const passed = results.filter((r) => r.success).length;
+      if (failed > 0) {
+        console.log(`\n⚠️  Batch had ${failed} failure(s), ${passed} success(es). Continuing.`);
+      }
       break;
     }
 
