@@ -3277,3 +3277,34 @@ tasks:
     started_at: 2026-02-14T01:24:35.198Z
     completed_at: 2026-02-14T01:24:51.546Z
     branch: auto/add-tests-state-manager-load-exceptions
+  - id: refactor-createAnthropicAdapter-error-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/adapters/anthropic-adapter.ts
+    variables:
+      modification_description: >
+        Improve error handling in the createAnthropicAdapter function by introducing granular error logging and ensuring
+        all possible error states are properly caught and handled.
+  - id: add-error-handling-to-anthropic-adapter-tests
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - test/adapters/anthropic-adapter.test.ts
+    variables:
+      test_target: src/adapters/anthropic-adapter.ts
+      test_description: >
+        Add comprehensive error handling tests for the Anthropic Adapter to ensure that it behaves correctly under error
+        conditions, including API limit errors and unexpected response structures.
+  - id: add-error-handling-to-state-manager-load-tests
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/state-manager.ts
+    variables:
+      modification_description: >
+        Enhance the error handling in the load function of the state-manager module by checking for additional error
+        states and ensuring that the function never returns unhandled or unknown error messages.
