@@ -1,76 +1,59 @@
-import { strict as assert } from 'node:assert';
-import { spawn } from 'node:child_process';
-import { test } from 'node:test';
-import { readFile } from 'node:fs/promises';
-import path from 'node:path';
-import * as mockFS from 'mock-fs';
+import { execSync } from 'child_process'; 
+import assert from 'node:assert';
+import test from 'node:test';
+import { spawnSync } from 'child_process';
+import { readFileSync, writeFileSync } from 'fs';
+import { join } from 'path';
 
-// Mock the imported functions
-// Assuming security-scanner exports mocked methods:
-import {
-  scanCode,
-  formatViolations,
-  requiresSecurityScan,
-  type SecurityScanResult,
-} from '../src/security-scanner.js';
+test('should handle non-git repository gracefully', () => {
+  const nonGitDirectory = '/tmp/non-git-directory';
+  const mkdirResult = spawnSync('mkdir', ['-p', nonGitDirectory]);
+  assert.strictEqual(mkdirResult.status, 0);
 
-// Mock implementations
-scanCode.mockImplementation((code: string, file: string): SecurityScanResult => {
-  if (file.includes('unsafe')) {
-    return { safe: false, violations: [{ message: 'Unsafe code detected' }] };
+  const result = spawnSync('node', ['src/security-check-runner.ts'], { cwd: nonGitDirectory });
+  assert.ok(result.stdout.toString().includes('No git repository or no changes detected.'));
+  assert.strictEqual(result.status, 0);
+});
+
+test('should detect no changes for a clean git directory', () => {
+  const tempGitRepo = '/tmp/clean-git-repo';
+  execSync('mkdir -p ' + tempGitRepo);
+  execSync('git init', { cwd: tempGitRepo });
+  execSync('touch test.txt', { cwd: tempGitRepo });
+  execSync('git add .', { cwd: tempGitRepo });
+  execSync('git commit -m "Initial commit"', { cwd: tempGitRepo });
+  
+  const result = spawnSync('node', ['src/security-check-runner.ts'], { cwd: tempGitRepo });
+  assert.ok(result.stdout.toString().includes('✅ No changed files to scan'));
+  assert.strictEqual(result.status, 0);
+});
+
+test('should handle uncommitted changes in a git repository', () => {
+  const tempGitRepo = '/tmp/uncommitted-git-repo';
+  execSync('mkdir -p ' + tempGitRepo);
+  execSync('git init', { cwd: tempGitRepo });
+  writeFileSync(join(tempGitRepo, 'uncommitted.txt'), 'Uncommitted change');
+  execSync('git add .', { cwd: tempGitRepo });
+
+  const result = spawnSync('node', ['src/security-check-runner.ts'], { cwd: tempGitRepo });
+  assert.ok(result.stdout.toString().includes('✅ No changed files to scan') === false);
+});
+
+test('should handle unauthorized file access attempts', () => {
+  const tempGitRepo = '/tmp/unauthorized-access-git-repo';
+  execSync('mkdir -p ' + tempGitRepo);
+  execSync('git init', { cwd: tempGitRepo });
+  
+  const filePath = join(tempGitRepo, 'restricted.txt');
+  writeFileSync(filePath, 'Restricted data');
+  execSync('git add .', { cwd: tempGitRepo });
+  execSync('git commit -m "Add restricted file"', { cwd: tempGitRepo });
+  try {
+    execSync(`chmod 000 ${filePath}`);
+  } catch (error) {
+    console.warn('Unable to change file permissions, test might not be effective on this environment!');
   }
-  return { safe: true, violations: [] };
-});
 
-formatViolations.mockImplementation(
-  (result: SecurityScanResult, file: string): string => {
-    return result.violations.map(v => `${file}: ${v.message}`).join('\n');
-  }
-);
-
-requiresSecurityScan.mockImplementation((file: string): boolean => {
-  return file.endsWith('.js');
-});
-
-test('getChangedFiles returns empty list if git command fails', async () => {
-  const originalSpawn = spawn;
-  let gitCommandExecuted = false;
-
-  Object.assign(spawn, () => {
-    const events = {
-      on: (event: string, callback: (...args: any[]) => void) => {
-        if (event === 'error') {
-          callback(new Error('spawn ENOENT'));
-        }
-      },
-    };
-    gitCommandExecuted = true;
-    return events;
-  });
-
-  const cwd = process.cwd();
-  assert.deepEqual(await require('../src/security-check-runner.ts').getChangedFiles(cwd), []);
-  assert.ok(gitCommandExecuted);
-
-  Object.assign(spawn, originalSpawn);
-});
-
-test('handles readFile error', async () => {
-  mockFS({
-    'file1.js': 'console.log("Hello World");',
-    'unsafe-file.js': 'console.log("This is unsafe");',
-  });
-
-  const originalReadFile = readFile;
-  Object.assign(readFile, async (filePath: string, encoding: string) => {
-    if (path.basename(filePath) === 'unsafe-file.js') {
-      throw new Error('Permission denied');
-    }
-    return await originalReadFile(filePath, encoding);
-  });
-
-  await import('../src/security-check-runner.ts');
-
-  Object.assign(readFile, originalReadFile);
-  mockFS.restore();
+  const result = spawnSync('node', ['src/security-check-runner.ts'], { cwd: tempGitRepo });
+  assert.ok(result.stderr.toString().includes('⚠️  Could not read restricted.txt'));
 });
