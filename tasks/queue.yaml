@@ -3159,7 +3159,7 @@ tasks:
     completed_at: 2026-02-14T01:22:44.571Z
     branch: auto/refactor-health-status-logging-function
   - id: write-tests-state-manager-save
-    status: running
+    status: failed
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -3170,3 +3170,95 @@ tasks:
         Write unit tests for the save function to ensure it handles disk write failures gracefully and behaves correctly
         in all scenarios.
     started_at: 2026-02-14T01:23:05.579Z
+    completed_at: 2026-02-14T01:23:25.530Z
+    error: >-
+      # Verification Errors
+
+
+      The following commands failed. Fix ALL errors.
+
+
+      ## TypeScript Build (exit 2)
+
+      ```
+
+      src/state-manager.test.ts(10,11): error TS2430: Interface 'MockedWorkflowExecution' incorrectly extends interface
+      'WorkflowExecution'.
+        Types of property 'steps' are incompatible.
+          Type 'Record<string, StepResult>' is not assignable to type 'Record<string, import("/Users/8con/documents-non-icloud/agentic-workflow-orchestrator/src/types").StepResult>'.
+            'string' index signatures are incompatible.
+              Type 'StepResult' is missing the following properties from type 'StepResult': stepId, attempts
+      src/state-manager.test.ts(25,9): error TS2739: Type '{ executionId: string; startedAt: string; steps: { step1: {
+      status: string; output: string; }; }; }' is missing the following properties from type 'MockedWorkflowExecution':
+      workflowName, status, variables
+
+      src/state-manager.test.ts(33,27): error TS2345: Argument of type 'MockedWorkflowExecution' is not assignable to
+      parameter of type 'WorkflowExecution'.
+        Types of property 'steps' are incompatible.
+          Type 'Record<string, StepResult>' is not assignable to type 'Record<string, import("/Users/8con/documents-non-icloud/agentic-workflow-orchestrator/src/types").StepResult>'.
+            'string' index signatures are incompatible.
+              Type 'StepResult' is missing the following properties from type 'StepResult': stepId, attempts
+      src/state-manager.test.ts(45,9): error TS2739: Type '{ executionId: string; startedAt: string; steps: { step1: {
+      status: string; output: string; }; }; }' is missing the following properties from type 'MockedWorkflowExecution':
+      workflowName, status, variables
+
+      src/state-manager.test.ts(57,29): error TS2345: Argument of type 'MockedWorkflowExecution' is not assignable to
+      parameter of type 'WorkflowExecution'.
+        Types of property 'steps' are incompatible.
+          Type 'Record<string, StepResult>' is not assignable to type 'Record<string, import("/Users/8con/documents-non-icloud/agentic-workflow-orchestrator/src/types").StepResult>'.
+            'string' index signatures are incompatible.
+              Type 'StepResult' is missing the following properties from type 'StepResult': stepId, attempts
+      ```
+  - id: write-anthropic-adapter-exception-tests
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/adapters/anthropic-adapter.ts
+    variables:
+      test_target: src/adapters/anthropic-adapter.ts
+      test_description: >
+        Write additional tests for edge cases and error handling in the Anthropic Adapter module, especially focusing on
+        unexpected API responses and network errors. Ensure comprehensive coverage of possible exceptions.
+  - id: enhance-openai-adapter-type-safety
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/adapters/openai-adapter.ts
+    variables:
+      modification_description: >
+        Enhance type safety in the OpenAI Adapter by specifying more detailed types for API responses and function
+        return values. Include handling for possible undefined or null values.
+  - id: add-error-handling-in-index
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/index.ts
+    variables:
+      modification_description: >
+        Implement comprehensive error handling in the main entry point of the application (index.ts). Catch and log any
+        initialization errors to ensure they do not crash the application without informative messages.
+  - id: add-tests-openai-adapter-execution
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/adapters/openai-adapter.ts
+    variables:
+      test_target: src/adapters/openai-adapter.ts
+      test_description: >
+        Develop tests for successful execution paths in the OpenAI Adapter, focusing on verifying correct and expected
+        results from API interactions, and ensuring proper handling and parsing of the response data.
+  - id: add-tests-state-manager-load-exceptions
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/state-manager.ts
+    variables:
+      test_target: src/state-manager.ts
+      test_description: >
+        Write tests to handle and validate exceptions that occur during the load function of the state manager,
+        including scenarios like file not found, incorrect JSON format, and permission issues.
