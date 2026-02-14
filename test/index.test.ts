@@ -1,35 +1,29 @@
-import { test } from 'node:test';
-import assert from 'node:assert';
-import { initializeOrchestrationEngine } from '../src/orchestrationEngine.js';
-import { loadWorkflowConfigurations } from '../src/workflowConfig.js';
-import { connectToAIAgents } from '../src/aiAgents.js';
 import { main } from '../src/index.js';
+import assert from 'node:assert';
+import { test } from 'node:test';
 
-test('main function should call all initialization functions', () => {
-  let orchestrationEngineInitialized = false;
-  let workflowsLoaded = false;
+test('main function should call initializeOrchestrationEngine, loadWorkflowConfigurations, and connectToAIAgents', () => {
+  let orchestrationInitialized = false;
+  let configurationsLoaded = false;
   let aiAgentsConnected = false;
 
-  function mockInitializeOrchestrationEngine() {
-    orchestrationEngineInitialized = true;
-  }
+  // Mock functions
+  const initializeOrchestrationEngine = () => { orchestrationInitialized = true; };
+  const loadWorkflowConfigurations = () => { configurationsLoaded = true; };
+  const connectToAIAgents = () => { aiAgentsConnected = true; };
 
-  function mockLoadWorkflowConfigurations() {
-    workflowsLoaded = true;
-  }
+  // Inject mocks
+  const rewire = require('rewire');
+  const index = rewire('../src/index.js');
+  index.__set__('initializeOrchestrationEngine', initializeOrchestrationEngine);
+  index.__set__('loadWorkflowConfigurations', loadWorkflowConfigurations);
+  index.__set__('connectToAIAgents', connectToAIAgents);
 
-  function mockConnectToAIAgents() {
-    aiAgentsConnected = true;
-  }
-
-  // Mock the functions
-  (initializeOrchestrationEngine as unknown) = mockInitializeOrchestrationEngine;
-  (loadWorkflowConfigurations as unknown) = mockLoadWorkflowConfigurations;
-  (connectToAIAgents as unknown) = mockConnectToAIAgents;
-
+  // Invoke the main function
   main();
 
-  assert.strictEqual(orchestrationEngineInitialized, true, 'Orchestration engine should be initialized');
-  assert.strictEqual(workflowsLoaded, true, 'Workflow configurations should be loaded');
-  assert.strictEqual(aiAgentsConnected, true, 'AI agents should be connected');
+  // Assert whether each function was called
+  assert.strictEqual(orchestrationInitialized, true, 'initializeOrchestrationEngine should be called');
+  assert.strictEqual(configurationsLoaded, true, 'loadWorkflowConfigurations should be called');
+  assert.strictEqual(aiAgentsConnected, true, 'connectToAIAgents should be called');
 });
