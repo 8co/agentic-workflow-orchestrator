@@ -5743,3 +5743,32 @@ tasks:
     started_at: 2026-02-14T02:43:09.426Z
     completed_at: 2026-02-14T02:43:20.290Z
     branch: auto/implement-edge-case-tests-for-queue-manager
+  - id: write-error-handling-tests-config-validator
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/config-validator.ts
+    variables:
+      test_target: src/config-validator.ts
+      test_description: |
+        Create tests specifically for error handling and edge cases in the config-validator module.
+  - id: add-log-util-type-safety
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/log-util.ts
+    variables:
+      modification_description: |
+        Enhance type safety by ensuring all functions within log-util.ts have appropriate type annotations.
+  - id: implement-edge-case-tests-scheduler
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/scheduler.ts
+    variables:
+      test_target: src/scheduler.ts
+      test_description: |
+        Write tests for edge cases in the scheduler module, focusing on polling intervals and task execution order.
