@@ -13,6 +13,15 @@ interface AnthropicConfig {
   model: string;
 }
 
+interface AnthropicResponse {
+  content: Array<Anthropic.TextBlock>;
+  usage: {
+    input_tokens: number;
+    output_tokens: number;
+  };
+  stop_reason: string;
+}
+
 function isNetworkError(err: unknown): boolean {
   return typeof err === 'object' && err !== null && 'code' in err && (err as { code: string }).code === 'ENOTFOUND';
 }
@@ -21,8 +30,8 @@ function isAPILimitError(err: unknown): boolean {
   return typeof err === 'object' && err !== null && 'response' in err && (err as { response: { status: number } }).response.status === 429;
 }
 
-function isInvalidResponseError(response: any): boolean {
-  return !(response && typeof response === 'object' && 'content' in response && 'usage' in response);
+function isInvalidResponseError(response: unknown): response is Partial<AnthropicResponse> {
+  return typeof response !== 'object' || response === null || !('content' in response) || !('usage' in response);
 }
 
 export function createAnthropicAdapter(config: AnthropicConfig): AgentAdapter {
@@ -56,7 +65,8 @@ export function createAnthropicAdapter(config: AnthropicConfig): AgentAdapter {
         });
 
         if (isInvalidResponseError(message)) {
-          throw new Error('Received an invalid response structure from the API.');
+          console.error('Received an invalid response structure from the API:', message);
+          throw new Error('API returned unexpected data structure.');
         }
 
         // Extract text from response
@@ -96,7 +106,7 @@ export function createAnthropicAdapter(config: AnthropicConfig): AgentAdapter {
         };
       } catch (err) {
         let error = 'An unknown error occurred.';
-        
+
         if (isNetworkError(err)) {
           error = 'Network error: Unable to reach the API.';
         } else if (isAPILimitError(err)) {
