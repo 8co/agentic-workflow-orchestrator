@@ -1,6 +1,6 @@
 // AI Agent Connection
 import { networkInterfaces, NetworkInterfaceInfo } from 'os';
-import { createConnection, Socket } from 'net';
+import { createConnection, Socket, TcpSocketConnectOpts } from 'net';
 
 export function connectToAIAgents(): void {
   logConnectionEvent('info', "Initiating connection to AI agent APIs...", {});
@@ -9,7 +9,12 @@ export function connectToAIAgents(): void {
     const aiAgentHost: string = 'ai-agent-api.example.com';
     const aiAgentPort: number = 443;
 
-    const socket: Socket = createConnection({ host: aiAgentHost, port: aiAgentPort }, () => {
+    const connectionOptions: TcpSocketConnectOpts = {
+      host: aiAgentHost,
+      port: aiAgentPort,
+    };
+
+    const socket: Socket = createConnection(connectionOptions, (): void => {
       logConnectionEvent('success', 'Successfully connected to AI agent APIs.', { host: aiAgentHost, port: aiAgentPort });
       socket.end();
     });
