@@ -2486,3 +2486,45 @@ tasks:
     started_at: 2026-02-14T01:10:05.203Z
     completed_at: 2026-02-14T01:10:11.476Z
     branch: auto/add-error-handling-to-state-manager-save
+  - id: improve-error-handling-retryUtility
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/retryUtility.ts
+    variables:
+      modification_description: >
+        Improve error handling in the retryAsync function to ensure all potential errors are caught and handled
+        properly, including issues with operation execution or retry mechanism.
+  - id: add-tests-aiagents-error-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/aiAgents.ts
+    variables:
+      test_target: src/aiAgents.ts
+      test_description: >
+        Add comprehensive tests for AI agents' error handling functions, covering network errors, invalid responses, and
+        connectivity issues.
+  - id: refine-error-handling-health-function
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/health.ts
+    variables:
+      modification_description: >
+        Refactor error handling in the getHealthStatus function to ensure comprehensive logging and exception capturing
+        during health status retrieval, including memory usage and version extraction errors.
+  - id: implement-edge-case-test-for-filesystem-utility
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/file-helper.ts
+    variables:
+      test_target: src/file-helper.ts
+      test_description: >
+        Implement edge case tests for the filesystem utility functions, such as reading and writing files with special
+        characters in filenames, or handling cases where directories do not exist.
