@@ -44,10 +44,19 @@ export function getHealthStatus(): HealthStatus {
   };
 
   logger.info(`Health: Status fetched: ${JSON.stringify(status)}`);
-
-  if (status.memoryUsage > 500) {
-    logger.warn(`Health: High memory usage detected: ${status.memoryUsage} MB`);
-  }
+  logMemoryUsageWarnings(status.memoryUsage);
 
   return status;
+}
+
+function logMemoryUsageWarnings(memoryUsage: number): void {
+  if (memoryUsage > 700) {
+    logger.error(`Health: Critical memory usage detected: ${memoryUsage} MB`);
+  } else if (memoryUsage > 500) {
+    logger.warn(`Health: High memory usage detected: ${memoryUsage} MB`);
+  } else if (memoryUsage > 300) {
+    logger.info(`Health: Moderate memory usage: ${memoryUsage} MB`);
+  } else {
+    logger.info(`Health: Normal memory usage: ${memoryUsage} MB`);
+  }
 }
