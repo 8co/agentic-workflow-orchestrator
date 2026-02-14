@@ -1863,7 +1863,7 @@ tasks:
     completed_at: 2026-02-14T00:50:08.053Z
     branch: auto/write-tests-file-writer-edge-cases
   - id: write-tests-anthropic-adapter-edge-cases-fixes
-    status: running
+    status: completed
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -1874,8 +1874,10 @@ tasks:
         Create tests to cover edge cases in the anthropic-adapter module, focusing on untested branches or conditions
         that could have varied inputs or outputs.
     started_at: 2026-02-14T00:50:28.096Z
+    completed_at: 2026-02-14T00:50:36.146Z
+    branch: auto/write-tests-anthropic-adapter-edge-cases-fixes
   - id: add-error-handling-to-state-manager-tests
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-modify-file.md
     context_files:
@@ -1884,6 +1886,7 @@ tasks:
       modification_description: >
         Enhance error handling for all operations in the state-manager module, ensuring robust handling and logging of
         filesystem errors.
+    started_at: 2026-02-14T00:50:36.182Z
   - id: write-more-tests-state-manager-edge-cases-fixes
     status: pending
     workflow: auto
