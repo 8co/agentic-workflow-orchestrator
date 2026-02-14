@@ -1,44 +1,117 @@
-import { strict as assert } from 'node:assert';
-import { test } from 'node:test';
 import { createOpenAIAdapter } from '../../src/adapters/openai-adapter.js';
-import type { AgentAdapter, AgentRequest, AgentResponse } from '../../src/types.js';
+import assert from 'node:assert';
+import test from 'node:test';
+import type { AgentRequest } from '../../src/types.js';
 
-test('OpenAIAdapter - execute method: network error mapping', async () => {
-  const mockConfig = {
-    apiKey: 'valid-api-key',
-    model: 'text-davinci-003',
+const validConfig = {
+  apiKey: 'testApiKey',
+  model: 'testModel',
+};
+
+const invalidConfigs = [
+  { apiKey: '', model: 'testModel' },
+  { apiKey: 'testApiKey', model: '' },
+  { apiKey: '', model: '' },
+];
+
+const validRequest: AgentRequest = {
+  prompt: 'What is TypeScript?',
+  context: 'Programming Languages',
+  outputPath: undefined,
+};
+
+test('OpenAI Adapter creation with valid config', async () => {
+  const adapter = createOpenAIAdapter(validConfig);
+  assert.strictEqual(adapter.name, 'openai');
+});
+
+invalidConfigs.forEach((config, index) => {
+  test(`OpenAI Adapter creation with invalid config #${index + 1}`, async () => {
+    assert.throws(() => {
+      createOpenAIAdapter(config);
+    }, /Invalid OpenAI configuration/);
+  });
+});
+
+test('OpenAI Adapter execute method success', async () => {
+  const adapter = createOpenAIAdapter(validConfig);
+
+  const mockResponse = {
+    choices: [{ index: 0, message: { role: 'assistant', content: 'TypeScript is a typed superset of JavaScript.' }, finish_reason: 'stop' }],
   };
   
-  const mockRequest: AgentRequest = {
-    prompt: 'Test prompt',
-    context: '',
-    outputPath: undefined,
+  // Mocking OpenAI client call
+  adapter['client'] = {
+    chat: {
+      completions: {
+        create: () => Promise.resolve(mockResponse),
+      },
+    },
   };
 
-  const adapter: AgentAdapter = createOpenAIAdapter(mockConfig);
+  const response = await adapter.execute(validRequest);
 
-  const networkError = new Error('Network Error');
-  const unauthorizedError = new Error('401 Unauthorized');
+  assert.strictEqual(response.success, true);
+  assert.strictEqual(typeof response.output, 'string');
+  assert.match(response.output, /TypeScript/);
+});
 
-  // Mock the execute function to throw specific errors
-  const originalExecute = adapter.execute;
-  adapter.execute = async (request: AgentRequest): Promise<AgentResponse> => {
-    if (request.prompt.includes('network')) {
-      throw networkError;
-    } else if (request.prompt.includes('unauthorized')) {
-      throw unauthorizedError;
-    }
-    return originalExecute(request);
+test('OpenAI Adapter execute method failure with malformed response', async () => {
+  const adapter = createOpenAIAdapter(validConfig);
+
+  const mockResponse = {
+    choices: [],
   };
 
-  const networkResponse = await adapter.execute({ ...mockRequest, prompt: 'simulate network issue' });
-  assert.strictEqual(networkResponse.success, false);
-  assert.strictEqual(networkResponse.error, 'Network error occurred. Please check your connection and try again.');
+  // Mocking OpenAI client call with malformed response
+  adapter['client'] = {
+    chat: {
+      completions: {
+        create: () => Promise.resolve(mockResponse),
+      },
+    },
+  };
 
-  const unauthorizedResponse = await adapter.execute({ ...mockRequest, prompt: 'simulate unauthorized access' });
-  assert.strictEqual(unauthorizedResponse.success, false);
-  assert.strictEqual(unauthorizedResponse.error, 'Unauthorized: Invalid API key or permissions issue.');
+  const response = await adapter.execute(validRequest);
 
-  // Restore the original execute function
-  adapter.execute = originalExecute;
+  assert.strictEqual(response.success, false);
+  assert.match(response.error, /Malformed response from OpenAI service/);
+});
+
+test('OpenAI Adapter execute method with timeout', async () => {
+  const adapter = createOpenAIAdapter(validConfig);
+
+  const neverResolvePromise = new Promise(() => {});
+
+  // Mocking OpenAI client call that takes too long
+  adapter['client'] = {
+    chat: {
+      completions: {
+        create: () => neverResolvePromise,
+      },
+    },
+  };
+
+  const response = await adapter.execute(validRequest);
+
+  assert.strictEqual(response.success, false);
+  assert.match(response.error, /Request timed out/);
+});
+
+test('OpenAI Adapter execute method unauthorized error', async () => {
+  const adapter = createOpenAIAdapter(validConfig);
+
+  // Mocking OpenAI client call with error
+  adapter['client'] = {
+    chat: {
+      completions: {
+        create: () => Promise.reject(new Error('401')),
+      },
+    },
+  };
+
+  const response = await adapter.execute(validRequest);
+
+  assert.strictEqual(response.success, false);
+  assert.match(response.error, /Unauthorized: Invalid API key/);
 });
