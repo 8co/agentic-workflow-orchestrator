@@ -17,48 +17,49 @@ type HealthStatus = {
 const logger = createLogger('health');
 
 export function getHealthStatus(): HealthStatus {
-  const packageJsonPath = join(process.cwd(), 'package.json');
-  let version: string | undefined = 'unknown';
-
-  try {
-    const packageJsonContent = readFileSync(packageJsonPath, 'utf-8');
-    try {
-      const packageJson: PackageJson = JSON.parse(packageJsonContent);
-      version = packageJson.version ?? 'unknown';
-      logger.debug(`Health: Package version extracted: ${version}`);
-    } catch (jsonError) {
-      logger.error(`Health: Failed to parse package.json: ${(jsonError as Error).message}`);
-      logger.error('Health: Returning status with unknown version due to JSON parsing error.');
-    }
-  } catch (fsError) {
-    logger.error(`Health: Failed to read package.json: ${(fsError as Error).message}`);
-    logger.error('Health: Returning status with unknown version due to file read error.');
-  }
-
-  const memoryUsageMB = Number((process.memoryUsage().heapUsed / 1048576).toFixed(2)); // converting bytes to MB
+  const version = extractPackageVersion();
+  const memoryUsageMB = getMemoryUsageMB();
 
   const status: HealthStatus = {
     status: 'ok',
     uptime: Number(process.uptime().toFixed(2)),
     memoryUsage: memoryUsageMB,
-    timestamp: new Date().toISOString(), // ISO 8601 formatted string
-    version: version !== 'unknown' ? version : undefined,
+    timestamp: new Date().toISOString(),
+    version: version,
   };
 
-  logger.info(`Health: Status fetched: ${JSON.stringify(status)}`);
+  logger.info(`Status fetched: ${JSON.stringify(status)}`);
   logMemoryUsageWarnings(memoryUsageMB);
 
   return status;
 }
 
+function extractPackageVersion(): string | undefined {
+  const packageJsonPath = join(process.cwd(), 'package.json');
+  try {
+    const packageJsonContent = readFileSync(packageJsonPath, 'utf-8');
+    const packageJson: PackageJson = JSON.parse(packageJsonContent);
+    const version = packageJson.version ?? 'unknown';
+    logger.debug(`Package version extracted: ${version}`);
+    return version !== 'unknown' ? version : undefined;
+  } catch (error) {
+    logger.error(`Failed to handle package.json: ${(error as Error).message}`);
+    return undefined;
+  }
+}
+
+function getMemoryUsageMB(): number {
+  return Number((process.memoryUsage().heapUsed / 1048576).toFixed(2));
+}
+
 function logMemoryUsageWarnings(memoryUsage: number): void {
   if (memoryUsage > 700) {
-    logger.error(`Health: Critical memory usage detected: ${memoryUsage} MB`);
+    logger.error(`Critical memory usage detected: ${memoryUsage} MB`);
   } else if (memoryUsage > 500) {
-    logger.warn(`Health: High memory usage detected: ${memoryUsage} MB`);
+    logger.warn(`High memory usage detected: ${memoryUsage} MB`);
   } else if (memoryUsage > 300) {
-    logger.info(`Health: Moderate memory usage: ${memoryUsage} MB`);
+    logger.info(`Moderate memory usage: ${memoryUsage} MB`);
   } else {
-    logger.info(`Health: Normal memory usage: ${memoryUsage} MB`);
+    logger.info(`Normal memory usage: ${memoryUsage} MB`);
   }
 }
