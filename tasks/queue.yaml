@@ -4151,3 +4151,57 @@ tasks:
     started_at: 2026-02-14T01:57:24.514Z
     completed_at: 2026-02-14T01:57:34.728Z
     branch: auto/improve-type-safety-security-scanner
+  - id: write-tests-enhanced-logger-edge-cases
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/enhanced-logger.ts
+    variables:
+      test_target: src/enhanced-logger.ts
+      test_description: >
+        Write tests specifically covering edge case scenarios including file write failures or retry mechanisms to
+        ensure all paths in EnhancedLogger are covered.
+  - id: add-error-handling-in-project-registry-load
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/project-registry.ts
+    variables:
+      modification_description: >
+        Add robust error handling in load method to ensure exceptions are caught and logged when failing to read or
+        parse the projects.yaml file.
+  - id: write-tests-error-notification
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/error-notification.ts
+    variables:
+      test_target: src/error-notification.ts
+      test_description: >
+        Cover scenarios for notifyCriticalError method, including the notification service failing to send alerts, and
+        ensure proper handling and logging of errors.
+  - id: improve-type-safety-config-validator
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/config-validator.ts
+    variables:
+      modification_description: >
+        Ensure all return and input types in validateEnvConfig are properly declared and utilize TypeScript's type
+        safety features.
+  - id: create-observability-cli-commands
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-create-module.md
+    context_files:
+      - src/cli.ts
+    variables:
+      module_name: cli-observability-commands
+      module_description: >
+        Add new read-only CLI commands for enhanced observability, such as status checks for running jobs and logs
+        retrieval for debugging purposes. Focus on safely integrating these features without modifying existing workflow
+        commands.
