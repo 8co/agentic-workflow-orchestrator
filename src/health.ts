@@ -45,12 +45,7 @@ export function getHealthStatus(): HealthStatus {
     version,
   };
 
-  try {
-    logHealthStatus(uptime, memoryUsageMB, version);
-    logMemoryUsageWarnings(memoryUsageMB);
-  } catch (error) {
-    logger.error(`Logging error: Could not log health status and warnings. ${error instanceof Error ? error.message : 'Unknown error'}`);
-  }
+  logHealthMonitoringData(healthStatus);
 
   return healthStatus;
 }
@@ -70,8 +65,17 @@ function getSafeMemoryUsageMB(): number {
   return Number((heapUsed / 1048576).toFixed(2));
 }
 
-function logHealthStatus(uptime: number, memoryUsageMB: number, version?: string): void {
-  logger.info(`Health status fetched at ${new Date().toISOString()}. Uptime: ${uptime} seconds, Memory Usage: ${memoryUsageMB} MB, Version: ${version ?? 'N/A'}`);
+function logHealthMonitoringData(healthStatus: HealthStatus): void {
+  try {
+    logHealthStatus(healthStatus);
+    logMemoryUsageWarnings(healthStatus.memoryUsage);
+  } catch (error) {
+    logger.error(`Logging error: Could not log health status and warnings. ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
+
+function logHealthStatus({ uptime, memoryUsage, version }: HealthStatus): void {
+  logger.info(`Health status fetched at ${new Date().toISOString()}. Uptime: ${uptime} seconds, Memory Usage: ${memoryUsage} MB, Version: ${version ?? 'N/A'}`);
 }
 
 function logMemoryUsageWarnings(memoryUsage: number): void {
