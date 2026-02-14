@@ -5956,7 +5956,7 @@ tasks:
     completed_at: 2026-02-14T02:47:29.632Z
     branch: auto/refactor-enhanced-logger-error-improvements
   - id: add-error-handling-scheduler-specific
-    status: running
+    status: completed
     workflow: auto
     prompt: prompts/auto-modify-file.md
     context_files:
@@ -5966,8 +5966,10 @@ tasks:
         Enhance error handling in the scheduler module, with a focus on capturing and logging errors that occur during
         task execution and task queue management operations.
     started_at: 2026-02-14T02:47:29.708Z
+    completed_at: 2026-02-14T02:47:45.602Z
+    branch: auto/add-error-handling-scheduler-specific
   - id: write-tests-anthropic-adapter-error-handling-enhancements
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -5977,3 +5979,4 @@ tasks:
       test_description: >
         Create tests to specifically target the improved error handling aspects in the Anthropic adapter. Focus on
         scenarios where the API response is malformed or times out.
+    started_at: 2026-02-14T02:47:45.697Z
