@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metrics Dashboard</title>
+    <style>
+      body {
+        background-color: #121212;
+        color: #ffffff;
+        font-family: Arial, sans-serif;
+      }
+      canvas {
+        max-width: 600px;
+        margin: 20px auto;
+        display: block;
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Metrics Dashboard</h1>
+    <canvas id="memoryChart"></canvas>
+    <canvas id="cpuChart"></canvas>
+    <script>
+        async function fetchMetrics() {
+            const response = await fetch('/api/metrics');
+            return response.json();
+        }
+
+        async function updateCharts() {
+            const metrics = await fetchMetrics();
+            // Assuming successful task frequency and cost are simulated values.
+            const successRates = [Math.random() * 100];
+            const costs = [Math.random() * 1000];
+
+            memoryChart.data.labels.push(new Date().toISOString());
+            memoryChart.data.datasets[0].data.push(metrics.memory.usedMemory);
+            memoryChart.update();
+
+            cpuChart.data.labels.push(new Date().toISOString());
+            cpuChart.data.datasets[0].data.push(metrics.cpu.reduce((acc, cpu) => acc + cpu.speed, 0) / metrics.cpu.length);
+            cpuChart.update();
+
+            setTimeout(updateCharts, 5000); // Update every 5 seconds
+        }
+
+        const memoryChart = new Chart(document.getElementById('memoryChart').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Memory Usage',
+                    data: [],
+                    borderColor: '#ff6384',
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: {
+                            unit: 'second'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Bytes'
+                        }
+                    }
+                }
+            }
+        });
+
+        const cpuChart = new Chart(document.getElementById('cpuChart').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Average CPU Speed',
+                    data: [],
+                    borderColor: '#36a2eb',
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: {
+                            unit: 'second'
+                        }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'MHz'
+                        }
+                    }
+                }
+            }
+        });
+
+        updateCharts();
+    </script>
+</body>
+</html>
