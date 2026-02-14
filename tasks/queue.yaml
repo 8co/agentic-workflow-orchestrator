@@ -5476,3 +5476,44 @@ tasks:
     started_at: 2026-02-14T02:39:10.173Z
     completed_at: 2026-02-14T02:39:15.103Z
     branch: auto/add-missing-error-handling-network-util
+  - id: improve-error-handling-adapters-cursor
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/adapters/cursor-adapter.ts
+    variables:
+      modification_description: >
+        Improve the error handling in the Cursor Adapter by adding more specific error messages and handling edge
+        cases,  ensuring that all potential errors are logged and returned properly.
+  - id: add-type-safety-cli
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/cli.ts
+    variables:
+      modification_description: >
+        Enhance the type safety of the CLI module by adding explicit type annotations where missing and ensuring
+        all  types are correctly defined, preventing type errors during execution.
+  - id: refactor-network-error-util
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/utils/networkErrorUtil.ts
+    variables:
+      modification_description: >
+        Refactor the Network Error Utility to improve its structure and efficiency, ensuring that it accurately
+        identifies  and handles all specified network error types with improved performance.
+  - id: write-tests-scheduler-exceptions
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/scheduler.ts
+    variables:
+      test_target: src/scheduler.ts
+      test_description: >
+        Add unit tests to the Scheduler module to specifically target exception cases, validating that the
+        scheduler  handles unexpected interruptions, errors during task execution, and retry scenarios correctly.
