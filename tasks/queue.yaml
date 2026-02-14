@@ -744,7 +744,7 @@ tasks:
     completed_at: 2026-02-14T00:28:34.236Z
     branch: auto/create-generic-utility-retry
   - id: write-tests-file-util
-    status: running
+    status: completed
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -755,3 +755,5 @@ tasks:
         Write comprehensive tests for `writeToFile` and `readFromFile` to validate correct file operations, including
         edge cases such as directory creation errors.
     started_at: 2026-02-14T00:28:34.248Z
+    completed_at: 2026-02-14T00:28:38.771Z
+    branch: auto/write-tests-file-util
