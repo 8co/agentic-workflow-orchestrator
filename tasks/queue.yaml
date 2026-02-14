@@ -5529,3 +5529,57 @@ tasks:
     started_at: 2026-02-14T02:40:04.484Z
     completed_at: 2026-02-14T02:40:14.720Z
     branch: auto/write-tests-scheduler-exceptions
+  - id: write-tests-adapters-cursor-error-handling
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/adapters/cursor-adapter.ts
+    variables:
+      test_target: src/adapters/cursor-adapter.ts
+      test_description: >
+        Validate error handling logic by simulating different error scenarios such as permission denied, too many open
+        files, and network issues, ensuring appropriate error messages and responses are generated.
+  - id: add-missing-error-handling-index-module
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/index.ts
+    variables:
+      modification_description: >
+        Introduce comprehensive error handling in the initialization logic in `main()`. Ensure all potential errors
+        during orchestration engine initialization, workflow configurations loading, and AI agents connection are caught
+        and appropriately logged with clear context.
+  - id: add-type-safety-enhancements-to-network-utility
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/networkErrorUtil.ts
+    variables:
+      modification_description: >
+        Enhance type safety in `networkErrorUtil` by adding TypeScript type annotations to all functions, ensuring
+        strict type checks and eliminating implicit `any` type usage. 
+  - id: add-edge-case-tests-openai-adapter-error-messages
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/adapters/openai-adapter.ts
+    variables:
+      test_target: src/adapters/openai-adapter.ts
+      test_description: >
+        Test edge cases in OpenAI adapter focusing on error message mapping to ensure accurate and informative error
+        logs when network issues or API errors like Unauthorized or Forbidden occur.
+  - id: create-unit-tests-for-new-utility-function-log-exceptions
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/log-exception-util.ts
+    variables:
+      test_target: src/log-exception-util.ts
+      test_description: >
+        Develop unit tests to verify logging functionality for different exception types by providing mock exceptions
+        and verifying the correct structure of log messages with detailed exception information.
