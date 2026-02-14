@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 
 interface JobStatus {
   id: string;
@@ -31,11 +32,51 @@ export function getJobLogs(jobId: string): void {
   console.log(`Logs for Job ID: ${jobId}\n${logs}`);
 }
 
+export function systemStatus(): void {
+  const freeMemory = bytesToHumanReadable(os.freemem());
+  const totalMemory = bytesToHumanReadable(os.totalmem());
+  const uptime = os.uptime();
+
+  console.log('System Status:');
+  console.log(`- Free Memory: ${freeMemory}`);
+  console.log(`- Total Memory: ${totalMemory}`);
+  console.log(`- Uptime: ${formatUptime(uptime)}`);
+}
+
+export function listJobIds(): void {
+  const jobs = loadRunningJobs();
+  if (jobs.length === 0) {
+    console.log('No running jobs found.');
+  } else {
+    console.log('Running Job IDs:');
+    jobs.forEach(job => {
+      console.log(`- ${job.id}`);
+    });
+  }
+}
+
 function loadRunningJobs(): JobStatus[] {
-  // Hypothetical implementation to load jobs
   const jobsDataPath = path.resolve('data', 'running_jobs.json');
   if (!fs.existsSync(jobsDataPath)) return [];
 
   const jobsData = fs.readFileSync(jobsDataPath, 'utf8');
   return JSON.parse(jobsData) as JobStatus[];
+}
+
+function bytesToHumanReadable(bytes: number): string {
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  let index = 0;
+  while (bytes >= 1024 && index < units.length - 1) {
+    bytes /= 1024;
+    index++;
+  }
+  return `${bytes.toFixed(2)} ${units[index]}`;
+}
+
+function formatUptime(seconds: number): string {
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${days}d ${hours}h ${minutes}m ${secs}s`;
 }
