@@ -212,7 +212,7 @@ tasks:
     started_at: 2026-02-14T18:55:08.892Z
     completed_at: 2026-02-14T18:55:19.574Z
   - id: improve-type-coverage
-    status: running
+    status: completed
     workflow: auto
     prompt: prompts/auto-modify-file.md
     context_files:
@@ -223,3 +223,5 @@ tasks:
         that handle these errors can properly discriminate between different error types, reducing the risk of runtime
         exceptions.
     started_at: 2026-02-14T18:55:19.581Z
+    completed_at: 2026-02-14T18:55:27.621Z
+    branch: auto/improve-type-coverage
