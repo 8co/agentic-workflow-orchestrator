@@ -4770,7 +4770,7 @@ tasks:
       src/adapters/anthropic-adapter.ts(141,43): error TS2339: Property 'stop_reason' does not exist on type 'never'.
       ```
   - id: add-tests-cli-observability
-    status: running
+    status: completed
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -4781,8 +4781,10 @@ tasks:
         Add tests for 'cli-observability-commands' to validate 'listRunningJobs' and 'getJobLogs' functions, ensuring
         they handle normal and edge scenarios properly.
     started_at: 2026-02-14T02:25:24.111Z
+    completed_at: 2026-02-14T02:25:31.566Z
+    branch: auto/add-tests-cli-observability
   - id: missing-error-handling-enhanced-logger
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-modify-file.md
     context_files:
@@ -4791,3 +4793,4 @@ tasks:
       modification_description: >
         Implement comprehensive error handling in the 'logToFile' function to better manage file write failures and
         ensure log integrity.
+    started_at: 2026-02-14T02:25:31.638Z
