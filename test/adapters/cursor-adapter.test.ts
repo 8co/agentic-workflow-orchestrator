@@ -1,49 +1,121 @@
-import { test } from 'node:test';
-import assert from 'node:assert';
 import { createCursorAdapter } from '../../src/adapters/cursor-adapter.js';
-import { mkdtemp, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { AgentRequest } from '../../src/types.js';
+import assert from 'node:assert';
+import { test } from 'node:test';
+import { writeFile, mkdir } from 'node:fs/promises';
+import { dirname } from 'node:path';
 
-const adapter = createCursorAdapter();
+const cursorAdapter = createCursorAdapter();
 
-test('execute writes prompt to specified output path', async (t) => {
-  const tempDir = await mkdtemp(join(tmpdir(), 'cursor-adapter-test-'));
-  const outputPath = join(tempDir, 'output.txt');
-  const request = {
-    prompt: 'Hello, this is a test prompt.',
-    outputPath,
-  };
+test('Cursor Adapter - Successful execution to outputPath', async (t) => {
+  let writtenContent = '';
+  const originalWriteFile = writeFile;
   
-  const response = await adapter.execute(request);
+  await t.test('setup', async () => {
+    (await import('node:fs/promises')).writeFile = async (path: string, content: string) => {
+      writtenContent = content;
+    };
+  });
 
-  assert.strictEqual(response.success, true);
-  assert.strictEqual(response.output, outputPath);
+  try {
+    const request: AgentRequest = {
+      prompt: 'Test prompt\nLine 2\nLine 3',
+      outputPath: 'test-output-path/output.txt',
+    };
 
-  // Clean up
-  await rm(tempDir, { recursive: true, force: true });
+    const response = await cursorAdapter.execute(request);
+
+    assert.strictEqual(response.success, true);
+    assert.strictEqual(response.output, request.outputPath);
+    assert.strictEqual(writtenContent, request.prompt);
+  } finally {
+    (await import('node:fs/promises')).writeFile = originalWriteFile;
+  }
 });
 
-test('execute logs to stdout if no output path is specified', async () => {
-  const request = {
-    prompt: 'This is another test prompt with no output path.',
+test('Cursor Adapter - Successful execution to stdout', async () => {
+  const request: AgentRequest = {
+    prompt: 'Test prompt',
   };
 
-  const response = await adapter.execute(request);
+  const response = await cursorAdapter.execute(request);
 
   assert.strictEqual(response.success, true);
   assert.strictEqual(response.output, '[stdout]');
 });
 
-test('handle error when writing to invalid output path', async () => {
-  const invalidOutputPath = '/invalid-path/output.txt';
-  const request = {
-    prompt: 'This prompt should fail to write due to invalid path.',
-    outputPath: invalidOutputPath,
+test('Cursor Adapter - Error with ENOENT', async (t) => {
+  const request: AgentRequest = {
+    prompt: 'Test prompt',
+    outputPath: '/invalid-directory/output.txt',
   };
 
-  const response = await adapter.execute(request);
+  let mkdirCalledWith;
+  const originalMkdir = mkdir;
+  
+  try {
+    await t.test('setup', async () => {
+      (await import('node:fs/promises')).mkdir = async (path: string, options: any) => {
+        mkdirCalledWith = path;
+        throw new Error('ENOENT');
+      };
+    });
 
-  assert.strictEqual(response.success, false);
-  assert.match(response.error, /ENOENT|EACCES/);
+    const response = await cursorAdapter.execute(request);
+
+    assert.strictEqual(response.success, false);
+    assert.ok(response.error?.includes('File path not found'));
+  } finally {
+    (await import('node:fs/promises')).mkdir = originalMkdir;
+  }
+});
+
+test('Cursor Adapter - Error with EACCES', async (t) => {
+  const request: AgentRequest = {
+    prompt: 'Test prompt',
+    outputPath: '/protected-directory/output.txt',
+  };
+
+  let mkdirCalledWith;
+  const originalMkdir = mkdir;
+
+  try {
+    await t.test('setup', async () => {
+      (await import('node:fs/promises')).mkdir = async (path: string, options: any) => {
+        mkdirCalledWith = path;
+        throw new Error('EACCES');
+      };
+    });
+
+    const response = await cursorAdapter.execute(request);
+
+    assert.strictEqual(response.success, false);
+    assert.ok(response.error?.includes('Permission denied'));
+  } finally {
+    (await import('node:fs/promises')).mkdir = originalMkdir;
+  }
+});
+
+test('Cursor Adapter - Unhandled error', async (t) => {
+  const request: AgentRequest = {
+    prompt: 'Test prompt',
+    outputPath: '/some-path/output.txt',
+  };
+
+  const originalWriteFile = writeFile;
+
+  try {
+    await t.test('setup', async () => {
+      (await import('node:fs/promises')).writeFile = async () => {
+        throw new Error('Unexpected Error');
+      };
+    });
+
+    const response = await cursorAdapter.execute(request);
+
+    assert.strictEqual(response.success, false);
+    assert.ok(response.error?.includes('Unhandled error: Unexpected Error'));
+  } finally {
+    (await import('node:fs/promises')).writeFile = originalWriteFile;
+  }
 });
