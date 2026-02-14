@@ -3397,7 +3397,7 @@ tasks:
     completed_at: 2026-02-14T01:41:50.438Z
     branch: auto/write-tests-index-enhancements
   - id: write-tests-ai-agents-error-cases
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -3407,6 +3407,7 @@ tasks:
       test_description: >
         Write comprehensive tests for aiAgents.ts to cover error handling cases  such as network failures, promise
         rejections, and unexpected exceptions.
+    started_at: 2026-02-14T01:42:12.480Z
   - id: add-tests-adapters-openai-integration
     status: pending
     workflow: auto
