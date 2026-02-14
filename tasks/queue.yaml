@@ -3396,3 +3396,56 @@ tasks:
     started_at: 2026-02-14T01:41:34.147Z
     completed_at: 2026-02-14T01:41:50.438Z
     branch: auto/write-tests-index-enhancements
+  - id: write-tests-ai-agents-error-cases
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/aiAgents.ts
+    variables:
+      test_target: src/aiAgents.ts
+      test_description: >
+        Write comprehensive tests for aiAgents.ts to cover error handling cases  such as network failures, promise
+        rejections, and unexpected exceptions.
+  - id: add-tests-adapters-openai-integration
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/adapters/openai-adapter.ts
+    variables:
+      test_target: src/adapters/openai-adapter.ts
+      test_description: >
+        Verify the integration of the OpenAI adapter by simulating API  responses and testing proper handling of success
+        and error scenarios.
+  - id: enhance-type-safety-file-helper
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/file-helper.ts
+    variables:
+      modification_description: >
+        Improve type safety in file-helper.ts by specifying more precise types  for function parameters and return
+        values where applicable.
+  - id: refactor-health-logging-function
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/health.ts
+    variables:
+      modification_description: >
+        Refactor the logging functions within health.ts to improve the overall  output readability and ensure the
+        logging level consistency.
+  - id: create-error-notification-module
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-create-module.md
+    context_files:
+      - src/enhanced-logger.ts
+    variables:
+      module_name: errorNotification
+      module_description: >
+        Create a utility module for sending error notifications. Utilize existing  logging infrastructure to connect
+        with a notification service and send alerts  for critical errors in the system.
