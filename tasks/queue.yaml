@@ -136,3 +136,25 @@ tasks:
       undefined'.
         Type '{ type: "network_error"; message: string; }' is not assignable to type 'string'.
       ```
+  - id: add-tests-to-cursor-adapter
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/adapters/cursor-adapter.ts
+    variables:
+      test_target: src/adapters/cursor-adapter.ts
+      test_description: >
+        Develop unit tests to cover the execution functionality of the Cursor Adapter, specifically focusing on error
+        handling and correct output writing.
+  - id: create-log-util
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-create-module.md
+    context_files:
+      - src/logger.ts
+    variables:
+      module_name: log-util
+      module_description: >
+        Develop a utility module that abstracts and centralizes logging behavior throughout the application, reducing
+        redundancy and improving consistency.
