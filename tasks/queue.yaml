@@ -5702,7 +5702,7 @@ tasks:
         Type 'undefined' is not assignable to type 'string'.
       ```
   - id: add-edge-case-tests-anthropic-adapter
-    status: running
+    status: completed
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -5713,8 +5713,10 @@ tasks:
         Cover additional edge cases in AnthropicAdapter, such as unexpected API responses or network errors during
         retries.
     started_at: 2026-02-14T02:42:27.675Z
+    completed_at: 2026-02-14T02:42:49.060Z
+    branch: auto/add-edge-case-tests-anthropic-adapter
   - id: write-tests-openai-adapter-execution-edge-cases
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -5724,6 +5726,7 @@ tasks:
       test_description: >
         Introduce tests to handle execution edge cases in the OpenAIAdapter module, such as complete failures, partial
         successes, and unexpected API outputs.
+    started_at: 2026-02-14T02:42:49.155Z
   - id: implement-edge-case-tests-for-queue-manager
     status: pending
     workflow: auto
