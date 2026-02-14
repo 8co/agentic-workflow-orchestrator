@@ -117,7 +117,7 @@ export function createOpenAIAdapter(config: OpenAIConfig, adapterName: 'openai' 
             ],
             max_tokens: 4096,
           }), 
-          30_000 // Timeout set to 30 seconds
+          120_000 // Timeout set to 120 seconds (code generation needs time)
         );
 
         if (!completion || !Array.isArray(completion.choices) || completion.choices.length === 0 || !completion.choices[0].message?.content) {
