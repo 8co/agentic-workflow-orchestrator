@@ -4626,7 +4626,7 @@ tasks:
     completed_at: 2026-02-14T02:05:57.929Z
     branch: auto/refactor-log-util-error-handling-improvements
   - id: write-tests-state-manager-error-handling
-    status: running
+    status: completed
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -4637,3 +4637,5 @@ tasks:
         Add comprehensive tests for state manager error scenarios, including handling of read/write errors and invalid
         state data.
     started_at: 2026-02-14T02:05:57.992Z
+    completed_at: 2026-02-14T02:06:10.201Z
+    branch: auto/write-tests-state-manager-error-handling
