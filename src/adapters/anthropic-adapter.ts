@@ -29,15 +29,27 @@ interface ValidAnthropicResponse {
 }
 
 function isAPILimitError(err: unknown): boolean {
-  return typeof err === 'object' && err !== null && 'response' in err && (err as { response: { status: number } }).response.status === 429;
+  return (
+    typeof err === 'object' &&
+    err !== null &&
+    'response' in err &&
+    (err as { response: { status: number } }).response.status === 429
+  );
 }
 
 function isInvalidResponseError(response: unknown): response is Partial<ValidAnthropicResponse> {
-  return typeof response !== 'object' || response === null || !('content' in response) || !('usage' in response);
+  return (
+    typeof response !== 'object' || response === null || !('content' in response) || !('usage' in response)
+  );
 }
 
 function isUnexpectedResponseError(response: unknown): boolean {
-  return typeof response === 'object' && response !== null && 'status' in response && (response as { status: number }).status >= 400;
+  return (
+    typeof response === 'object' &&
+    response !== null &&
+    'status' in response &&
+    (response as { status: number }).status >= 400
+  );
 }
 
 function isTimeoutError(err: unknown): boolean {
@@ -45,7 +57,12 @@ function isTimeoutError(err: unknown): boolean {
 }
 
 function isRateLimitError(err: unknown): boolean {
-  return typeof err === 'object' && err !== null && 'response' in err && (err as { response: { status: number } }).response.status === 429;
+  return (
+    typeof err === 'object' &&
+    err !== null &&
+    'response' in err &&
+    (err as { response: { status: number } }).response.status === 429
+  );
 }
 
 async function retry<T>(fn: () => Promise<T>, retries: number, delayMs: number): Promise<T> {
@@ -54,7 +71,7 @@ async function retry<T>(fn: () => Promise<T>, retries: number, delayMs: number):
       return await fn();
     } catch (err) {
       if (attempt === retries - 1) throw err;
-      await new Promise(res => setTimeout(res, delayMs));
+      await new Promise((res) => setTimeout(res, delayMs));
     }
   }
   throw new Error('Retry attempts exhausted');
@@ -81,17 +98,18 @@ export function createAnthropicAdapter(config: AnthropicConfig): AgentAdapter {
           : 'You are an expert software engineer. Follow all instructions precisely. Return only the requested output — no preamble, no explanation unless asked.';
 
         const message: unknown = await retry(
-          () => client.messages.create({
-            model: config.model,
-            max_tokens: 4096,
-            system: systemPrompt,
-            messages: [
-              {
-                role: 'user',
-                content: request.prompt,
-              },
-            ],
-          }),
+          () =>
+            client.messages.create({
+              model: config.model,
+              max_tokens: 4096,
+              system: systemPrompt,
+              messages: [
+                {
+                  role: 'user',
+                  content: request.prompt,
+                },
+              ],
+            }),
           maxRetries,
           retryDelayMs
         );
