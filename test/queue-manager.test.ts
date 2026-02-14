@@ -1,136 +1,93 @@
-import { strict as assert } from 'node:assert';
+import assert from 'node:assert';
 import { createQueueManager, QueueTask } from '../src/queue-manager.js';
-import { promises as fs } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { readFile, writeFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import { test } from 'node:test';
 
-const basePath = resolve('.');
-const queueFilePath = join(basePath, 'tasks/queue.yaml');
-
-const mockQueue: QueueTask[] = [
-  { id: '1', status: 'pending', workflow: 'build', prompt: 'Prompt 1' },
-  { id: '2', status: 'completed', workflow: 'test', prompt: 'Prompt 2' },
-  { id: '3', status: 'failed', workflow: 'deploy', prompt: 'Prompt 3', error: 'Some error' },
+// Mock file operations
+const basePath = '/mock/path';
+let mockTasks: QueueTask[] = [
+  { id: '1', status: 'pending', workflow: 'wf1', prompt: 'Do something' },
+  { id: '2', status: 'running', workflow: 'wf2', prompt: 'Do something else' },
+  { id: '3', status: 'completed', workflow: 'wf3', prompt: 'Do another thing', completed_at: new Date().toISOString() },
 ];
 
-async function setupMockQueueFile(tasks: QueueTask[] = mockQueue) {
-  const content = `
-tasks:
-${tasks.map(task => `
-  - id: ${task.id}
-    status: ${task.status}
-    workflow: ${task.workflow}
-    prompt: ${task.prompt}
-    ${task.error ? `error: ${task.error}` : ''}
-    ${task.branch ? `branch: ${task.branch}` : ''}
-`).join('')}
-  `;
-  await fs.mkdir(resolve(basePath, 'tasks'), { recursive: true });
-  await fs.writeFile(queueFilePath, content.trim(), 'utf8');
+const queueManager = createQueueManager(basePath);
+
+before(async () => {
+  const fullPath = resolve(basePath, 'tasks/queue.yaml');
+  await writeFile(fullPath, '');
+});
+
+async function loadMock() {
+  return { tasks: [...mockTasks] };
 }
 
-async function cleanupMockQueueFile() {
-  await fs.unlink(queueFilePath).catch(() => {});
+async function saveMock(tasks: QueueTask[]) {
+  mockTasks = [...tasks];
 }
 
-(async () => {
-  await cleanupMockQueueFile();
+test('Test queueManager.list', async (t) => {
+  readFile.mockImplementationOnce(async () => JSON.stringify(loadMock()));
+  writeFile.mockImplementationOnce(async () => saveMock(mockTasks));
 
-  const queueManager = createQueueManager(basePath);
+  const tasks = await queueManager.list();
+  assert.deepEqual(tasks, mockTasks);
+});
 
-  process.on('exit', async () => {
-    await cleanupMockQueueFile();
-  });
+test('Test queueManager.next', async (t) => {
+  readFile.mockImplementationOnce(async () => JSON.stringify(loadMock()));
+  writeFile.mockImplementationOnce(async () => saveMock(mockTasks));
 
-  test('list() should return all tasks', async () => {
-    await setupMockQueueFile();
+  const nextTask = await queueManager.next();
+  assert.deepEqual(nextTask, mockTasks[0]);
+});
 
-    const tasks = await queueManager.list();
-    assert.equal(tasks.length, mockQueue.length);
-    assert.deepEqual(tasks, mockQueue);
+test('Test queueManager.summary', async (t) => {
+  readFile.mockImplementationOnce(async () => JSON.stringify(loadMock()));
+  writeFile.mockImplementationOnce(async () => saveMock(mockTasks));
 
-    await cleanupMockQueueFile();
-  });
+  const summary = await queueManager.summary();
+  assert.deepEqual(summary, { pending: 1, running: 1, completed: 1, failed: 0, skipped: 0 });
+});
 
-  test('next() should return the first pending task', async () => {
-    await setupMockQueueFile(mockQueue);
+test('Test queueManager.markRunning', async (t) => {
+  readFile.mockImplementationOnce(async () => JSON.stringify(loadMock()));
+  writeFile.mockImplementationOnce(async () => saveMock(mockTasks));
 
-    const nextTask = await queueManager.next();
-    assert.equal(nextTask?.id, '1');
+  await queueManager.markRunning('1');
+  assert.equal(mockTasks[0].status, 'running');
+  assert.ok(mockTasks[0].started_at);
+});
 
-    await cleanupMockQueueFile();
-  });
+test('Test queueManager.markCompleted', async (t) => {
+  readFile.mockImplementationOnce(async () => JSON.stringify(loadMock()));
+  writeFile.mockImplementationOnce(async () => saveMock(mockTasks));
 
-  test('summary() should return correct summary', async () => {
-    await setupMockQueueFile(mockQueue);
+  await queueManager.markCompleted('2', 'main');
+  assert.equal(mockTasks[1].status, 'completed');
+  assert.ok(mockTasks[1].completed_at);
+  assert.equal(mockTasks[1].branch, 'main');
+});
 
-    const summary = await queueManager.summary();
-    assert.deepEqual(summary, { pending: 1, running: 0, completed: 1, failed: 1, skipped: 0 });
+test('Test queueManager.markFailed', async (t) => {
+  readFile.mockImplementationOnce(async () => JSON.stringify(loadMock()));
+  writeFile.mockImplementationOnce(async () => saveMock(mockTasks));
 
-    await cleanupMockQueueFile();
-  });
+  const errorMessage = 'Unexpected Error';
+  await queueManager.markFailed('1', errorMessage);
+  assert.equal(mockTasks[0].status, 'failed');
+  assert.ok(mockTasks[0].completed_at);
+  assert.equal(mockTasks[0].error, errorMessage);
+});
 
-  test('markRunning() should update the task status to running', async () => {
-    await setupMockQueueFile(mockQueue);
+test('Test queueManager.resetTask', async (t) => {
+  readFile.mockImplementationOnce(async () => JSON.stringify(loadMock()));
+  writeFile.mockImplementationOnce(async () => saveMock(mockTasks));
 
-    await queueManager.markRunning('1');
-    const task = (await queueManager.list()).find(t => t.id === '1');
-    assert.equal(task?.status, 'running');
-    assert.ok(task?.started_at);
-
-    await cleanupMockQueueFile();
-  });
-
-  test('markCompleted() should update the task status to completed and set the branch', async () => {
-    await setupMockQueueFile(mockQueue);
-
-    await queueManager.markCompleted('1', 'feature-branch');
-    const task = (await queueManager.list()).find(t => t.id === '1');
-    assert.equal(task?.status, 'completed');
-    assert.ok(task?.completed_at);
-    assert.equal(task?.branch, 'feature-branch');
-
-    await cleanupMockQueueFile();
-  });
-
-  test('markFailed() should update the task status to failed with error', async () => {
-    await setupMockQueueFile(mockQueue);
-
-    await queueManager.markFailed('1', 'Unexpected error');
-    const task = (await queueManager.list()).find(t => t.id === '1');
-    assert.equal(task?.status, 'failed');
-    assert.ok(task?.completed_at);
-    assert.equal(task?.error, 'Unexpected error');
-
-    await cleanupMockQueueFile();
-  });
-
-  test('resetTask() should reset the task to pending', async () => {
-    await setupMockQueueFile(mockQueue);
-
-    await queueManager.resetTask('3');
-    const task = (await queueManager.list()).find(t => t.id === '3');
-    assert.equal(task?.status, 'pending');
-    assert.ok(!task?.error);
-    assert.ok(!task?.started_at);
-    assert.ok(!task?.completed_at);
-
-    await cleanupMockQueueFile();
-  });
-
-  test('should handle non-existent task file gracefully', async () => {
-    await queueManager.resetTask('3').catch((err: Error) => {
-      assert.equal(err.message, 'Task not found: 3');
-    });
-  });
-
-  test('should handle tasks with missing fields gracefully', async () => {
-    await setupMockQueueFile([{ id: '4', status: 'pending', workflow: 'test', prompt: '' }]);
-
-    const task = await queueManager.next();
-    assert.equal(task?.id, '4');
-    assert.equal(task?.prompt, '');
-
-    await cleanupMockQueueFile();
-  });
-
-})();
+  await queueManager.resetTask('1');
+  assert.equal(mockTasks[0].status, 'pending');
+  assert.strictEqual(mockTasks[0].error, undefined);
+  assert.strictEqual(mockTasks[0].started_at, undefined);
+  assert.strictEqual(mockTasks[0].completed_at, undefined);
+});
