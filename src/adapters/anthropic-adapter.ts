@@ -58,7 +58,7 @@ export function createAnthropicAdapter(config: AnthropicConfig): AgentAdapter {
           ? `You are an expert software engineer. Follow all instructions precisely.\n\nContext:\n${request.context}`
           : 'You are an expert software engineer. Follow all instructions precisely. Return only the requested output — no preamble, no explanation unless asked.';
 
-        const message = await client.messages.create({
+        const message: unknown = await client.messages.create({
           model: config.model,
           max_tokens: 4096,
           system: systemPrompt,
@@ -82,7 +82,7 @@ export function createAnthropicAdapter(config: AnthropicConfig): AgentAdapter {
         const validResponse = message as ValidAnthropicResponse;
 
         // Extract text from response
-        const textBlocks = validResponse.content.filter(
+        const textBlocks: TextBlock[] = validResponse.content.filter(
           (block): block is TextBlock => block.type === 'text'
         );
         const output = textBlocks.map((b) => b.text).join('\n');
