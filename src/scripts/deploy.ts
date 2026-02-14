@@ -22,16 +22,20 @@ const executeCommand = (cmd: string): Promise<string> => {
   });
 };
 
+const isConfig = (config: unknown): config is Config => {
+  return (
+    typeof config === 'object' &&
+    config !== null &&
+    'deployScript' in config &&
+    typeof (config as Config).deployScript === 'string'
+  );
+};
+
 const parseConfig = (configFileContent: Buffer): Config => {
   try {
     const config: unknown = JSON.parse(configFileContent.toString());
-    if (
-      typeof config === 'object' &&
-      config !== null &&
-      'deployScript' in config &&
-      typeof (config as Config).deployScript === 'string'
-    ) {
-      return config as Config;
+    if (isConfig(config)) {
+      return config;
     } else {
       throw new Error('Invalid configuration structure');
     }
@@ -46,14 +50,14 @@ export const deploy = async (configPath: string): Promise<DeploymentResult> => {
     const config: Config = parseConfig(configFile);
 
     console.log('Starting deployment...');
-    const result = await executeCommand(config.deployScript);
+    const result: string = await executeCommand(config.deployScript);
     console.log('Deployment completed: ', result);
-    
+
     return {
       success: true,
       message: 'Deployment succeeded',
     };
-  } catch (error) {
+  } catch (error: unknown) {
     if (error instanceof Error) {
       console.error('An error occurred during deployment:', error.message);
       return {
@@ -69,7 +73,7 @@ export const deploy = async (configPath: string): Promise<DeploymentResult> => {
   }
 };
 
-(async () => {
-  const result = await deploy('path/to/config.json');
+(async (): Promise<void> => {
+  const result: DeploymentResult = await deploy('path/to/config.json');
   console.log('Deployment Result:', result);
 })();
