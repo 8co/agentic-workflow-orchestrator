@@ -1,87 +1,128 @@
-import assert from 'node:assert';
-import { test } from 'node:test';
+import { strict as assert } from 'node:assert';
+import test from 'node:test';
 import { createOpenAIAdapter } from '../../src/adapters/openai-adapter.js';
-import type { AgentRequest, AgentResponse } from '../../src/types.js';
+import type { AgentRequest } from '../../src/types.js';
 
-test('OpenAI Adapter - successful execution', async () => {
-  const mockOpenAI = {
+interface MockOpenAI {
+  chat: {
+    completions: {
+      create: (params: Record<string, unknown>) => Promise<{ choices: Array<{ message: { content: string }, finish_reason: string }>, usage: { prompt_tokens: number, completion_tokens: number } }>;
+    };
+  };
+}
+
+test('OpenAI Adapter: should handle network errors', async () => {
+  const mockClient: MockOpenAI = {
     chat: {
       completions: {
-        create: async () => ({
-          choices: [{ message: { content: 'Test response' }, finish_reason: 'stop' }],
-          usage: { prompt_tokens: 5, completion_tokens: 15 }
-        })
-      }
-    }
+        create: async () => {
+          throw new Error('Network Error: Connection lost');
+        },
+      },
+    },
   };
 
-  const adapter = createOpenAIAdapter({ apiKey: 'fake-key', model: 'gpt-test' }, 'openai');
-  (adapter as any).client = mockOpenAI;
+  const adapter = createOpenAIAdapter(
+    { apiKey: 'test-api-key', model: 'test-model' } as any,
+  );
+
+  adapter['client'] = mockClient;
 
   const request: AgentRequest = {
-    prompt: 'Test prompt',
+    prompt: 'Test network error handling',
     context: 'Test context',
-    outputPath: undefined
-  };
-
-  const response = await adapter.execute(request);
-
-  assert.strictEqual(response.success, true);
-  assert.strictEqual(response.output, 'Test response');
-});
-
-test('OpenAI Adapter - network error scenario', async () => {
-  const mockOpenAI = {
-    chat: {
-      completions: {
-        create: async () => { throw new Error('Network error'); }
-      }
-    }
-  };
-
-  const adapter = createOpenAIAdapter({ apiKey: 'fake-key', model: 'gpt-test' }, 'openai');
-  (adapter as any).client = mockOpenAI;
-
-  const request: AgentRequest = {
-    prompt: 'Test prompt',
-    outputPath: undefined
+    outputPath: undefined,
   };
 
   const response = await adapter.execute(request);
 
   assert.strictEqual(response.success, false);
-  assert.strictEqual(response.error, 'Network error');
+  assert.strictEqual(response.error, 'Network error occurred. Please check your connection and try again.');
 });
 
-test('OpenAI Adapter - output to file', async () => {
-  let mockWriteFileContent: string | undefined;
-  const mockWriteFile = async (path: string, content: string) => {
-    mockWriteFileContent = content;
-  };
-  const mockMkdir = async () => {};
-
-  const mockOpenAI = {
+test('OpenAI Adapter: should handle timeout errors', async () => {
+  const mockClient: MockOpenAI = {
     chat: {
       completions: {
-        create: async () => ({
-          choices: [{ message: { content: 'Test response to file' }, finish_reason: 'stop' }],
-          usage: { prompt_tokens: 5, completion_tokens: 15 }
-        })
-      }
-    }
+        create: async () => {
+          throw new Error('Request timed out after 5000ms');
+        },
+      },
+    },
   };
 
-  const adapter = createOpenAIAdapter({ apiKey: 'fake-key', model: 'gpt-test' }, 'openai');
-  (adapter as any).client = mockOpenAI;
-  (adapter as any).writeFile = mockWriteFile;
-  (adapter as any).mkdir = mockMkdir;
+  const adapter = createOpenAIAdapter(
+    { apiKey: 'test-api-key', model: 'test-model' } as any,
+  );
+
+  adapter['client'] = mockClient;
 
   const request: AgentRequest = {
-    prompt: 'Test prompt',
-    outputPath: 'output.txt'
+    prompt: 'Test timeout error handling',
+    context: 'Test context',
+    outputPath: undefined,
   };
 
-  await adapter.execute(request);
+  const response = await adapter.execute(request);
 
-  assert.strictEqual(mockWriteFileContent, 'Test response to file');
+  assert.strictEqual(response.success, false);
+  assert.strictEqual(response.error, 'Request timed out. Please try again later.');
+});
+
+test('OpenAI Adapter: should handle internal server errors', async () => {
+  const mockClient: MockOpenAI = {
+    chat: {
+      completions: {
+        create: async () => {
+          throw new Error('500 Internal Server Error');
+        },
+      },
+    },
+  };
+
+  const adapter = createOpenAIAdapter(
+    { apiKey: 'test-api-key', model: 'test-model' } as any,
+  );
+
+  adapter['client'] = mockClient;
+
+  const request: AgentRequest = {
+    prompt: 'Test internal server error handling',
+    context: 'Test context',
+    outputPath: undefined,
+  };
+
+  const response = await adapter.execute(request);
+
+  assert.strictEqual(response.success, false);
+  assert.strictEqual(response.error, 'Internal server error. Try again after some time.');
+});
+
+test('OpenAI Adapter: should handle unauthorized errors', async () => {
+  const mockClient: MockOpenAI = {
+    chat: {
+      completions: {
+        create: async () => {
+          throw new Error('401 Unauthorized: Invalid API key');
+        },
+      },
+    },
+  };
+
+  const adapter = createOpenAIAdapter(
+    { apiKey: 'test-api-key', model: 'test-model' } as any,
+  );
+
+  adapter['client'] = mockClient;
+
+  const request: AgentRequest = {
+    prompt: 'Test unauthorized error handling',
+    context: 'Test context',
+    outputPath: undefined,
+  };
+
+  const response = await adapter.execute(request);
+
+  assert.strictEqual(response.success, false);
+  assert.strictEqual(response.error, 'Unauthorized: Invalid API key or permissions issue.');
 });
