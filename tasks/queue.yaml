@@ -1,231 +1,140 @@
 tasks:
-  - id: example-create-module
-    status: completed
+  - id: create-context-analyzer
+    status: pending
     workflow: auto-implement
     prompt: prompts/auto-create-module.md
     context_files:
       - src/types.ts
-    variables:
-      module_name: example module
-      module_description: |
-        Create a new utility module. This is a sample task demonstrating the queue format.
-    started_at: 2026-02-14T13:56:40.206Z
-    completed_at: 2026-02-14T13:56:44.775Z
-    branch: auto/example-create-module
-  - id: example-write-tests
-    status: failed
-    workflow: auto-implement
-    prompt: prompts/auto-write-test.md
-    context_files:
-      - src/types.ts
-    variables:
-      test_target: src/example-module.ts
-      test_description: |
-        Write tests for the example module. This is a sample task demonstrating test generation.
-    started_at: 2026-02-14T13:56:44.778Z
-    completed_at: 2026-02-14T13:57:00.944Z
-    error: >-
-      # Verification Errors
-
-
-      The following commands failed. Fix ALL errors.
-
-
-      ## TypeScript Build (exit 2)
-
-      ```
-
-      src/example-module.test.ts(3,33): error TS2307: Cannot find module './example-module.js' or its corresponding type
-      declarations.
-
-      ```
-  - id: improve-error-handling-in-cursor-adapter
-    status: completed
-    workflow: auto
-    prompt: prompts/auto-modify-file.md
-    context_files:
-      - src/adapters/cursor-adapter.ts
-    variables:
-      modification_description: >
-        Enhance error handling in the Cursor adapter by adding checks for specific error codes such as 400, 401, and 503
-        with descriptive logs.
-    started_at: 2026-02-14T13:57:00.947Z
-    completed_at: 2026-02-14T13:57:06.046Z
-    branch: auto/improve-error-handling-in-cursor-adapter
-  - id: refactor-redundant-error-patterns
-    status: completed
-    workflow: auto
-    prompt: prompts/auto-modify-file.md
-    context_files:
-      - src/adapters/anthropic-adapter.ts
-    variables:
-      modification_description: >
-        Refactor error handling patterns in anthropic-adapter.ts to reduce redundancy, ensuring a singular, reusable
-        function is used for logging and handling errors across the file.
-    started_at: 2026-02-14T13:57:06.049Z
-    completed_at: 2026-02-14T13:57:18.912Z
-    branch: auto/refactor-redundant-error-patterns
-  - id: add-tests-batch-execution
-    status: failed
-    workflow: auto
-    prompt: prompts/auto-write-test.md
-    context_files:
-      - src/scheduler.ts
-    variables:
-      test_target: src/scheduler.ts
-      test_description: >
-        Write unit tests to confirm that the batch execution logic in the scheduler loops through the task queue
-        correctly and handles each task, logging outcomes without side effects.
-    started_at: 2026-02-14T13:57:18.914Z
-    completed_at: 2026-02-14T13:58:11.565Z
-    error: >-
-      # Verification Errors
-
-
-      The following commands failed. Fix ALL errors.
-
-
-      ## TypeScript Build (exit 2)
-
-      ```
-
-      src/scheduler.test.ts(56,5): error TS2322: Type '{ type: string; execute: () => Promise<{ success: boolean;
-      output: string; }>; }' is not assignable to type 'AgentType'.
-
-      src/scheduler.test.ts(86,3): error TS2322: Type '(moduleName: string) => Promise<any>' is not assignable to type
-      '(specifier: string, parent?: string | URL | undefined) => string'.
-        Type 'Promise<any>' is not assignable to type 'string'.
-      src/scheduler.test.ts(93,3): error TS2322: Type '(moduleName: string) => Promise<any>' is not assignable to type
-      '(specifier: string, parent?: string | URL | undefined) => string'.
-        Type 'Promise<any>' is not assignable to type 'string'.
-      ```
-  - id: utility-function-retry-mechanism
-    status: completed
-    workflow: auto
-    prompt: prompts/auto-create-module.md
-    context_files:
-      - src/retryUtility.ts
-    variables:
-      module_name: src/utils/retryHelper.ts
-      module_description: >
-        Create a utility function to handle retry mechanisms for async operations, configurable with custom retry limits
-        and delays to improve code reuse and error management across the codebase.
-    started_at: 2026-02-14T13:58:11.568Z
-    completed_at: 2026-02-14T13:58:16.097Z
-    branch: auto/utility-function-retry-mechanism
-  - id: enhance-type-safety-autonomous-runner
-    status: completed
-    workflow: auto
-    prompt: prompts/auto-modify-file.md
-    context_files:
       - src/autonomous-runner.ts
     variables:
-      modification_description: >
-        Improve type safety in autonomous-runner by utilizing TypeScript's advanced types, such as intersection types
-        and type predicates, to validate step variables and execution results.
-    started_at: 2026-02-14T13:58:16.099Z
-    completed_at: 2026-02-14T13:58:39.780Z
-    branch: auto/enhance-type-safety-autonomous-runner
-  - id: write-tests-anthropic-adapter
-    status: completed
-    workflow: auto
-    prompt: prompts/auto-write-test.md
-    context_files:
-      - src/adapters/anthropic-adapter.ts
-    variables:
-      test_target: src/adapters/anthropic-adapter.ts
-      test_description: >
-        Write tests for the Anthropic Adapter to ensure all functions, especially error-handling mechanisms, function
-        correctly under expected scenarios and edge cases.
-    started_at: 2026-02-14T14:19:11.953Z
-    completed_at: 2026-02-14T14:19:20.914Z
-    branch: auto/write-tests-anthropic-adapter
-  - id: enhance-type-safety-openai-adapter
-    status: failed
-    workflow: auto
-    prompt: prompts/auto-modify-file.md
-    context_files:
-      - src/adapters/openai-adapter.ts
-    variables:
-      modification_description: >
-        Improve type safety in the OpenAI Adapter by ensuring all function interfaces are explicitly typed, and unknown
-        types are properly handled using TypeScript conventions.
-    started_at: 2026-02-14T14:19:20.920Z
-    completed_at: 2026-02-14T14:19:53.707Z
-    error: >-
-      # Verification Errors
+      module_name: context-analyzer
+      module_description: >
+        Create src/context-analyzer.ts that exports a function analyzeContext(entryFile: string, basePath: string):
+        Promise<string[]>. It should read the given TypeScript file, extract all relative import paths (lines matching
+        import ... from './...'), resolve them to absolute paths, and recursively follow imports up to 3 levels deep.
+        Return a deduplicated array of file paths that are relevant context for that entry file. Use node:fs/promises
+        and node:path only. No external dependencies. Export a second function getFileExports(filePath: string):
+        Promise<string[]> that reads a file and returns the names of all named exports using regex matching on
+        'export function', 'export class', 'export interface', 'export const', 'export type'. Named exports only.
 
-
-      The following commands failed. Fix ALL errors.
-
-
-      ## TypeScript Build (exit 2)
-
-      ```
-
-      src/adapters/openai-adapter.ts(6,18): error TS2614: Module '"openai"' has no exported member 'ChatCompletion'. Did
-      you mean to use 'import ChatCompletion from "openai"' instead?
-
-      ```
-  - id: refactor-error-handling-duplicate-patterns
-    status: completed
-    workflow: auto
-    prompt: prompts/auto-modify-file.md
-    context_files:
-      - src/utils/networkErrorUtil.ts
-      - src/adapters/openai-adapter.ts
-    variables:
-      modification_description: >
-        Create a utility function in networkErrorUtil.ts to manage duplicate error-handling patterns from multiple
-        adapters.
-    started_at: 2026-02-14T14:19:53.712Z
-    completed_at: 2026-02-14T14:20:00.233Z
-    branch: auto/refactor-error-handling-duplicate-patterns
-  - id: add-tests-openai-adapter
-    status: failed
-    workflow: auto
-    prompt: prompts/auto-write-test.md
-    context_files:
-      - src/adapters/openai-adapter.ts
-    variables:
-      test_target: src/adapters/openai-adapter.ts
-      test_description: >
-        Implement comprehensive tests for OpenAI Adapter coverage including API response structure validation, error
-        handling, and token usage calculations.
-    started_at: 2026-02-14T14:20:00.239Z
-    completed_at: 2026-02-14T14:20:56.581Z
-    error: >-
-      # Verification Errors
-
-
-      The following commands failed. Fix ALL errors.
-
-
-      ## TypeScript Build (exit 2)
-
-      ```
-
-      src/adapters/openai-adapter.test.ts(23,14): error TS7017: Element implicitly has an 'any' type because type
-      'typeof globalThis' has no index signature.
-
-      src/adapters/openai-adapter.test.ts(68,14): error TS7017: Element implicitly has an 'any' type because type
-      'typeof globalThis' has no index signature.
-
-      src/adapters/openai-adapter.test.ts(96,14): error TS7017: Element implicitly has an 'any' type because type
-      'typeof globalThis' has no index signature.
-
-      ```
-  - id: create-config-validation-module
-    status: completed
-    workflow: auto
+  - id: create-execution-audit-log
+    status: pending
+    workflow: auto-implement
     prompt: prompts/auto-create-module.md
     context_files:
-      - src/config.ts
+      - src/types.ts
+      - src/queue-manager.ts
     variables:
-      module_name: configValidator
+      module_name: execution-audit-log
       module_description: >
-        Create a module to validate configuration files and environment variables ensuring correct and secure settings
-        are applied, with clear error reporting for missing or incorrect variables.
-    started_at: 2026-02-14T14:20:56.586Z
-    completed_at: 2026-02-14T14:20:59.668Z
-    branch: auto/create-config-validation-module
+        Create src/audit-log.ts that exports an interface AuditEntry with fields: id (string), taskId (string),
+        timestamp (string ISO), durationMs (number), tokensIn (number), tokensOut (number), estimatedCost (number),
+        status ('completed' | 'failed'), filesChanged (string[]), branch (string | undefined), error (string | undefined).
+        Export function logEntry(entry: AuditEntry): Promise<void> that appends the entry as a JSON line to
+        'audit-log.jsonl' in the project root. Export function loadAuditLog(): Promise<AuditEntry[]> that reads
+        the JSONL file and returns all entries. Export function getAuditSummary(): Promise<{ totalRuns: number,
+        successRate: number, totalTokensIn: number, totalTokensOut: number, totalCost: number, avgDurationMs: number }>
+        that computes summary stats from the log. Use node:fs/promises only. Named exports only.
+
+  - id: create-diff-preview
+    status: pending
+    workflow: auto-implement
+    prompt: prompts/auto-create-module.md
+    context_files:
+      - src/git-ops.ts
+      - src/autonomous-runner.ts
+    variables:
+      module_name: diff-preview
+      module_description: >
+        Create src/diff-preview.ts that exports a function generateDiffPreview(basePath: string): Promise<string>.
+        It should run 'git diff --staged' and 'git diff' as child processes (using node:child_process spawn) and
+        return the combined diff output as a string. Export a function formatDiffSummary(diff: string):
+        { filesChanged: string[], linesAdded: number, linesRemoved: number } that parses a unified diff string
+        and extracts file names from '--- a/' and '+++ b/' lines, counts lines starting with '+' (added) and '-'
+        (removed), excluding the --- and +++ header lines. Export a function printDiffPreview(diff: string): void
+        that prints a colorized summary to console using ANSI codes (green for additions, red for removals).
+        Use node:child_process and node:path only. Named exports only.
+
+  - id: create-dependency-graph
+    status: pending
+    workflow: auto-implement
+    prompt: prompts/auto-create-module.md
+    context_files:
+      - src/types.ts
+    variables:
+      module_name: dependency-graph
+      module_description: >
+        Create src/dependency-graph.ts that exports an interface DependencyNode with fields: file (string),
+        imports (string[]), importedBy (string[]). Export function buildDependencyGraph(basePath: string):
+        Promise<Map<string, DependencyNode>>. It should find all .ts files in src/ using node:fs/promises readdir
+        with recursive option, read each file, extract relative import paths using regex matching on lines like
+        import ... from './...' or import ... from '../...', resolve them relative to each file's directory,
+        and build a bidirectional graph. Export function getModuleDepth(graph: Map<string, DependencyNode>,
+        file: string): number that returns how many levels deep a module is (0 for files with no imports).
+        Export function findOrphans(graph: Map<string, DependencyNode>): string[] that returns files that are
+        neither imported by anything nor import anything. Export function toJSON(graph: Map<string, DependencyNode>):
+        string that serializes the graph to a JSON string. Use node:fs/promises and node:path only. Named exports only.
+
+  - id: create-task-cost-tracker
+    status: pending
+    workflow: auto-implement
+    prompt: prompts/auto-create-module.md
+    context_files:
+      - src/budget-manager.ts
+      - src/types.ts
+    variables:
+      module_name: task-cost-tracker
+      module_description: >
+        Create src/task-cost-tracker.ts that exports an interface TaskCost with fields: taskId (string),
+        model (string), tokensIn (number), tokensOut (number), cost (number), timestamp (string ISO).
+        Export const MODEL_PRICING: Record<string, { inputPer1k: number, outputPer1k: number }> with entries
+        for 'gpt-4o' (input: 0.0025, output: 0.01), 'gpt-4o-mini' (input: 0.00015, output: 0.0006),
+        'claude-sonnet-4-20250514' (input: 0.003, output: 0.015), 'claude-haiku' (input: 0.00025, output: 0.00125).
+        Export function calculateCost(model: string, tokensIn: number, tokensOut: number): number that looks up
+        the model in MODEL_PRICING and computes the cost, returning 0 if model is unknown.
+        Export function trackTaskCost(cost: TaskCost): Promise<void> that appends to 'task-costs.jsonl'.
+        Export function getSpendingSummary(): Promise<{ totalCost: number, costByModel: Record<string, number>,
+        taskCount: number }> that reads the JSONL and aggregates. Use node:fs/promises only. Named exports only.
+
+  - id: create-codebase-health-score
+    status: pending
+    workflow: auto-implement
+    prompt: prompts/auto-create-module.md
+    context_files:
+      - src/verify-runner.ts
+      - src/observabilityUtil.ts
+    variables:
+      module_name: codebase-health-score
+      module_description: >
+        Create src/health-score.ts that exports an interface HealthReport with fields: score (number 0-100),
+        timestamp (string ISO), metrics (object with: typeScriptErrors: number, totalFiles: number,
+        totalLines: number, avgFileSize: number, largestFile: { path: string, lines: number }).
+        Export function computeHealthScore(basePath: string): Promise<HealthReport>. It should: 1) run
+        'npx tsc --noEmit' via spawn and count error lines (lines containing ': error TS'), 2) find all .ts
+        files in src/ using readdir recursive, 3) count total lines across all files, 4) find the largest file.
+        Score formula: start at 100, subtract 10 per TypeScript error (min 0), subtract 5 if any file exceeds
+        500 lines, subtract 5 if avgFileSize exceeds 200 lines. Export function trackHealthScore(report: HealthReport):
+        Promise<void> that appends to 'health-scores.jsonl'. Export function getHealthTrend():
+        Promise<HealthReport[]> that reads back all scores. Use node:child_process spawn and node:fs/promises.
+        Named exports only.
+
+  - id: create-webhook-notifier
+    status: pending
+    workflow: auto-implement
+    prompt: prompts/auto-create-module.md
+    context_files:
+      - src/types.ts
+      - src/error-notification.ts
+    variables:
+      module_name: webhook-notifier
+      module_description: >
+        Create src/webhook-notifier.ts that exports an interface WebhookPayload with fields: event
+        ('task.completed' | 'task.failed' | 'batch.completed'), taskId (string | undefined), status (string),
+        message (string), timestamp (string ISO), metadata (Record<string, unknown> | undefined).
+        Export function sendWebhook(url: string, payload: WebhookPayload): Promise<{ success: boolean,
+        statusCode: number | undefined }> that makes an HTTP POST request using node:https (for https URLs)
+        or node:http (for http URLs). Set Content-Type to application/json, timeout to 5000ms. Return
+        success: true if statusCode is 2xx, false otherwise. Do not throw on failure.
+        Export function createTaskCompletedPayload(taskId: string, branch: string, durationMs: number):
+        WebhookPayload and createTaskFailedPayload(taskId: string, error: string): WebhookPayload as
+        convenience constructors. Use node:http and node:https only. No external dependencies. Named exports only.
