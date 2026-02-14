@@ -215,10 +215,11 @@ export function createAutonomousRunner(deps: AutoRunnerDeps) {
       console.log(`  📦 Found ${changes.length} file(s) to write`);
 
       // Write files to the target project
-      // Only enforce protected file list for the orchestrator project
+      // Protected file list is project-specific (via protected-files-config)
       const isOrchestrator = !workflow.projectId || workflow.projectId === 'orchestrator';
       const writeResult = await writeFiles(changes, targetDir, {
         enforceProtected: isOrchestrator,
+        projectId: workflow.projectId,
       });
       filesWritten = writeResult.filesWritten.map((f) => f.filePath);
 

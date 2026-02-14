@@ -17,6 +17,7 @@
 
 import { writeFile, mkdir, readFile } from 'node:fs/promises';
 import { dirname, resolve, join } from 'node:path';
+import { getProtectedFiles, isProtected, ORCHESTRATOR_PROTECTED, type ProtectedFilesConfig } from './protected-files-config.js';
 
 export interface FileChange {
   filePath: string;
@@ -32,27 +33,10 @@ export interface WriteResult {
 
 /**
  * Protected files that autonomous mode cannot overwrite.
- * These are core infrastructure files with high blast radius.
- * The LLM can create new files freely, but cannot modify these.
+ * Now delegated to protected-files-config module for per-project support.
+ * This constant is kept for backward compatibility.
  */
-export const PROTECTED_FILES: Set<string> = new Set([
-  'src/types.ts',
-  'src/cli.ts',
-  'src/config.ts',
-  'src/autonomous-runner.ts',
-  'src/scheduler.ts',
-  'src/queue-manager.ts',
-  'src/task-proposer.ts',
-  'src/file-writer.ts',
-  'src/verify-runner.ts',
-  'src/git-ops.ts',
-  'src/workflow-runner.ts',
-  'src/prompt-resolver.ts',
-  'src/state-manager.ts',
-  'package.json',
-  'tsconfig.json',
-  'AGENTS.md',
-]);
+export const PROTECTED_FILES: Set<string> = ORCHESTRATOR_PROTECTED.files;
 
 /**
  * Parse LLM output and extract file changes.
@@ -156,10 +140,15 @@ export async function writeToFile(
 export async function writeFiles(
   changes: FileChange[],
   targetDir: string,
-  options?: { enforceProtected?: boolean }
+  options?: { enforceProtected?: boolean; projectId?: string }
 ): Promise<WriteResult> {
   const enforceProtected = options?.enforceProtected ?? true;
   const result: WriteResult = { filesWritten: [], errors: [], blocked: [] };
+
+  // Resolve protected files config based on project
+  const protectedConfig: ProtectedFilesConfig = enforceProtected
+    ? getProtectedFiles(options?.projectId ?? 'orchestrator')
+    : { files: new Set<string>(), patterns: [] };
 
   for (const change of changes) {
     try {
@@ -171,8 +160,8 @@ export async function writeFiles(
         continue;
       }
 
-      // Protected files check: block overwrites of core infrastructure
-      if (enforceProtected && PROTECTED_FILES.has(change.filePath)) {
+      // Protected files check: block overwrites based on project-specific config
+      if (enforceProtected && isProtected(change.filePath, protectedConfig)) {
         console.log(`  🛡️  Blocked: ${change.filePath} (protected file)`);
         result.blocked.push(change.filePath);
         continue;

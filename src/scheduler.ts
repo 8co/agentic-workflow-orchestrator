@@ -21,6 +21,7 @@ import { createAutonomousRunner, type AutoStep, type AutoWorkflow } from './auto
 import { runVerification, defaultVerifyCommands, verifyCommandsForProject } from './verify-runner.js';
 import type { AgentAdapter, AgentType } from './types.js';
 import type { ProjectConfig, ProjectRegistry } from './project-registry.js';
+import { getProfile, getLanguageVarsFromProfile } from './project-profiles.js';
 
 /**
  * Run a git command and return stdout.
@@ -62,27 +63,18 @@ interface TaskRunResult {
 
 /**
  * Derive language-related template variables from project config.
- * These get injected into prompt templates as {{language}}, {{code_lang}}, etc.
- *
- * TODO: Replace with project-profiles module in Phase 3.
+ * Uses project-profiles for consistent defaults per project type.
+ * Falls back to TypeScript defaults if profile not found.
  */
 function getLanguageVars(projectConfig?: ProjectConfig): Record<string, string> {
   const projectType = projectConfig?.type ?? 'typescript-node';
+  const profile = getProfile(projectType);
 
-  // JavaScript project types
-  const jsTypes = new Set(['serverless-js', 'javascript-node', 'nextjs-js']);
-
-  if (jsTypes.has(projectType)) {
-    return {
-      language: 'JavaScript',
-      code_lang: 'javascript',
-      file_ext: 'js',
-      module_system: 'CommonJS (require/module.exports)',
-      language_instructions: 'Plain JavaScript (ES2022+). No TypeScript syntax. Use JSDoc for type hints where helpful.',
-    };
+  if (profile) {
+    return getLanguageVarsFromProfile(profile);
   }
 
-  // Default: TypeScript
+  // Fallback: TypeScript defaults
   return {
     language: 'TypeScript',
     code_lang: 'typescript',

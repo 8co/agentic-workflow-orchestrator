@@ -18,12 +18,14 @@ projects:
         args: [tsc, --noEmit]
     package_manager: npm
 
-  # Prompt Scorer Serverless API
-  - id: api
+  # --- Prompt Scorer ---
+
+  # Prompt Scorer Serverless API (Plain JS, CommonJS, Serverless Framework)
+  - id: prompt-scorer-api
     name: prompt-scorer-sls-api
     path: ../prompt-scorer-sls-api
-    type: serverless-node
-    description: Serverless API service for evaluating and optimizing LLM prompts
+    type: serverless-js
+    description: Serverless API for evaluating and optimizing LLM prompts. AWS Lambda + DynamoDB + SQS.
     scan_dirs:
       - src
       - resources
@@ -31,17 +33,14 @@ projects:
       - "*.test.js"
       - node_modules
       - .serverless
+      - .webpack
     verify:
-      - command: npm
-        args: [run, lint]
-        optional: true
       - command: npx
-        args: [tsc, --noEmit]
-        optional: true
+        args: [webpack, --mode, production]
     package_manager: npm
 
-  # Prompt Scorer UI
-  - id: ui
+  # Prompt Scorer UI (TypeScript, React + Vite)
+  - id: prompt-scorer-ui
     name: prompt-scorer-ui
     path: ../prompt-scorer-ui
     type: react-vite
@@ -58,3 +57,69 @@ projects:
         args: [run, build]
     package_manager: npm
 
+  # --- Athlete Mono App (monorepo workspaces) ---
+
+  # SST v2 Infrastructure
+  - id: mono-infra
+    name: athlete-mono-infra
+    path: ../athlete-mono-app/infra
+    type: sst-v2
+    description: SST v2 infrastructure for athlete platform. Lambda handlers, DynamoDB tables, API Gateway.
+    scan_dirs:
+      - src
+    skip_patterns:
+      - node_modules
+      - .sst
+      - .build
+    verify:
+      - command: npx
+        args: [tsc, --noEmit]
+    package_manager: npm
+
+  # SST v3 Infrastructure
+  - id: mono-infra-v3
+    name: athlete-mono-infra-v3
+    path: ../athlete-mono-app/infra-v3
+    type: sst-v2
+    description: SST v3 infrastructure migration. New API endpoints and resources.
+    scan_dirs:
+      - src
+    skip_patterns:
+      - node_modules
+      - .sst
+    verify:
+      - command: npx
+        args: [tsc, --noEmit]
+    package_manager: npm
+
+  # Shared packages (data layer)
+  - id: mono-data
+    name: athlete-mono-data
+    path: ../athlete-mono-app/packages/data
+    type: typescript-node
+    description: Shared data models and DynamoDB utilities for athlete platform
+    scan_dirs:
+      - src
+    skip_patterns:
+      - node_modules
+      - dist
+    verify:
+      - command: npx
+        args: [tsc, --noEmit]
+    package_manager: npm
+
+  # Shared packages (common utilities)
+  - id: mono-shared
+    name: athlete-mono-shared
+    path: ../athlete-mono-app/packages/shared
+    type: typescript-node
+    description: Shared utilities and types across athlete platform workspaces
+    scan_dirs:
+      - src
+    skip_patterns:
+      - node_modules
+      - dist
+    verify:
+      - command: npx
+        args: [tsc, --noEmit]
+    package_manager: npm

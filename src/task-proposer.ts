@@ -10,6 +10,8 @@ import { parse as parseYaml } from 'yaml';
 import type { AgentAdapter, AgentRequest } from './types.js';
 import { createQueueManager, type QueueTask } from './queue-manager.js';
 import type { ProjectConfig } from './project-registry.js';
+import { generateProjectContext } from './project-context.js';
+import { getProfile, getLanguageVarsFromProfile } from './project-profiles.js';
 
 // --- Types ---
 
@@ -209,9 +211,24 @@ export function createTaskProposer(config: ProposerConfig) {
     const { stringify: stringifyYaml } = await import('yaml');
     const tasksYaml = stringifyYaml(tasks, { lineWidth: 120 });
 
-    const prompt = template
+    // Resolve language variables for review template
+    const reviewProjectType = projectConfig?.type ?? 'typescript-node';
+    const reviewProfile = getProfile(reviewProjectType);
+    const reviewLangVars = reviewProfile ? getLanguageVarsFromProfile(reviewProfile) : {
+      language: 'TypeScript',
+      code_lang: 'typescript',
+      file_ext: 'ts',
+      module_system: 'ES modules (import/export, .js extensions in imports)',
+      language_instructions: 'TypeScript strict mode — no `any`, no implicit types.',
+    };
+
+    let prompt = template
       .replace(/\{\{\s*project_name\s*\}\}/g, projectName)
       .replace(/\{\{\s*proposed_tasks\s*\}\}/g, tasksYaml);
+
+    for (const [key, value] of Object.entries(reviewLangVars)) {
+      prompt = prompt.replace(new RegExp(`\\{\\{\\s*${key}\\s*\\}\\}`, 'g'), value);
+    }
 
     const request: AgentRequest = { prompt };
     const response = await adapter.execute(request);
@@ -265,14 +282,38 @@ export function createTaskProposer(config: ProposerConfig) {
       const existingTasks = await queue.list();
       const existingIds = new Set(existingTasks.map((t) => t.id));
 
-      // Inject variables
-      const prompt = template
+      // Resolve language variables from project profile
+      const projectType = projectConfig?.type ?? 'typescript-node';
+      const profile = getProfile(projectType);
+      const langVars = profile ? getLanguageVarsFromProfile(profile) : {
+        language: 'TypeScript',
+        code_lang: 'typescript',
+        file_ext: 'ts',
+        module_system: 'ES modules (import/export, .js extensions in imports)',
+        language_instructions: 'TypeScript strict mode — no `any`, no implicit types.',
+      };
+
+      // Inject variables (project info + language vars)
+      let prompt = template
         .replace(/\{\{\s*project_name\s*\}\}/g, projectName)
         .replace(/\{\{\s*project_description\s*\}\}/g, projectDescription)
         .replace(/\{\{\s*max_tasks\s*\}\}/g, String(maxTasks));
 
-      // Build the full prompt with codebase context
-      const fullPrompt = `${prompt}\n\n## Current Codebase\n\n${codebaseSummary}\n\n## Existing Tasks (do NOT duplicate these)\n\n${existingTasks.map((t) => `- ${t.id} (${t.status})`).join('\n') || 'None'}`;
+      // Replace language template variables
+      for (const [key, value] of Object.entries(langVars)) {
+        prompt = prompt.replace(new RegExp(`\\{\\{\\s*${key}\\s*\\}\\}`, 'g'), value);
+      }
+
+      // Generate project context preamble (language, framework, patterns)
+      let projectContextStr = '';
+      try {
+        projectContextStr = await generateProjectContext(basePath);
+      } catch {
+        // Non-fatal — proceed without context
+      }
+
+      // Build the full prompt with project context and codebase
+      const fullPrompt = `${prompt}\n\n${projectContextStr}\n\n## Current Codebase\n\n${codebaseSummary}\n\n## Existing Tasks (do NOT duplicate these)\n\n${existingTasks.map((t) => `- ${t.id} (${t.status})`).join('\n') || 'None'}`;
 
       console.log('🤖 Asking LLM to propose tasks...\n');
 
