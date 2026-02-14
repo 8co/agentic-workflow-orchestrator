@@ -661,3 +661,35 @@ tasks:
     started_at: 2026-02-14T00:24:40.600Z
     completed_at: 2026-02-14T00:24:44.808Z
     branch: auto/create-logger-utility
+  - id: write-tests-scheduler
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-write-test.md
+    context_files:
+      - src/scheduler.ts
+    variables:
+      test_target: src/scheduler.ts
+      test_description: >
+        Implement unit tests to cover basic functionalities, edge cases, and error handling for the `scheduler.ts`
+        module.
+  - id: implement-error-handling-promp-resolver
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-modify-file.md
+    context_files:
+      - src/prompt-resolver.ts
+    variables:
+      modification_description: >
+        Add error handling for file reading and variable resolution steps in `prompt-resolver.ts`, ensuring robust
+        handling of errors like file not found or undefined variables.
+  - id: add-unified-error-utility
+    status: pending
+    workflow: auto
+    prompt: prompts/auto-create-module.md
+    context_files:
+      - src/utils.ts
+    variables:
+      module_name: errorUtility
+      module_description: >
+        Create a utility module to standardize error handling procedures across the project, including functions for
+        logging error details and formatting error messages for user-friendly outputs.
