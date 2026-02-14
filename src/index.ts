@@ -12,12 +12,26 @@ export function main(): void {
 
   try {
     initializeOrchestrationEngine();
-    loadWorkflowConfigurations();
-    connectToAIAgents();
-    console.log('✅ System initialized');
   } catch (error) {
-    console.error('❌ Error during system initialization:', error);
+    console.error('❌ Error during orchestration engine initialization:', error instanceof Error ? error.message : String(error));
+    return;
   }
+
+  try {
+    loadWorkflowConfigurations();
+  } catch (error) {
+    console.error('❌ Error during workflow configurations loading:', error instanceof Error ? error.message : String(error));
+    return;
+  }
+
+  try {
+    connectToAIAgents();
+  } catch (error) {
+    console.error('❌ Error during AI agents connection:', error instanceof Error ? error.message : String(error));
+    return;
+  }
+
+  console.log('✅ System initialized');
 }
 
 // Run if executed directly
