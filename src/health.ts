@@ -26,21 +26,21 @@ export function getHealthStatus(): HealthStatus {
   try {
     version = retryOperation(extractPackageVersion);
   } catch (error) {
-    logError('Version extraction error', 'Failed to parse package.json for version.', error);
+    logDetailedError('Version extraction error', 'Failed to parse package.json for version.', error);
     status = 'degraded';
   }
 
   try {
     memoryUsageMB = retryOperation(getSafeMemoryUsageMB);
   } catch (error) {
-    logError('Memory usage retrieval error', 'Unable to calculate memory usage.', error);
+    logDetailedError('Memory usage retrieval error', 'Unable to calculate memory usage.', error);
     status = 'degraded';
   }
 
   const uptime = retryOperation(getUptimeSafely);
 
   if (uptime === null) {
-    logError('Uptime retrieval error', 'Failed to retrieve system uptime.', new Error('Uptime is NaN'));
+    logDetailedError('Uptime retrieval error', 'Failed to retrieve system uptime.', new Error('Uptime is NaN'));
     status = 'down';
   }
 
@@ -109,7 +109,7 @@ function logHealthMonitoringData(healthStatus: HealthStatus): void {
     logHealthStatus(healthStatus);
     logMemoryUsageWarnings(healthStatus.memoryUsage);
   } catch (error) {
-    logError('Logging error', 'Could not log health status and warnings.', error);
+    logDetailedError('Logging error', 'Could not log health status and warnings.', error);
   }
 }
 
@@ -137,7 +137,8 @@ function logMemoryUsageWarnings(memoryUsage: number): void {
   }
 }
 
-function logError(type: string, context: string, error: unknown): void {
+function logDetailedError(type: string, context: string, error: unknown): void {
   const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-  logger.error(`${type}: ${context} - ${errorMessage}`);
+  const stackTrace = error instanceof Error && error.stack ? `\nStack Trace: ${error.stack}` : '';
+  logger.error(`${type}: ${context} - ${errorMessage}${stackTrace}`);
 }
