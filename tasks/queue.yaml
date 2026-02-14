@@ -608,7 +608,7 @@ tasks:
     completed_at: 2026-02-14T20:53:47.132Z
     branch: auto/validate-request-body
   - id: write-tests-for-analyze-prompt-handler
-    status: running
+    status: completed
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -620,6 +620,8 @@ tasks:
         verify that analyzed prompts are properly stored.
     project: prompt-scorer-api
     started_at: 2026-02-14T20:53:44.728Z
+    completed_at: 2026-02-14T20:53:56.885Z
+    branch: auto/write-tests-for-analyze-prompt-handler
   - id: error-handling-improvement-in-diagnostic
     status: completed
     workflow: auto
@@ -648,7 +650,7 @@ tasks:
     project: prompt-scorer-api
     started_at: 2026-02-14T20:53:53.571Z
   - id: write-tests-for-vote-prompt-handler
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -659,6 +661,7 @@ tasks:
         Create tests to check the voting functionality for prompts, ensuring the handler correctly processes votes and
         updates the prompt statistics as expected.
     project: prompt-scorer-api
+    started_at: 2026-02-14T20:53:56.899Z
   - id: add-type-validation-in-promptservice
     status: pending
     workflow: auto
