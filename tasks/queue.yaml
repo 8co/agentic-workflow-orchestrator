@@ -4435,7 +4435,7 @@ tasks:
     completed_at: 2026-02-14T02:02:36.422Z
     branch: auto/add-monitoring-utils
   - id: write-tests-index-error-handling-scenarios
-    status: running
+    status: failed
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -4446,8 +4446,56 @@ tasks:
         Write detailed tests to cover various error handling scenarios, ensuring that error logging in the main function
         works correctly under multiple failure conditions.
     started_at: 2026-02-14T02:03:35.725Z
+    completed_at: 2026-02-14T02:04:14.022Z
+    error: >-
+      # Verification Errors
+
+
+      The following commands failed. Fix ALL errors.
+
+
+      ## TypeScript Build (exit 2)
+
+      ```
+
+      src/index.test.ts(3,33): error TS2307: Cannot find module 'jest-mock-process' or its corresponding type
+      declarations.
+
+      src/index.test.ts(7,49): error TS2304: Cannot find name 'jest'.
+
+      src/index.test.ts(10,3): error TS2304: Cannot find name 'jest'.
+
+      src/index.test.ts(11,36): error TS2304: Cannot find name 'jest'.
+
+      src/index.test.ts(24,3): error TS2304: Cannot find name 'expect'.
+
+      src/index.test.ts(26,3): error TS2304: Cannot find name 'jest'.
+
+      src/index.test.ts(32,46): error TS2304: Cannot find name 'jest'.
+
+      src/index.test.ts(35,3): error TS2304: Cannot find name 'jest'.
+
+      src/index.test.ts(36,33): error TS2304: Cannot find name 'jest'.
+
+      src/index.test.ts(49,3): error TS2304: Cannot find name 'expect'.
+
+      src/index.test.ts(51,3): error TS2304: Cannot find name 'jest'.
+
+      src/index.test.ts(57,37): error TS2304: Cannot find name 'jest'.
+
+      src/index.test.ts(60,3): error TS2304: Cannot find name 'jest'.
+
+      src/index.test.ts(61,24): error TS2304: Cannot find name 'jest'.
+
+      src/index.test.ts(74,3): error TS2304: Cannot find name 'expect'.
+
+      src/index.test.ts(76,3): error TS2304: Cannot find name 'jest'.
+
+      src/index.test.ts(92,3): error TS2304: Cannot find name 'expect'.
+
+      ```
   - id: add-tests-security-scanner
-    status: pending
+    status: running
     workflow: auto
     prompt: prompts/auto-write-test.md
     context_files:
@@ -4457,6 +4505,7 @@ tasks:
       test_description: >
         Create comprehensive tests for the security scanner to validate proper detection of vulnerabilities and correct
         categorization of threat levels.
+    started_at: 2026-02-14T02:04:14.095Z
   - id: refactor-log-util-error-handling
     status: pending
     workflow: auto
