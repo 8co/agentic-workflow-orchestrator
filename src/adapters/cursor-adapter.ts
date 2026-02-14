@@ -41,21 +41,24 @@ export function createCursorAdapter(): AgentAdapter {
           console.log(`│ 📄 Output written to: ${request.outputPath}`);
         }
 
-        const durationMs: number = Date.now() - start;
+        const durationMs = Date.now() - start;
 
         console.log(`│ ⏱  Duration: ${durationMs}ms`);
         console.log('└─────────────────────────────────────────\n');
 
-        return {
+        const successResponse: AgentResponse = {
           success: true,
           output: request.outputPath ?? '[stdout]',
           durationMs,
         };
+        return successResponse;
       } catch (err: unknown) {
         let errorMessage: string;
+
         if (err instanceof Error) {
           if ('code' in err) {
-            switch ((err as NodeJS.ErrnoException).code) {
+            const errnoError = err as NodeJS.ErrnoException;
+            switch (errnoError.code) {
               case 'ENOENT':
                 errorMessage = 'File path not found. Please ensure the directory exists.';
                 break;
@@ -63,7 +66,7 @@ export function createCursorAdapter(): AgentAdapter {
                 errorMessage = 'Permission denied. Check your access rights to the output path.';
                 break;
               default:
-                errorMessage = `Unhandled error: ${err.message}`;
+                errorMessage = `Unhandled error: ${errnoError.message}`;
             }
           } else {
             errorMessage = err.message;
@@ -72,11 +75,13 @@ export function createCursorAdapter(): AgentAdapter {
           errorMessage = String(err);
         }
         console.error(`Error executing Cursor Agent: ${errorMessage}`);
-        return {
+
+        const errorResponse: AgentResponse = {
           success: false,
           error: errorMessage,
           durationMs: Date.now() - start,
         };
+        return errorResponse;
       }
     },
   };
